@@ -1,2 +1,2 @@
 #include "./getJapaneseImage/Anime_Img.h"
-#include "./getJapaneseImage/114514.h"
+#include "./auto114514/114514.h"

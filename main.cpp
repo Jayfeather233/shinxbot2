@@ -48,7 +48,7 @@ void input_process(std::string *input){
                         if (game->help() != "")
                             help_message += game->help() + '\n';
                     }
-                    help_message += "本Bot项目地址：https://github.com/Jayfeather233/shinxBot";
+                    help_message += "本Bot项目地址：https://github.com/Jayfeather233/shinxbot2";
                     cq_send(help_message, message_type, user_id, group_id);
                 } else {
                     for (processable *game : functions) {
