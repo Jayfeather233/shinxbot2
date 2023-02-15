@@ -7,9 +7,11 @@
 #include <vector>
 #include <sstream>
 #include <algorithm>
-#include <boost/asio.hpp>
-#include <boost/array.hpp>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 #include <thread>
+#include <mutex>
 
 int send_port = 5750;
 int recieve_port = 5701;
@@ -63,46 +65,81 @@ void input_process(std::string *input){
     delete input;
 }
 
-void handle_accept(boost::asio::ip::tcp::socket &socket){
-    boost::array<char, 4096> buf;
-    boost::system::error_code error;
-    size_t len = socket.read_some(boost::asio::buffer(buf), error);
-    
-    std::istringstream data (buf.c_array());
-    std::string line;    
-    while (std::getline(data, line)) {
-        if(line[0]=='{'){
-            //input_process(line);
-            std::string *u = new std::string(line);
-            std::thread th = std::thread(input_process, u);
-            th.detach();
-        }
+
+int start_server(){
+    int server_fd, new_socket;
+    struct sockaddr_in address;
+    int addrlen = sizeof(address);
+    char buffer[4096] = {0};
+
+    // Create server socket
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+        std::cerr << "Error creating socket\n";
+        return 1;
     }
-    
-    std::string res_header = 
-                    (std::string)"HTTP/1.1 200 OK\n"+
-                    "Content-Length: 0\n"+
-                    "Content-Type: application/json\n"+ "\n"
-                    ;
-    boost::asio::write(socket, boost::asio::buffer(res_header));
-    socket.close();
+
+    // Set socket options
+    int opt = 1;
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+        std::cerr << "Error setting socket options\n";
+        return 1;
+    }
+
+    // Set server address and bind to socket
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(recieve_port);
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
+        std::cerr << "Error binding to socket\n";
+        return 1;
+    }
+
+    // Listen for incoming connections
+    if (listen(server_fd, 3) < 0) {
+        std::cerr << "Error listening for connections\n";
+        return 1;
+    }
+
+    // Accept incoming connections and handle requests
+    while (true) {
+        if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
+            std::cerr << "Error accepting connection\n";
+            continue;
+        }
+        int valread = read(new_socket, buffer, 4096);
+
+        std::istringstream iss((std::string)buffer);
+        std::string line;
+        while(getline(iss, line)){
+            if(line[0]=='{'){
+                std::string *u = new std::string(line);
+                std::thread(input_process, u).detach();
+            }
+        }
+
+        std::stringstream response_body;
+        response_body << (std::string)"HTTP/1.1 200 OK\r\n"+
+                    "Content-Length: 0\r\n"+
+                    "Content-Type: application/json\r\n\n";
+        std::string response = response_body.str();
+        const char* response_cstr = response.c_str();
+        send(new_socket, response_cstr, strlen(response_cstr), 0);
+        close(new_socket);
+    }
+    return 0;
 }
 
 int main(){
     username_init();
     functions.push_back(new AnimeImg());
     functions.push_back(new auto114());
+    functions.push_back(new hhsh());
 
-    try {
-        boost::asio::io_service io_service;
-        boost::asio::ip::tcp::acceptor acceptor(io_service, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), recieve_port));
-        for (;;) {
-            boost::asio::ip::tcp::socket socket(io_service);
-            acceptor.accept(socket);
-            handle_accept(socket);
-        }
-    } catch (std::exception& e) {
-        std::cerr << e.what() << std::endl;
+    start_server();
+    while(1);
+
+    for(processable *u : functions){
+        delete []u;
     }
 
     return 0;

@@ -1,4 +1,4 @@
-#include "114514.h"
+#include "auto114.h"
 #include "utils.h"
 #include <iostream>
 #include <fstream>
@@ -53,7 +53,6 @@ std::string auto114::getans(long long input){
 }
 
 std::string auto114::process(std::string message, std::string message_type, long user_id, long group_id){
-    std::cout<<message.substr(4)<<std::endl;
     std::istringstream iss(message.substr(4));
     long long input;
     iss >> input;
