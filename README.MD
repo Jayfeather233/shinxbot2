@@ -27,6 +27,8 @@
 
 需要几个支持库：curl / jsoncpp，以后图片处理可能用stb_image或openCV
 
+这些库怎么装？问chatGPT。
+
 linux: 运行build.sh，自动执行cmake和make编译并运行
 
 windows：手动通过CMake编译，需要更改TCP连接的头文件（和可能的代码细微差别）本人没有使用Windows编译过（

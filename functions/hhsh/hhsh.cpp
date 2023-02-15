@@ -71,5 +71,5 @@ bool hhsh::check(std::string message, std::string message_type, long user_id, lo
     return message.find("hhsh")==0;
 }
 std::string hhsh::help(){
-    return "";
+    return "首字母缩写识别： hhsh+缩写";
 }

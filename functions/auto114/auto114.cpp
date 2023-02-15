@@ -58,11 +58,15 @@ std::string auto114::process(std::string message, std::string message_type, long
     iss >> input;
     
     setlog(LOG::INFO, "auto114 at group " + std::to_string(group_id) + " by user " + std::to_string(user_id));
-    return cq_send(std::to_string(input) + "=" + getans(input), message_type, user_id, group_id);
+    if(input == 114514){
+        return cq_send("这么臭的数字有必要论证吗（恼）", message_type, user_id, group_id);
+    } else {
+        return cq_send(std::to_string(input) + "=" + getans(input), message_type, user_id, group_id);
+    }
 }
 bool auto114::check(std::string message, std::string message_type, long user_id, long group_id){
     return message.find("homo")==0;
 }
 std::string auto114::help(){
-    return "";
+    return "恶臭数字论证器： homo+数字";
 }

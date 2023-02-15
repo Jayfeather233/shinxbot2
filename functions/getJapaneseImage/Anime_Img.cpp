@@ -21,5 +21,5 @@ bool AnimeImg::check(std::string message, std::string message_type, long user_id
     return message=="来点二次元";
 }
 std::string AnimeImg::help(){
-    return "";
+    return "纸片人图片：来点二次元";
 }
