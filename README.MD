@@ -25,9 +25,11 @@
 
 ### 如何运行这个机器人
 
+需要几个支持库：curl / jsoncpp，以后图片处理可能用stb_image或openCV
+
 linux: 运行build.sh，自动执行cmake和make编译并运行
 
-windows：手动通过CMake编译
+windows：手动通过CMake编译，需要更改TCP连接的头文件（和可能的代码细微差别）本人没有使用Windows编译过（
 
 ### 如何添加新功能
 
