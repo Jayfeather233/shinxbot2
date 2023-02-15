@@ -91,6 +91,7 @@ void handle_accept(boost::asio::ip::tcp::socket &socket){
 int main(){
     username_init();
     functions.push_back(new AnimeImg());
+    functions.push_back(new auto114());
 
     try {
         boost::asio::io_service io_service;

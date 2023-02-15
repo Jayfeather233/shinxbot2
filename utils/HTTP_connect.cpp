@@ -36,6 +36,7 @@ std::string do_post(const char* url, Json::Value json_message){
 
         res = curl_easy_perform(curl);
         curl_easy_cleanup(curl);
+        curl_slist_free_all(headers);
 
         if(res != CURLE_OK) {
             std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) 
