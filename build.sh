@@ -1,7 +1,8 @@
 #!/bin/sh
 
-if [ ! -x "./build"]; then
-mkdir "./build"
+if [ ! -x ./build]
+    then
+    mkdir "./build"
 fi
 
 cd ./build

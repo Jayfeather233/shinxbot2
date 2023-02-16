@@ -2,7 +2,7 @@
 
 一个基于[go-cqhttp](https://github.com/Mrs4s/go-cqhttp)的机器人。
 
-是我原来项目shinxBot的C++重构版，
+是我原来项目[shinxBot](https://github.com/Jayfeather233/shinxBot)的C++重构版，
 
 ### 它能做什么？
 
@@ -11,6 +11,8 @@
 - 来点二次元。来源：[dmoe](https://www.dmoe.cc)
 
 - 首字母缩写识别，来源：[itorr](https://github.com/itorr/nbnhhsh)
+
+- 在群或私聊中生成一个假的转发信息。
 
 
 ### 关于源文件

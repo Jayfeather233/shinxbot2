@@ -52,16 +52,16 @@ std::string auto114::getans(long long input){
     }
 }
 
-std::string auto114::process(std::string message, std::string message_type, long user_id, long group_id){
+void auto114::process(std::string message, std::string message_type, long user_id, long group_id){
     std::istringstream iss(message.substr(4));
     long long input;
     iss >> input;
     
     setlog(LOG::INFO, "auto114 at group " + std::to_string(group_id) + " by user " + std::to_string(user_id));
     if(input == 114514){
-        return cq_send("这么臭的数字有必要论证吗（恼）", message_type, user_id, group_id);
+        cq_send("这么臭的数字有必要论证吗（恼）", message_type, user_id, group_id);
     } else {
-        return cq_send(std::to_string(input) + "=" + getans(input), message_type, user_id, group_id);
+        cq_send(std::to_string(input) + "=" + getans(input), message_type, user_id, group_id);
     }
 }
 bool auto114::check(std::string message, std::string message_type, long user_id, long group_id){

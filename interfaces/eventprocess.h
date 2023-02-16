@@ -5,7 +5,7 @@
 
 class eventprocess {
 public:
-    virtual std::string process(Json::Value J) = 0;
+    virtual void process(Json::Value J) = 0;
     virtual bool check(Json::Value J) = 0;
     virtual std::string help() = 0;
 };

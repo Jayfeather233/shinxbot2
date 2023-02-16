@@ -36,7 +36,7 @@ std::string get_username(long user_id, long group_id){
         std::string res = do_post("http://127.0.0.1:5750/get_group_member_info", input);
         input.clear();
         input = string_to_json(res);
-        return input["data"].isMember("card")
+        return input["data"]["card"].asString().size() != 0
                 ? input["data"]["card"].asString()
                 : input["data"]["nickname"].asString();
     }

@@ -13,6 +13,8 @@ aux_source_directory(./functions/getJapaneseImage SOURCES)
 aux_source_directory(./functions/auto114 SOURCES)
 aux_source_directory(./functions/621 SOURCES)
 aux_source_directory(./functions/hhsh SOURCES)
+aux_source_directory(./functions/fudu SOURCES)
+aux_source_directory(./functions/forwardgenerator SOURCES)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
 

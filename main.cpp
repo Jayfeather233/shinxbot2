@@ -134,9 +134,10 @@ int main(){
     functions.push_back(new AnimeImg());
     functions.push_back(new auto114());
     functions.push_back(new hhsh());
+    functions.push_back(new fudu());
+    functions.push_back(new forward());
 
     start_server();
-    while(1);
 
     for(processable *u : functions){
         delete []u;
@@ -163,4 +164,9 @@ std::mutex mylock;
 void setlog(LOG type, std::string message){
     std::lock_guard<std::mutex> lock(mylock);
     std::cout<<"[" << LOG_name[type] << "] " << message <<std::endl;
+}
+
+long get_botqq(){
+    return -1;
+    //TODO: add auto detect
 }

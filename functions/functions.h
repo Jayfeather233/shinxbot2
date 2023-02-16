@@ -2,3 +2,5 @@
 #include "./auto114/auto114.h"
 #include "./621/621.h"
 #include "./hhsh/hhsh.h"
+#include "./fudu/fudu.h"
+#include "./forwardgenerator/forward.h"
