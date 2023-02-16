@@ -19,7 +19,7 @@ std::string get_code(int color){
     return res;
 }
 
-void r_color::process(std::string message, std::string message_type, long user_id, long group_id){
+void r_color::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     std::wstring w_mess = trim(string_to_wstring(message).substr(4));
     int color = 0;
     if(w_mess[0]==L'#'){
@@ -67,7 +67,7 @@ void r_color::process(std::string message, std::string message_type, long user_i
 
     cq_send("[CQ:image,file=file://" + get_local_path() + "/resource/temp/%23" + text.substr(1) + ".png,id=40000]", message_type, user_id, group_id);
 }
-bool r_color::check(std::string message, std::string message_type, long user_id, long group_id){
+bool r_color::check(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     return string_to_wstring(message).find(L"来点色图") == 0;
 }
 std::string r_color::help(){

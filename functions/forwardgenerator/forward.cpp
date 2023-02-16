@@ -5,7 +5,7 @@
 
 #include <jsoncpp/json/json.h>
 
-Json::Value forward::get_data(std::wstring s1, std::wistringstream &wiss, long group_id){
+Json::Value forward::get_data(std::wstring s1, std::wistringstream &wiss, int64_t group_id){
     Json::Value res;
     std::wstring s2;
     std::wstring u;
@@ -27,7 +27,7 @@ Json::Value forward::get_data(std::wstring s1, std::wistringstream &wiss, long g
             flg = true;
         }
     }
-    long uin = get_userid(s1);
+    int64_t uin = get_userid(s1);
     res["name"] = get_username(uin, group_id);
     res["uin"] = uin;
     if(s2 == L"转发") {
@@ -48,7 +48,7 @@ Json::Value forward::get_data(std::wstring s1, std::wistringstream &wiss, long g
     return res;
 }
 
-Json::Value forward::get_content(std::wistringstream &wiss, long group_id){
+Json::Value forward::get_content(std::wistringstream &wiss, int64_t group_id){
     std::wstring s1;
     Json::Value Ja;
     while(wiss >> s1){
@@ -64,7 +64,7 @@ Json::Value forward::get_content(std::wistringstream &wiss, long group_id){
     return Ja;
 }
 
-void forward::process(std::string message, std::string message_type, long user_id, long group_id){
+void forward::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     std::wstring w_mess = string_to_wstring(message).substr(2);
     if(w_mess == L"帮助"){
         cq_send("格式为：\n转发\n[@某人或qq号] 消息（一整行）\n[@某人或qq号] 合并行\n（多行消息）\n结束合并\n...\n[@某人或qq号] 转发\n（此处为转发内套转发）\n结束转发\n...\n结束转发 ",
@@ -83,7 +83,7 @@ void forward::process(std::string message, std::string message_type, long user_i
         cq_send("send_private_forward_msg", J);
     }
 }
-bool forward::check(std::string message, std::string message_type, long user_id, long group_id){
+bool forward::check(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     return string_to_wstring(message).find(L"转发") == 0;
 }
 std::string forward::help(){

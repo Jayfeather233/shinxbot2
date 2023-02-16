@@ -24,7 +24,7 @@ auto114::auto114(){
 
 std::string __1 = "(11-4-5+1-4)*";
 
-int auto114::find_min(long long input){
+int auto114::find_min(int64_t input){
     for(int i=0;i<len;i++){
         if(ai[i].num <= input){
             return i;
@@ -33,7 +33,7 @@ int auto114::find_min(long long input){
     return -1;
 }
 
-std::string auto114::getans(long long input){
+std::string auto114::getans(int64_t input){
     if(input < 0){
         return __1 + "(" + getans(-input) + ")";
     }
@@ -52,9 +52,9 @@ std::string auto114::getans(long long input){
     }
 }
 
-void auto114::process(std::string message, std::string message_type, long user_id, long group_id){
+void auto114::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     std::istringstream iss(message.substr(4));
-    long long input;
+    int64_t input;
     iss >> input;
     
     setlog(LOG::INFO, "auto114 at group " + std::to_string(group_id) + " by user " + std::to_string(user_id));
@@ -64,7 +64,7 @@ void auto114::process(std::string message, std::string message_type, long user_i
         cq_send(std::to_string(input) + "=" + getans(input), message_type, user_id, group_id);
     }
 }
-bool auto114::check(std::string message, std::string message_type, long user_id, long group_id){
+bool auto114::check(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     return message.find("homo")==0;
 }
 std::string auto114::help(){

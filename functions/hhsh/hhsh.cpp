@@ -16,7 +16,7 @@ std::string my_replace(std::string s){
     return ans;
 }
 
-void hhsh::process(std::string message, std::string message_type, long user_id, long group_id){
+void hhsh::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     Json::Value J;
     J["text"] = my_replace(message.substr(4));
 
@@ -67,7 +67,7 @@ void hhsh::process(std::string message, std::string message_type, long user_id, 
     setlog(LOG::INFO, "nbnhhsh at group" + std::to_string(group_id) + " by " + std::to_string(user_id));
     cq_send(res, message_type, user_id, group_id);
 }
-bool hhsh::check(std::string message, std::string message_type, long user_id, long group_id){
+bool hhsh::check(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     return message.find("hhsh")==0;
 }
 std::string hhsh::help(){

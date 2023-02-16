@@ -4,7 +4,7 @@
 #include <jsoncpp/json/json.h>
 #include <map>
 
-std::map<long, std::string> username;
+std::map<int64_t, std::string> username;
 
 void username_init(){
     Json::Value friend_list = string_to_json(do_post("http://127.0.0.1:5750/get_friend_list", "{}"));
@@ -15,9 +15,9 @@ void username_init(){
     }
 }
 
-std::string get_username(long user_id, long group_id){
+std::string get_username(int64_t user_id, int64_t group_id){
     if(group_id == -1){
-        std::map<long, std::string>::iterator it = username.find(user_id);
+        std::map<int64_t, std::string>::iterator it = username.find(user_id);
         if(it != username.end()){
             return it->second;
         } else {

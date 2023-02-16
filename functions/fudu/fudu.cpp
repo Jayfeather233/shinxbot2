@@ -3,10 +3,10 @@
 
 #include <map>
 
-std::map<long, std::string> msg;
-std::map<long, int> times;
+std::map<int64_t, std::string> msg;
+std::map<int64_t, int> times;
 
-void fudu::process(std::string message, std::string message_type, long user_id, long group_id){
+void fudu::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     auto it = msg.find(group_id);
     if(it != msg.end()){
         if(message == it->second){
@@ -24,7 +24,7 @@ void fudu::process(std::string message, std::string message_type, long user_id, 
         times[group_id] = 1;
     }
 }
-bool fudu::check(std::string message, std::string message_type, long user_id, long group_id){
+bool fudu::check(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     return message_type == "group" && user_id != get_botqq();
 }
 std::string fudu::help(){

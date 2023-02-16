@@ -1,7 +1,6 @@
 #include "utils.h"
-#include "processable.h"
-#include "eventprocess.h"
 #include "functions.h"
+#include "events.h"
 
 #include <iostream>
 #include <filesystem>
@@ -18,7 +17,7 @@
 int send_port;
 int receive_port;
 
-long botqq;
+int64_t botqq;
 
 std::string LOG_name[3] = {"INFO", "WARNING", "ERROR"};
 
@@ -41,7 +40,7 @@ void input_process(std::string *input){
             int message_id = J["message_id"].asInt();
             std::string message_type = J["message_type"].asString();
             if(message_type == "group" || message_type == "private"){
-                long user_id = 0, group_id = -1;
+                int64_t user_id = 0, group_id = -1;
                 if(J.isMember("group_id")){
                     group_id = J["group_id"].asInt64();
                 }
@@ -50,16 +49,16 @@ void input_process(std::string *input){
                 }
                 if (message == "bot.help") {
                     std::string help_message;
-                    for (processable *game : functions) {
-                        if (game->help() != "")
-                            help_message += game->help() + '\n';
+                    for (processable *func : functions) {
+                        if (func->help() != "")
+                            help_message += func->help() + '\n';
                     }
                     help_message += "本Bot项目地址：https://github.com/Jayfeather233/shinxbot2";
                     cq_send(help_message, message_type, user_id, group_id);
                 } else {
-                    for (processable *game : functions) {
-                        if (game->check(message, message_type, user_id, group_id)) {
-                            game->process(message, message_type, user_id, group_id);
+                    for (processable *func : functions) {
+                        if (func->check(message, message_type, user_id, group_id)) {
+                            func->process(message, message_type, user_id, group_id);
                         }
                     }
                 }
@@ -166,14 +165,17 @@ void init(){
 int main(){
 
     init();
-
     username_init();
+
     functions.push_back(new AnimeImg());
     functions.push_back(new auto114());
     functions.push_back(new hhsh());
     functions.push_back(new fudu());
     functions.push_back(new forward());
     functions.push_back(new r_color());
+
+    events.push_back(new talkative());
+    events.push_back(new m_change());
 
     start_server();
 
@@ -184,7 +186,7 @@ int main(){
     return 0;
 }
 
-std::string cq_send(std::string message, std::string message_type, long user_id, long group_id){
+std::string cq_send(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     Json::Value input;
     input["message"] = message;
     input["message_type"] = message_type;
@@ -204,7 +206,7 @@ void setlog(LOG type, std::string message){
     std::cout<<"[" << LOG_name[type] << "] " << message <<std::endl;
 }
 
-long get_botqq(){
+int64_t get_botqq(){
     return botqq;
 }
 

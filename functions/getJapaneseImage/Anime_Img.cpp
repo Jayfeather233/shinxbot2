@@ -5,7 +5,7 @@
 #include <iostream>
 
 AnimeImg::AnimeImg(){}
-void AnimeImg::process(std::string message, std::string message_type, long user_id, long group_id){
+void AnimeImg::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     //try {
         Json::Value J = string_to_json(do_get("https://www.dmoe.cc/random.php?return=json"));
         setlog(LOG::INFO, "Auto2DAnimateImg at group " + std::to_string(group_id) + " by " + std::to_string(user_id));
@@ -17,7 +17,7 @@ void AnimeImg::process(std::string message, std::string message_type, long user_
     //    Main.setNextLog("Auto2DAnimateImg at group " + group_id + " by "+user_id + " Connected Time Out",2);
     //}
 }
-bool AnimeImg::check(std::string message, std::string message_type, long user_id, long group_id){
+bool AnimeImg::check(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     return message=="来点二次元";
 }
 std::string AnimeImg::help(){

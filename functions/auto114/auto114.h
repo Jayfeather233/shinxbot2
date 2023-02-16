@@ -10,11 +10,11 @@ private:
     }ai[525];
     int len;
 
-    int find_min(long long input);
-    std::string getans(long long input);
+    int find_min(int64_t input);
+    std::string getans(int64_t input);
 public:
     auto114();
-    void process(std::string message, std::string message_type, long user_id, long group_id);
-    bool check(std::string message, std::string message_type, long user_id, long group_id);
+    void process(std::string message, std::string message_type, int64_t user_id, int64_t group_id);
+    bool check(std::string message, std::string message_type, int64_t user_id, int64_t group_id);
     std::string help();
 };
