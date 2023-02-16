@@ -4,6 +4,7 @@
 #include "functions.h"
 
 #include <iostream>
+#include <filesystem>
 #include <vector>
 #include <fstream>
 #include <sstream>
@@ -14,8 +15,8 @@
 #include <thread>
 #include <mutex>
 
-int send_port = 5750;
-int receive_port = 5701;
+int send_port;
+int receive_port;
 
 long botqq;
 
@@ -172,6 +173,7 @@ int main(){
     functions.push_back(new hhsh());
     functions.push_back(new fudu());
     functions.push_back(new forward());
+    functions.push_back(new r_color());
 
     start_server();
 
@@ -204,4 +206,8 @@ void setlog(LOG type, std::string message){
 
 long get_botqq(){
     return botqq;
+}
+
+std::string get_local_path(){
+    return std::filesystem::current_path();
 }

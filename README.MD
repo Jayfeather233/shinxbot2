@@ -41,4 +41,4 @@ windows：手动通过CMake编译，需要更改TCP连接的头文件（和可�
 
 2. ./functions/functions.h 中加入你的.h
 
-3. CMake中加入 aux_source_directory(./functions/your_name SOURCES)
+3. main.cpp中main函数里加入functions.push_back(new your_name());

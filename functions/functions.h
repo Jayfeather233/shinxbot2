@@ -4,3 +4,4 @@
 #include "./hhsh/hhsh.h"
 #include "./fudu/fudu.h"
 #include "./forwardgenerator/forward.h"
+#include "./random_color/random_color.h"

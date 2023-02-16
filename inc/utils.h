@@ -20,6 +20,7 @@ std::string cq_send(std::string message, std::string message_type, long user_id,
 std::string cq_send(std::string end_point, Json::Value J);
 void setlog(LOG type, std::string message);
 long get_botqq();
+std::string get_local_path();
 
 std::wstring string_to_wstring(std::string u);
 std::string wstring_to_string(std::wstring u);
