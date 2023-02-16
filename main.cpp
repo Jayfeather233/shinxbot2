@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <vector>
+#include <fstream>
 #include <sstream>
 #include <algorithm>
 #include <sys/socket.h>
@@ -14,7 +15,9 @@
 #include <mutex>
 
 int send_port = 5750;
-int recieve_port = 5701;
+int receive_port = 5701;
+
+long botqq;
 
 std::string LOG_name[3] = {"INFO", "WARNING", "ERROR"};
 
@@ -88,7 +91,7 @@ int start_server(){
     // Set server address and bind to socket
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(recieve_port);
+    address.sin_port = htons(receive_port);
     if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
         std::cerr << "Error binding to socket\n";
         return 1;
@@ -129,7 +132,40 @@ int start_server(){
     return 0;
 }
 
+void init(){
+    std::ifstream iport("./config/port.txt");
+    if(iport.is_open()){
+        iport >> send_port >> receive_port;
+        iport.close();
+    } else {
+        std::cout<<"Please input the send_port: (receive port in go-cqhttp):";
+        std::cin>>send_port;
+        std::cout<<"Please input the receive_port: (send port in go-cqhttp):";
+        std::cin>>receive_port;
+        std::ofstream oport("./config/port.txt");
+        if(oport){
+            oport << send_port << ' ' << receive_port;
+            oport.flush();oport.close();
+        }
+    }
+
+    for(;;){
+        try{
+            Json::Value J = string_to_json(cq_send("get_login_info", ""));
+            botqq = J["data"]["user_id"].asInt64();
+            break;
+        } catch (...) {
+
+        }
+        sleep(10);//10 sec
+    }
+    std::cout<<"botqq:"<<botqq<<std::endl;
+}
+
 int main(){
+
+    init();
+
     username_init();
     functions.push_back(new AnimeImg());
     functions.push_back(new auto114());
@@ -167,6 +203,5 @@ void setlog(LOG type, std::string message){
 }
 
 long get_botqq(){
-    return -1;
-    //TODO: add auto detect
+    return botqq;
 }

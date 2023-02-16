@@ -41,13 +41,13 @@ std::string do_post(const char* url, Json::Value json_message){
         if(res != CURLE_OK) {
             std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) 
                 << std::endl;
-            return "";
+            throw "http failed";
         } else {
             return response;
         }
     } else {
         std::cerr << "curl_easy_init() failed: " << std::endl;
-        return "";
+        throw "curl failed";
     }
 }
 
