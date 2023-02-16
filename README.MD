@@ -39,8 +39,16 @@ windows：手动通过CMake编译，需要更改TCP连接的头文件（和可�
 
 ### 如何添加新功能
 
+functions和events可以互换。
+
+functions传参仅为消息相关，events传入事件的JSON数据
+
+在收到聊天消息的时候调用functions里的方法，在其他提示性消息的时候用events的方法
+
 1. ./functions 下新建目录并把代码放入，写一个类继承./interfaces/processable.h中的类并实现virtual方法（可以参考我其他功能的写法）
 
 2. ./functions/functions.h 中加入你的.h
 
 3. main.cpp中main函数里加入functions.push_back(new your_name());
+
+4. CMakeLists.txt里加入aux_source_directory(./functions/your_name SOURCES)

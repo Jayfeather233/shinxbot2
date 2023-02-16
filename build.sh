@@ -1,11 +1,9 @@
 #!/bin/sh
 
-if [ ! -x ./build]
-    then
-    mkdir "./build"
-fi
+mkdir ./build
 
 cd ./build
+cmake ..
 make
 cd ..
 ./build/cq_bot
