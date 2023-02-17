@@ -39,14 +39,13 @@ std::string do_post(const char* url, Json::Value json_message){
         curl_slist_free_all(headers);
 
         if(res != CURLE_OK) {
-            std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) 
-                << std::endl;
+            setlog(LOG::ERROR, (std::string)"curl_easy_perform() failed: " + curl_easy_strerror(res));
             throw "http failed";
         } else {
             return response;
         }
     } else {
-        std::cerr << "curl_easy_init() failed: " << std::endl;
+        setlog(LOG::ERROR, "curl_easy_init() failed: ");
         throw "curl failed";
     }
 }
@@ -68,14 +67,13 @@ std::string do_get(const char* url){
         curl_easy_cleanup(curl);
 
         if(res != CURLE_OK) {
-            std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) 
-                << std::endl;
-            return "";
+            setlog(LOG::ERROR, (std::string)"curl_easy_perform() failed: " + curl_easy_strerror(res));
+            throw "http failed";
         } else {
             return response;
         }
     } else {
-        std::cerr << "curl_easy_init() failed: " << std::endl;
-        return "";
+        setlog(LOG::ERROR, "curl_easy_init() failed: ");
+        throw "curl failed";
     }
 }

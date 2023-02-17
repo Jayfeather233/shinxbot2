@@ -11,12 +11,6 @@ using namespace cimg_library;
 
 std::string int_to_hex = "0123456789ABCDEF";
 
-r_color::r_color(){
-    std::random_device os_seed;
-    const u32 seed = os_seed();
-    generator = engine(seed);
-}
-
 std::string get_code(int color){
     std::string res = "#";
     for(int i=1048576;i>=1;i/=16){
@@ -41,9 +35,9 @@ void r_color::process(std::string message, std::string message_type, int64_t use
             }
         }
     } else {
-        color = uni_dis_0_255(generator) * 65536
-                + uni_dis_0_255(generator) * 256
-                + uni_dis_0_255(generator);
+        color = get_random(256) * 65536
+                + get_random(256) * 256
+                + get_random(256);
     }
     color = color % 16777216;
 

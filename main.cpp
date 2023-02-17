@@ -20,6 +20,7 @@ int receive_port;
 int64_t botqq;
 
 std::string LOG_name[3] = {"INFO", "WARNING", "ERROR"};
+std::ofstream LOG_output[3];
 
 std::vector<processable*> functions;
 std::vector<eventprocess*> events;
@@ -136,6 +137,7 @@ int start_server(){
 }
 
 void init(){
+
     std::ifstream iport("./config/port.txt");
     if(iport.is_open()){
         iport >> send_port >> receive_port;
@@ -163,6 +165,16 @@ void init(){
         sleep(10);//10 sec
     }
     std::cout<<"botqq:"<<botqq<<std::endl;
+
+    std::ostringstream oss;
+    std::time_t nt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    tm tt = *localtime(&nt);
+
+    oss << tt.tm_year + 1900 << '_' << tt.tm_mon + 1 << '_' << tt.tm_mday;
+
+    LOG_output[0] = std::ofstream("./log/" + oss.str() + "/info.log");
+    LOG_output[1] = std::ofstream("./log/" + oss.str() + "/warn.log");
+    LOG_output[2] = std::ofstream("./log/" + oss.str() + "/erro.log");
 }
 
 int main(){
@@ -179,6 +191,8 @@ int main(){
 
     events.push_back(new talkative());
     events.push_back(new m_change());
+    events.push_back(new friendadd());
+    events.push_back(new poke());
 
     start_server();
 
@@ -208,8 +222,17 @@ std::string cq_send(std::string end_point, Json::Value J){
 std::mutex mylock;
 
 void setlog(LOG type, std::string message){
+    std::time_t nt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    tm tt = *localtime(&nt);
+
     std::lock_guard<std::mutex> lock(mylock);
-    std::cout<<"[" << LOG_name[type] << "] " << message <<std::endl;
+
+    std::ostringstream oss;
+    oss << "[" << LOG_name[type] << "][" << tt.tm_hour << ":" << tt.tm_min << ":"<< tt.tm_sec << "] "
+    << message <<std::endl;
+
+    std::cout<< oss.str();
+    LOG_output[type] << oss.str();
 }
 
 int64_t get_botqq(){

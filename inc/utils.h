@@ -6,7 +6,7 @@
 #include <locale>
 
 enum LOG{
-    INFO, WARNING, EORROR
+    INFO, WARNING, ERROR
 };
 
 std::string do_post(const char* url, Json::Value json_message);
@@ -30,3 +30,5 @@ std::wstring trim(std::wstring u);
 
 int64_t get_userid(std::wstring s);
 int64_t get_userid(std::string s);
+
+int get_random(int maxi = 65536);
