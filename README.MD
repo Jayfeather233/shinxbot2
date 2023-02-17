@@ -29,7 +29,7 @@
 
 ### 如何运行这个机器人
 
-需要几个支持库：curl / jsoncpp / openCV
+需要几个支持库：curl / jsoncpp / CImg
 
 这些库怎么装？问chatGPT。
 
@@ -50,5 +50,3 @@ functions传参仅为消息相关，events传入事件的JSON数据
 2. ./functions/functions.h 中加入你的.h
 
 3. main.cpp中main函数里加入functions.push_back(new your_name());
-
-4. CMakeLists.txt里加入aux_source_directory(./functions/your_name SOURCES)

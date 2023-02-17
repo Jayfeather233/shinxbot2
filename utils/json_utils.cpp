@@ -12,6 +12,7 @@ Json::Value string_to_json(std::string str){
     bool isok = charread->parse(str.c_str(),str.c_str()+str.size(),&root,&strerr);
     if(!isok || strerr.size() != 0){
         std::cerr<<"string to json failed: "<<strerr<<std::endl;
+        std::cerr<<str<<std::endl;
     }
     return root;
 }

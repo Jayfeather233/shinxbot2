@@ -2,6 +2,7 @@
 
 #include <jsoncpp/json/json.h>
 #include <string>
+#include <curl/curl.h>
 #include <locale>
 
 enum LOG{

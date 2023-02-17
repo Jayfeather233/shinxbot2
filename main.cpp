@@ -26,6 +26,7 @@ std::vector<eventprocess*> events;
 
 void input_process(std::string *input){
     Json::Value J = string_to_json(*input);
+    delete input;
     std::string post_type = J["post_type"].asString();
 
     if(post_type == "request" || post_type == "notice"){
@@ -65,7 +66,6 @@ void input_process(std::string *input){
             }
         }
     }
-    delete input;
 }
 
 
@@ -73,7 +73,7 @@ int start_server(){
     int server_fd, new_socket;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
-    char buffer[4096] = {0};
+    char buffer[10240] = {0};
 
     // Create server socket
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
@@ -109,7 +109,10 @@ int start_server(){
             std::cerr << "Error accepting connection\n";
             continue;
         }
-        int valread = read(new_socket, buffer, 4096);
+        int valread = read(new_socket, buffer, 10230);
+        if(valread == -1){
+            std::cerr<<"Error read message.\n";
+        }
 
         std::istringstream iss((std::string)buffer);
         std::string line;
@@ -180,6 +183,9 @@ int main(){
     start_server();
 
     for(processable *u : functions){
+        delete []u;
+    }
+    for(eventprocess *u : events){
         delete []u;
     }
 

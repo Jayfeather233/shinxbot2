@@ -1,7 +1,13 @@
 #include "random_color.h"
 #include "utils.h"
 
-#include <opencv2/opencv.hpp>
+#define cimg_display_type 0
+#define cimg_use_png 1
+#include "CImg.h"
+
+#include <iostream>
+
+using namespace cimg_library;
 
 std::string int_to_hex = "0123456789ABCDEF";
 
@@ -24,11 +30,11 @@ void r_color::process(std::string message, std::string message_type, int64_t use
     int color = 0;
     if(w_mess[0]==L'#'){
         for(int i=1;i<=6;i++){
-            if(w_mess[i]>L'9'){
-                if(w_mess[i]>L'Z'){
-                    color = (color<<4) + w_mess[i] - L'a';
+            if(w_mess[i]>L'9' || L'0'>w_mess[i]){
+                if(w_mess[i]>L'Z' || L'A'>w_mess[i]){
+                    color = (color<<4) + w_mess[i] + 10 - L'a';
                 } else {
-                    color = (color<<4) + w_mess[i] - L'A';
+                    color = (color<<4) + w_mess[i] + 10 - L'A';
                 }
             } else {
                 color = (color<<4) + w_mess[i] - L'0';
@@ -39,33 +45,51 @@ void r_color::process(std::string message, std::string message_type, int64_t use
                 + uni_dis_0_255(generator) * 256
                 + uni_dis_0_255(generator);
     }
-    color = color % 1677216;
-    cv::Mat img = cv::Mat(256,256, CV_8UC3);
-    img = cv::Scalar(color/65536,color/256%256,color%256);
+    color = color % 16777216;
+
+    std::string name = get_code(color);
+
+    CImg<unsigned char> img(256,256,1,3);
+
+    unsigned char color_code[] = {color/65536,color/256%256,color%256};
+
+    for(int i=0;i<256;i++){
+        for(int j = 0; j < 256;j++){
+            img(i,j,0,0) = color_code[0];
+            img(i,j,0,1) = color_code[1];
+            img(i,j,0,2) = color_code[2];
+        }
+    }
+
     int cnt = 0;
     for(int i=0;i<25;i++){
         cnt+= (color&(1<<i)) ? 1 : 0;
     }
 
-    int fontFace = cv::FONT_HERSHEY_TRIPLEX;
-    double fontScale = 1;
-    int thickness = 1;
-    cv::String text = get_code(color);
-    cv::cvtColor(img, img, cv::COLOR_RGB2BGR);
+    const unsigned char white[] = {255,255,255};
+    const unsigned char black[] = {0,0,0};
 
-    // Get text size and baseline
-    cv::Size textSize = cv::getTextSize(text, fontFace, fontScale, thickness, nullptr);
-    int baseline = (img.rows - textSize.height) / 2;
+    int img_width = img.width();
+    int img_height = img.height();
+    int center_x = img_width / 2;
+    int center_y = img_height / 2;
 
-    // Center text horizontally and vertically
-    cv::Point textOrg((img.cols - textSize.width) / 2, baseline + textSize.height);
+    CImgList<> *font_size = new CImgList<>(CImgList<>::font(32,false));
 
-    // Add text to image
-    cv::putText(img, text, textOrg, fontFace, fontScale, cnt <= 12 ? cv::Scalar::all(255) : cv::Scalar::all(0), thickness, cv::LINE_8);
+    CImg<unsigned char> text;
+    text.draw_text(0,0, name.c_str(), cnt >= 12 ? black : white, 0, 1, font_size);
 
-    cv::imwrite("./resource/temp/" + text + ".png", img);
+    // Set the font size, color and style
+    img.draw_text(center_x - text.width()/2, center_y - text.height()/2, name.c_str(), cnt >= 12 ? black : white, 0, 1, font_size);
 
-    cq_send("[CQ:image,file=file://" + get_local_path() + "/resource/temp/%23" + text.substr(1) + ".png,id=40000]", message_type, user_id, group_id);
+    // Save the image to a file
+    img.save_png(((std::string)"./resource/temp/" + name + ".png").c_str());
+
+    char* c_name = curl_easy_escape(NULL, name.c_str(), 0);
+
+    cq_send("[CQ:image,file=file://" + get_local_path() + "/resource/temp/" + c_name + ".png,id=40000]", message_type, user_id, group_id);
+    curl_free(c_name);
+    delete font_size;
 }
 bool r_color::check(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     return string_to_wstring(message).find(L"来点色图") == 0;
