@@ -2,16 +2,20 @@
 
 #include <iostream>
 #include <string>
+#include <mutex>
 #include <curl/curl.h>
 #include <jsoncpp/json/json.h>
 
-static size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdata)
+std::mutex httplock;
+
+static size_t write_callback(const char *ptr, size_t size, size_t nmemb, void *userdata)
 {
     ((std::string*)userdata)->append(ptr, size * nmemb);
     return size * nmemb;
 }
 
 std::string do_post(const char* url, Json::Value json_message){
+    std::lock_guard<std::mutex> lock(httplock);
     CURL *curl;
     CURLcode res;
     
@@ -35,11 +39,12 @@ std::string do_post(const char* url, Json::Value json_message){
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
 
         res = curl_easy_perform(curl);
-        curl_easy_cleanup(curl);
         curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
 
         if(res != CURLE_OK) {
             setlog(LOG::ERROR, (std::string)"curl_easy_perform() failed: " + curl_easy_strerror(res));
+            std::cerr<<"Connect to URL: " << url <<" failed."<<std::endl;
             throw "http failed";
         } else {
             return response;
@@ -51,6 +56,7 @@ std::string do_post(const char* url, Json::Value json_message){
 }
 
 std::string do_get(const char* url){
+    std::lock_guard<std::mutex> lock(httplock);
     CURL *curl;
     CURLcode res;
     
@@ -58,7 +64,7 @@ std::string do_get(const char* url){
 
     curl = curl_easy_init();
     if(curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, curl_easy_escape(curl, url, 0));
+        curl_easy_setopt(curl, CURLOPT_URL, url);
         
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
@@ -68,6 +74,7 @@ std::string do_get(const char* url){
 
         if(res != CURLE_OK) {
             setlog(LOG::ERROR, (std::string)"curl_easy_perform() failed: " + curl_easy_strerror(res));
+            std::cerr<<"Connect to URL: " << url <<" failed."<<std::endl;
             throw "http failed";
         } else {
             return response;

@@ -186,6 +186,7 @@ void init(){
 }
 
 int main(){
+    curl_global_init(CURL_GLOBAL_ALL);
 
     init();
     username_init();
@@ -210,6 +211,8 @@ int main(){
     for(eventprocess *u : events){
         delete []u;
     }
+
+    curl_global_cleanup();
 
     return 0;
 }
