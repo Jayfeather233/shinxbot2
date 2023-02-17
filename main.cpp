@@ -9,6 +9,8 @@
 #include <sstream>
 #include <algorithm>
 #include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <thread>
@@ -172,9 +174,15 @@ void init(){
 
     oss << tt.tm_year + 1900 << '_' << tt.tm_mon + 1 << '_' << tt.tm_mday;
 
-    LOG_output[0] = std::ofstream("./log/" + oss.str() + "/info.log");
-    LOG_output[1] = std::ofstream("./log/" + oss.str() + "/warn.log");
-    LOG_output[2] = std::ofstream("./log/" + oss.str() + "/erro.log");
+    if(!std::filesystem::exists(("./log/" + oss.str()).c_str())){
+        if(!std::filesystem::exists("./log")){
+            std::filesystem::create_directory("./log");
+        }
+        std::filesystem::create_directory(("./log/" + oss.str()).c_str());
+    }
+    LOG_output[0] = std::ofstream("./log/" + oss.str() + "/info.log", std::ios_base::app);
+    LOG_output[1] = std::ofstream("./log/" + oss.str() + "/warn.log", std::ios_base::app);
+    LOG_output[2] = std::ofstream("./log/" + oss.str() + "/erro.log", std::ios_base::app);
 }
 
 int main(){
@@ -228,11 +236,12 @@ void setlog(LOG type, std::string message){
     std::lock_guard<std::mutex> lock(mylock);
 
     std::ostringstream oss;
-    oss << "[" << LOG_name[type] << "][" << tt.tm_hour << ":" << tt.tm_min << ":"<< tt.tm_sec << "] "
+    oss << "[" << tt.tm_hour << ":" << tt.tm_min << ":"<< tt.tm_sec << "][" << LOG_name[type] << "] "
     << message <<std::endl;
 
     std::cout<< oss.str();
     LOG_output[type] << oss.str();
+    LOG_output[type].flush();
 }
 
 int64_t get_botqq(){
