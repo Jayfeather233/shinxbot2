@@ -24,12 +24,13 @@ void setlog(LOG type, std::string message);
 int64_t get_botqq();
 std::string get_local_path();
 
-std::wstring string_to_wstring(std::string u);
-std::string wstring_to_string(std::wstring u);
-std::string trim(std::string u);
-std::wstring trim(std::wstring u);
+std::wstring string_to_wstring(const std::string &u);
+std::string wstring_to_string(const std::wstring &u);
+std::string trim(const std::string &u);
+std::wstring trim(const std::wstring &u);
+std::string my_replace(const std::string &s, const char old, const char ne);
 
-int64_t get_userid(std::wstring s);
-int64_t get_userid(std::string s);
+int64_t get_userid(const std::wstring &s);
+int64_t get_userid(const std::string &s);
 
 int get_random(int maxi = 65536);

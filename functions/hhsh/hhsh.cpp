@@ -4,21 +4,9 @@
 #include <iostream>
 #include <jsoncpp/json/json.h>
 
-std::string my_replace(std::string s){
-    std::string ans;
-    for(size_t i = 0; i < s.length(); i++){
-        if(s[i]==' '){
-            ans += ',';
-        } else {
-            ans += s[i];
-        }
-    }
-    return ans;
-}
-
 void hhsh::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     Json::Value J;
-    J["text"] = my_replace(message.substr(4));
+    J["text"] = my_replace(message.substr(4), ' ', ',');
 
     Json::Value Ja;
 

@@ -5,17 +5,17 @@
 
 std::wstring_convert<std::codecvt_utf8<wchar_t> > converter;
 
-std::wstring string_to_wstring(std::string u){
+std::wstring string_to_wstring(const std::string &u){
     return converter.from_bytes(u);
 }
-std::string wstring_to_string(std::wstring u){
+std::string wstring_to_string(const std::wstring &u){
     return converter.to_bytes(u);
 }
 
 std::string whitespaces = "\t\r\n ";
 std::wstring w_whitespaces = L"\t\r\n ";
 
-std::string trim(std::string u){
+std::string trim(const std::string &u){
     size_t fir = u.find_first_not_of(whitespaces);
     if(fir == std::string::npos){
         return "";
@@ -23,11 +23,22 @@ std::string trim(std::string u){
     size_t las = u.find_last_not_of(whitespaces);
     return u.substr(fir, las-fir+1);
 }
-std::wstring trim(std::wstring u){
+std::wstring trim(const std::wstring &u){
     size_t fir = u.find_first_not_of(w_whitespaces);
     if(fir == std::wstring::npos){
         return L"";
     }
     size_t las = u.find_last_not_of(w_whitespaces);
     return u.substr(fir, las-fir+1);
+}
+std::string my_replace(const std::string &s, const char old, const char ne){
+    std::string ans;
+    for(size_t i = 0; i < s.length(); i++){
+        if(s[i]==old){
+            ans += ne;
+        } else {
+            ans += s[i];
+        }
+    }
+    return ans;
 }
