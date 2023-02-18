@@ -60,7 +60,7 @@ void hhsh::process(std::string message, std::string message_type, int64_t user_i
             res.append(J["name"].asString()).append("未收录");
         }
     }
-    setlog(LOG::INFO, "nbnhhsh at group" + std::to_string(group_id) + " by " + std::to_string(user_id));
+    setlog(LOG::INFO, "nbnhhsh at group " + std::to_string(group_id) + " by " + std::to_string(user_id));
     cq_send(res, message_type, user_id, group_id);
 }
 bool hhsh::check(std::string message, std::string message_type, int64_t user_id, int64_t group_id){

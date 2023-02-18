@@ -1,6 +1,7 @@
 #pragma once
 
 #include "processable.h"
+#include <jsoncpp/json/json.h>
 #include <map>
 
 class e621 : public processable{
