@@ -1,86 +1,95 @@
 #include "utils.h"
 
-#include <iostream>
-#include <string>
-#include <mutex>
-#include <curl/curl.h>
-#include <jsoncpp/json/json.h>
+std::string do_post(std::string url, std::string endpoint, Json::Value json_message, std::map<std::string, std::string> headers) {
+    httplib::Client client(url);
 
-std::mutex httplock;
+    // add custom headers
+    httplib::Headers header = {
+        { "Content-Type", "application/json" }
+    };
+    for (auto it : headers) {
+        header.insert(it);
+    }
 
-static size_t write_callback(const char *ptr, size_t size, size_t nmemb, void *userdata)
-{
-    ((std::string*)userdata)->append(ptr, size * nmemb);
-    return size * nmemb;
-}
+    // set the request body
+    std::string body = json_message.toStyledString();
 
-std::string do_post(const char* url, Json::Value json_message){
-    std::lock_guard<std::mutex> lock(httplock);
-    CURL *curl;
-    CURLcode res;
-    
-    std::string string_message = json_message.toStyledString();
-    std::string response;
-    std::string method = "POST";
+    // send the POST request and get the response
+    auto res = client.Post("/" + endpoint, header, body, "application/json");
 
-    curl = curl_easy_init();
-    if(curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, url);
-        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, method.c_str());
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, string_message.c_str());
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, string_message.size());
-        
-        curl_slist* headers = NULL;
-        headers = curl_slist_append(headers, "Content-Type: application/json");
-
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-
-        res = curl_easy_perform(curl);
-        curl_slist_free_all(headers);
-        curl_easy_cleanup(curl);
-
-        if(res != CURLE_OK) {
-            setlog(LOG::ERROR, (std::string)"curl_easy_perform() failed: " + curl_easy_strerror(res));
-            std::cerr<<"Connect to URL: " << url <<" failed."<<std::endl;
-            throw "http failed";
-        } else {
-            return response;
-        }
+    // return the response body
+    if(res){
+        return res->body;
     } else {
-        setlog(LOG::ERROR, "curl_easy_init() failed: ");
-        throw "curl failed";
+        setlog(LOG::ERROR, httplib::to_string(res.error()));
+        throw "http connect failed";
     }
 }
 
-std::string do_get(const char* url){
-    std::lock_guard<std::mutex> lock(httplock);
-    CURL *curl;
-    CURLcode res;
-    
-    std::string response;
+std::string do_post(std::string url, Json::Value J, std::map<std::string, std::string> header) {
+    httplib::Client cli(url);
 
-    curl = curl_easy_init();
-    if(curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, url);
-        
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+    // Convert the JSON value to a string
+    std::string body = J.toStyledString();
 
-        res = curl_easy_perform(curl);
-        curl_easy_cleanup(curl);
+    // Set the content type to JSON
+    httplib::Headers headers = {
+        { "Content-Type", "application/json" }
+    };
+    for (auto it : header) {
+        headers.insert(it);
+    }
 
-        if(res != CURLE_OK) {
-            setlog(LOG::ERROR, (std::string)"curl_easy_perform() failed: " + curl_easy_strerror(res));
-            std::cerr<<"Connect to URL: " << url <<" failed."<<std::endl;
-            throw "http failed";
-        } else {
-            return response;
-        }
+  // Perform the POST request and get the response
+    auto res = cli.Post("", headers, body, "application/json");
+
+    // Check if the request was successful
+    if (res && res->status == 200) {
+        return res->body;
     } else {
-        setlog(LOG::ERROR, "curl_easy_init() failed: ");
-        throw "curl failed";
+        setlog(LOG::ERROR, httplib::to_string(res.error()));
+        throw std::runtime_error("POST request failed");
+    }
+}
+
+std::string do_get(std::string url, std::string endpoint, std::map<std::string, std::string> headers) {
+    httplib::Client client(url);
+    // add custom headers
+    httplib::Headers header;
+    for (auto it : headers) {
+        header.insert(it);
+    }
+
+    // send the POST request and get the response
+    auto res = client.Get("/" + endpoint, header);
+
+    // return the response body
+    if(res){
+        return res->body;
+    } else {
+        setlog(LOG::ERROR, httplib::to_string(res.error()));
+        throw "http connect failed";
+    }
+}
+
+std::string do_get(std::string url, std::map<std::string, std::string> headers) {
+    // create HTTP request object
+    httplib::Client client(url);
+    
+    // add custom headers
+    httplib::Headers header;
+    for (auto it : headers) {
+        header.insert(it);
+    }
+
+    // send the Get request and get the response
+    auto res = client.Get("", header);
+
+    // return the response body
+    if(res){
+        return res->body;
+    } else {
+        setlog(LOG::ERROR, httplib::to_string(res.error()));
+        throw "http connect failed";
     }
 }

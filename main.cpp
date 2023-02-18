@@ -1,3 +1,5 @@
+#define CPPHTTPLIB_OPENSSL_SUPPORT
+
 #include "utils.h"
 #include "functions.h"
 #include "events.h"
@@ -186,10 +188,8 @@ void init(){
 }
 
 int main(){
-    curl_global_init(CURL_GLOBAL_ALL);
 
     init();
-    username_init();
 
     functions.push_back(new AnimeImg());
     functions.push_back(new auto114());
@@ -212,8 +212,6 @@ int main(){
         delete []u;
     }
 
-    curl_global_cleanup();
-
     return 0;
 }
 
@@ -227,7 +225,10 @@ std::string cq_send(std::string message, std::string message_type, int64_t user_
 }
 
 std::string cq_send(std::string end_point, Json::Value J){
-    return do_post(("http://127.0.0.1:" + std::to_string(send_port) + "/" + end_point).c_str(), J);
+    return do_post("127.0.0.1:" + std::to_string(send_port), end_point, J);
+}
+std::string cq_get(std::string end_point, Json::Value J){
+    return do_get("127.0.0.1:" + std::to_string(send_port), end_point);
 }
 
 std::mutex mylock;

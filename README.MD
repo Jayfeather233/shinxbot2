@@ -29,7 +29,7 @@
 
 ### 如何运行这个机器人
 
-需要几个支持库：curl / jsoncpp / CImg
+需要几个支持库：cpp-httplib + openssl-dev / jsoncpp / CImg
 
 这些库怎么装？问chatGPT。
 

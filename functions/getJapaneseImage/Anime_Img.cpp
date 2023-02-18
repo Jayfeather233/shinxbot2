@@ -4,7 +4,6 @@
 
 #include <iostream>
 
-AnimeImg::AnimeImg(){}
 void AnimeImg::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     try {
         Json::Value J = string_to_json(do_get("https://www.dmoe.cc/random.php?return=json"));

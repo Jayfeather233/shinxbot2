@@ -2,17 +2,18 @@
 
 #include <jsoncpp/json/json.h>
 #include <string>
-#include <curl/curl.h>
+#include <httplib.h>
 #include <locale>
 
 enum LOG{
     INFO, WARNING, ERROR
 };
 
-std::string do_post(const char* url, Json::Value json_message);
-std::string do_get(const char* url);
+std::string do_post(std::string url, std::string endpoint, Json::Value json_message, std::map<std::string, std::string> headers = {});
+std::string do_post(std::string url, Json::Value json_message, std::map<std::string, std::string> headers = {});
+std::string do_get(std::string url, std::string endpoint, std::map<std::string, std::string> headers = {});
+std::string do_get(std::string url, std::map<std::string, std::string> headers = {});
 
-void username_init();
 std::string get_username(int64_t user_id, int64_t group_id);
 
 Json::Value string_to_json(std::string str);

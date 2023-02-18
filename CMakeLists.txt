@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.11)
 
 project(cq_bot)
 
+find_package(OpenSSL REQUIRED)
+include_directories(${OPENSSL_INCLUDE_DIR})
 include_directories("./inc")
 include_directories("./interfaces")
 include_directories("./functions")
@@ -26,6 +28,7 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC -lcurl)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC -ljsoncpp)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC -pthread)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC -lm)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${OPENSSL_LIBRARIES})
 
 set(YOU_NEED_X11 1)
 set(YOU_NEED_PNG 1)
