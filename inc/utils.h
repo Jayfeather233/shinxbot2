@@ -10,9 +10,7 @@ enum LOG{
 };
 
 std::string do_post(std::string url, std::string endpoint, Json::Value json_message, std::map<std::string, std::string> headers = {});
-std::string do_post(std::string url, Json::Value json_message, std::map<std::string, std::string> headers = {});
 std::string do_get(std::string url, std::string endpoint, std::map<std::string, std::string> headers = {});
-std::string do_get(std::string url, std::map<std::string, std::string> headers = {});
 
 std::string get_username(int64_t user_id, int64_t group_id);
 

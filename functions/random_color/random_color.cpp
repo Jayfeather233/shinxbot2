@@ -44,8 +44,10 @@ void r_color::process(std::string message, std::string message_type, int64_t use
     std::string name = get_code(color);
 
     CImg<unsigned char> img(256,256,1,3);
-
-    unsigned char color_code[] = {color/65536,color/256%256,color%256};
+    
+    unsigned char color_code[] = {static_cast<unsigned char>(color/65536),
+                                static_cast<unsigned char>(color/256%256),
+                                static_cast<unsigned char>(color%256)};
 
     for(int i=0;i<256;i++){
         for(int j = 0; j < 256;j++){

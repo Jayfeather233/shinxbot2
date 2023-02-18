@@ -1,5 +1,3 @@
-#define CPPHTTPLIB_OPENSSL_SUPPORT
-
 #include "utils.h"
 #include "functions.h"
 #include "events.h"
