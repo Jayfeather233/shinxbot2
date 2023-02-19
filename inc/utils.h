@@ -15,8 +15,8 @@ enum LOG{
     INFO, WARNING, ERROR
 };
 
-std::string do_post(const std::string &url, const std::string &endpoint, const Json::Value &json_message, const std::map<std::string, std::string> &headers = {});
-std::string do_get(const std::string &url, const std::string &endpoint, const std::map<std::string, std::string> &headers = {});
+std::string do_post(const std::string &httpaddr, const Json::Value &json_message, const std::map<std::string, std::string> &headers = {});
+std::string do_get(const std::string &httpaddr, const std::map<std::string, std::string> &headers = {});
 std::pair<std::string, std::string> divide_http_addr(const std::string &url);
 
 std::string get_username(int64_t user_id, int64_t group_id);

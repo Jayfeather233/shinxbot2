@@ -8,7 +8,7 @@ static size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdat
     response->append(ptr, num_bytes);
     return num_bytes;
 }
-std::string do_post(const std::string &url, const std::string &endpoint, const Json::Value &json_message, const std::map<std::string, std::string> &headers) {
+std::string do_post(const std::string &httpaddr, const Json::Value &json_message, const std::map<std::string, std::string> &headers) {
 
     // Create a new curl handle
     CURL *curl_handle = curl_easy_init();
@@ -17,8 +17,7 @@ std::string do_post(const std::string &url, const std::string &endpoint, const J
     }
 
     // Set the URL to POST to
-    std::string full_url = url + (endpoint.length() ? ("/" +endpoint) : "");
-    curl_easy_setopt(curl_handle, CURLOPT_URL, full_url.c_str());
+    curl_easy_setopt(curl_handle, CURLOPT_URL, httpaddr.c_str());
 
     // Set the request method to POST
     curl_easy_setopt(curl_handle, CURLOPT_POST, 1L);
@@ -65,7 +64,7 @@ std::string do_post(const std::string &url, const std::string &endpoint, const J
     return response;
 }
 
-std::string do_get(const std::string &url, const std::string &endpoint, const std::map<std::string, std::string> &headers) {
+std::string do_get(const std::string &httpaddr, const std::map<std::string, std::string> &headers) {
 
     // Create a new curl handle
     CURL *curl_handle = curl_easy_init();
@@ -74,8 +73,7 @@ std::string do_get(const std::string &url, const std::string &endpoint, const st
     }
 
     // Set the URL to POST to
-    std::string full_url = url + (endpoint.length() ? ("/" +endpoint) : "");
-    curl_easy_setopt(curl_handle, CURLOPT_URL, full_url.c_str());
+    curl_easy_setopt(curl_handle, CURLOPT_URL, httpaddr.c_str());
 
     // Set the request method to POST
     curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1L);
@@ -115,53 +113,3 @@ std::string do_get(const std::string &url, const std::string &endpoint, const st
     curl_easy_cleanup(curl_handle);
     return response;
 }
-// std::string do_post(const std::string &url, const std::string &endpoint, const Json::Value &json_message, const std::map<std::string, std::string> &headers) {
-//     httplib::Client client(url);
-
-//     if(use_proxy) client.set_proxy(proxy_url, proxy_port);
-
-//     // add custom headers
-//     httplib::Headers header = {
-//         { "Content-Type", "application/json" }
-//     };
-//     for (auto it : headers) {
-//         header.insert(it);
-//     }
-
-//     // set the request body
-//     std::string body = json_message.toStyledString();
-
-//     // send the POST request and get the response
-//     auto res = client.Post(endpoint.size() ? ("/" + endpoint) : "", header, body, "application/json");
-
-//     // return the response body
-//     if(res){
-//         return res->body;
-//     } else {
-//         setlog(LOG::ERROR, httplib::to_string(res.error()));
-//         throw "http connect failed";
-//     }
-// }
-
-// std::string do_get(const std::string &url, const std::string &endpoint, const std::map<std::string, std::string> &headers) {
-//     httplib::Client client(url);
-
-//     if(use_proxy) client.set_proxy(proxy_url, proxy_port);
-
-//     // add custom headers
-//     httplib::Headers header;
-//     for (auto it : headers) {
-//         header.insert(it);
-//     }
-
-//     // send the Get request and get the response
-//     auto res = client.Get(endpoint.size() ? ("/" + endpoint) : "", header);
-
-//     // return the response body
-//     if(res){
-//         return res->body;
-//     } else {
-//         setlog(LOG::ERROR, httplib::to_string(res.error()));
-//         throw "http connect failed";
-//     }
-// }

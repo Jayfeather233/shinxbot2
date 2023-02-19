@@ -226,11 +226,11 @@ std::string cq_send(std::string message, std::string message_type, int64_t user_
 }
 
 std::string cq_send(std::string end_point, Json::Value J){
-    std::string re = do_post("127.0.0.1:" + std::to_string(send_port), end_point, J);
+    std::string re = do_post("127.0.0.1:" + std::to_string(send_port) + "/" + end_point, J);
     return re;
 }
 std::string cq_get(std::string end_point){
-    std::string re = do_get("127.0.0.1:" + std::to_string(send_port), end_point);
+    std::string re = do_get("127.0.0.1:" + std::to_string(send_port) + "/" + end_point);
     return re;
 }
 

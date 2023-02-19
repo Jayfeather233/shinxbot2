@@ -110,8 +110,7 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
         message = trim(message.substr(16));
         try{
             Json::Value Ja = string_to_json(
-                do_get("https://e621.net",
-                    "tags/autocomplete.json?search[name_matches]=" + message + "&expiry=7",
+                do_get("https://e621.net/tags/autocomplete.json?search[name_matches]=" + message + "&expiry=7",
                     {{"user-agent", "AutoSearch/1.0 (by " + username + " on e621)"},
                     {"Authorization", "basic " + base64::to_base64(username + ":" + authorkey)}}));
             std::string res;
@@ -147,7 +146,7 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
     for(i = 0; i < 3; i++){
         try{
             J = string_to_json(
-                do_get("https://e621.net", "posts.json?limit=50&tags=" + input,
+                do_get("https://e621.net/posts.json?limit=50&tags=" + input,
                         {{"user-agent", "AutoSearch/1.0 (by " + username + " on e621)"},
                         {"Authorization", "basic " + base64::to_base64(username + ":" + authorkey)}})
             );
@@ -193,7 +192,7 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
         int64_t pool_id = J["posts"][0]["pools"][0].asInt64();
         
         Json::Value J3 = string_to_json(
-            do_get("https://e621.net", "pools.json?search[id]=" + std::to_string(pool_id),
+            do_get("https://e621.net/pools.json?search[id]=" + std::to_string(pool_id),
                     {{"user-agent", "AutoSearch/1.0 (by " + username + " on e621)"},
                     {"Authorization", "basic " + base64::to_base64(username + ":" + authorkey)}})
         )[0];

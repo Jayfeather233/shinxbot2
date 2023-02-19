@@ -75,9 +75,9 @@ void r_color::process(std::string message, std::string message_type, int64_t use
     // Save the image to a file
     img.save_png(((std::string)"./resource/temp/" + name + ".png").c_str());
 
-    //name = httplib::detail::encode_url(name); no use for '#'
+    const char* c_name = curl_easy_escape(nullptr, name.c_str(), name.length());
 
-    cq_send("[CQ:image,file=file://" + get_local_path() + "/resource/temp/%23" + name.substr(1) + ".png,id=40000]", message_type, user_id, group_id);
+    cq_send("[CQ:image,file=file://" + get_local_path() + "/resource/temp/" + c_name + ".png,id=40000]", message_type, user_id, group_id);
     setlog(LOG::INFO, "r_color at group " + std::to_string(group_id) + " by " + std::to_string(user_id));
     
     delete font_size;

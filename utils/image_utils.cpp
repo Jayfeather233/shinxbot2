@@ -6,8 +6,7 @@
 
 void download(const std::string& httpAddress, const std::string& filePath, const std::string& fileName) {
     try {
-        auto url = divide_http_addr(httpAddress);
-        std::string data = do_get(url.first, url.second);
+        std::string data = do_get(httpAddress);
         std::ofstream out(filePath + "/" + fileName, std::ios::out | std::ios::binary);
         out.write(data.c_str(), data.size());
         out.close();
