@@ -31,6 +31,14 @@
 
 需要几个支持库：[libcurl](https://curl.se/libcurl/) + openssl-dev / [jsoncpp](https://github.com/open-source-parsers/jsoncpp) / [CImg](https://www.cimg.eu/) / [base64](https://github.com/tobiaslocker/base64)
 
+```
+libcurl: sudo apt-get install libcurl4-openssl-dev
+jsoncpp: install libjsoncpp-dev
+CImg: download and include CImg.h and install libjpeg-dev libpng-dev
+base64: download and include base64.hpp
+maybe it will work
+```
+
 这些库怎么装？问chatGPT。
 
 linux: 运行build.sh，自动执行cmake和make编译并运行

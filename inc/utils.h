@@ -2,7 +2,6 @@
 
 #include <jsoncpp/json/json.h>
 #include <string>
-//#include <httplib.h>
 #include <curl/curl.h>
 #include <locale>
 
