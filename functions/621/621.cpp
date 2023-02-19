@@ -42,7 +42,10 @@ e621::e621(){
         parse_ja_to_map(J["group"], group);
         parse_ja_to_map(J["user"], user);
         parse_ja_to_map(J["admin"], admin);
-        parse_ja_to_map(J["not_search"], n_search);
+        Json::ArrayIndex sz = J["n_search"].size();
+        for(Json::ArrayIndex i = 0; i < sz; i++){
+            n_search.insert(J["n_search"][i].asString());
+        }
     } else {
         
     }
@@ -57,9 +60,9 @@ std::string e621::deal_input(const std::string &input, bool is_pool){
     if(res.find("order:") == res.npos && !is_pool){
         res += "+order:random";
     }
-    for(auto it : n_search){
-        if(res.find(it.first) == res.npos){
-            res += "+-" + it.first;
+    for(std::string it : n_search){
+        if(res.find(it) == res.npos){
+            res += "+-" + it;
         }
     }
     return res;
@@ -98,8 +101,8 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
         std::string res = "\
 如未指定favcount或score，默认加上favcount:>400 score:>200\n\
 如未指定以下tags，默认不搜索";
-        for(auto it : n_search){
-            res += it.first + ",";
+        for(std::string it : n_search){
+            res += it + ",";
         }
         cq_send(res, message_type, user_id, group_id);
     }
@@ -259,7 +262,17 @@ void e621::save(){
     J["user"] = parse_map_to_ja(user);
     J["group"] = parse_map_to_ja(group);
     J["admin"] = parse_map_to_ja(admin);
-    J["n_search"] = parse_map_to_ja(n_search);
+    Json::Value J2;
+    for(std::string u : n_search){
+        J2.append(u);
+    }
+    J["n_search"] = J2;
+
+    std::ofstream ofs("./config/621_level.json");
+    if(ofs.is_open()){
+        ofs << J.toStyledString();
+        ofs.close();
+    }
 }
 std::string e621::get_image_tags(const Json::Value &J){
     std::string s;
