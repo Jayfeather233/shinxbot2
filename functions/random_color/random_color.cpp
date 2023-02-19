@@ -1,13 +1,7 @@
 #include "random_color.h"
 #include "utils.h"
 
-#define cimg_display_type 0
-#define cimg_use_png 1
-#include "CImg.h"
-
 #include <iostream>
-
-using namespace cimg_library;
 
 std::string int_to_hex = "0123456789ABCDEF";
 

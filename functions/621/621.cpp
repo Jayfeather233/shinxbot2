@@ -8,8 +8,8 @@
 #include <iostream>
 
 void parse_ja_to_map(const Json::Value &J, std::map<int64_t, bool>&mp){
-    Json::Value::ArrayIndex sz = J.size();
-    for(Json::Value::ArrayIndex i = 0; i < sz; i++){
+    Json::ArrayIndex sz = J.size();
+    for(Json::ArrayIndex i = 0; i < sz; i++){
         mp[J[i].asInt64()] = true;
     }
 }
@@ -48,7 +48,7 @@ e621::e621(){
     }
 }
 
-std::string e621::deal_input(std::string input, bool is_pool){
+std::string e621::deal_input(const std::string &input, bool is_pool){
     std::string res = my_replace(input, ' ', '+');
     
     if(res.find("score:") == res.npos && res.find("favcount:") == res.npos && !is_pool){
@@ -62,6 +62,7 @@ std::string e621::deal_input(std::string input, bool is_pool){
             res += "+-" + it.first;
         }
     }
+    return res;
 }
 
 void e621::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
@@ -105,8 +106,8 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
                     {{"user-agent", "AutoSearch/1.0 (by " + username + " on e621)"},
                     {"Authorization", "basic " + base64::to_base64(username + ":" + authorkey)}}));
             std::string res;
-            Json::Value::ArrayIndex sz = Ja.size();
-            for(Json::Value::ArrayIndex i = 0; i < sz; i++){
+            Json::ArrayIndex sz = Ja.size();
+            for(Json::ArrayIndex i = 0; i < sz; i++){
                 res += Ja[i]["name"].asString() + "    " + std::to_string(Ja[i]["post_count"].asInt64()) + "\n";
             }
             cq_send(res, message_type, user_id, group_id);
@@ -124,8 +125,8 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
         input = trim(input.substr(4));
     }
     
-    if(input.find("621.input") == 0){
-        cq_send(deal_input(input, is_pool), message_type, user_id, group_id);
+    if(input.find(".input") == 0){
+        cq_send(deal_input(input.substr(6), is_pool), message_type, user_id, group_id);
         return;
     }
     input = deal_input(input, is_pool);
@@ -149,7 +150,7 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
         setlog(LOG::WARNING, "621 at group " + std::to_string(group_id) + " by " + std::to_string(user_id) + " but unable to connect.");
         return;
     }
-
+    
     int count = J["posts"].size();
     if(count == 0){
         cq_send("No image found.", message_type, user_id, group_id);
@@ -165,31 +166,112 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
             if(get_tag){
                 J2 = string_to_json(cq_send(get_image_tags(J), message_type,user_id, group_id));
             } else {
-                J2 = string_to_json(cq_send(get_image_info(J,i), message_type,user_id, group_id));
+                J2 = string_to_json(cq_send(get_image_info(J, count, is_pool, i), message_type,user_id, group_id));
             }
             if(J2["status"].asString() != "failed"){
                 break;
             }
         }
         if(i == 3){
-            cq_send("cannot send image due to tencent", message_type, user_id, group_id);
+            cq_send("cannot send image due to Tencent", message_type, user_id, group_id);
             setlog(LOG::WARNING, "621 at group " + std::to_string(group_id) + " by " + std::to_string(user_id) + " send failed.");
         } else {
-            setlog(LOG::WARNING, "621 at group " + std::to_string(group_id) + " by " + std::to_string(user_id));
+            setlog(LOG::INFO, "621 at group " + std::to_string(group_id) + " by " + std::to_string(user_id));
         }
     } else {
 
     }
 }
 
-void e621::admin_set(std::string input, int64_t user_id, int64_t group_id){}
-void e621::admin_del(std::string input, int64_t user_id, int64_t group_id){}
-std::string e621::get_image_tags(Json::Value J){}
-std::string e621::get_image_info(Json::Value J, int retry){}
+void e621::admin_set(const std::string &input, int64_t user_id, int64_t group_id){}
+void e621::admin_del(const std::string &input, int64_t user_id, int64_t group_id){}
+std::string e621::get_image_tags(const Json::Value &J){
+    std::string s;
+    Json::ArrayIndex sz;
+    Json::Value J2;
+    J2 = J["tags"];
+    s += "artist:";
+    sz = J2["artist"].size();
+    for(Json::ArrayIndex i = 0; i < sz; i++) s += J2["artist"][i].asString() + " ";
+    s+="\n";
+    s += "character:";
+    sz = J2["character"].size();
+    for(Json::ArrayIndex i = 0; i < sz; i++) s += J2["character"][i].asString() + " ";
+    s+="\n";
+    s += "species:";
+    sz = J2["species"].size();
+    for(Json::ArrayIndex i = 0; i < sz; i++) s += J2["species"][i].asString() + " ";
+    s+="\n";
+    return s;
+}
+
+std::string e621::get_image_info(const Json::Value &J, int count, bool poolFlag, int retry) {
+    std::string imageUrl;
+    if (J.isMember("file") && retry <= 0){
+        imageUrl = J["file"]["url"].asString();
+    } else if (J.isMember("sample") && retry <= 1) {
+        imageUrl = J["sample"]["url"].asString();
+    } else if (J.isMember("preview")) {
+        imageUrl = J["preview"]["url"].asString();
+    } else {
+        throw "";
+    }
+
+    int64_t id = J["id"].asInt64();
+    int64_t fav_count = J["fav_count"].asInt64();
+    int64_t score = J["score"]["total"].asInt64();
+
+    std::stringstream quest;
+    if (!poolFlag && count != 50) {
+        quest << "只有" << count << "个图片\n";
+    }
+    if (poolFlag && count == 50) {
+        quest << "多于" << count << "个图片\n";
+    }
+
+    size_t extPos = 0, tmpPos;
+    while ((tmpPos = imageUrl.find(".", extPos)) != std::string::npos) {
+        extPos = tmpPos + 1;
+    }
+    std::string fileExt = imageUrl.substr(extPos);
+    std::string imageLocalPath = std::to_string(id) + '.' + fileExt;
+
+    if (!std::ifstream("./resource/download/e621/" + imageLocalPath)) {
+        download(imageUrl, "./resource/download/e621", imageLocalPath);
+    }
+    addRandomNoise("./resource/download/e621/" + imageLocalPath);
+
+    quest << "[CQ:image,file=file://" << get_local_path() << "/resource/download/e621/" << imageLocalPath << ",id=40000]\n";
+    quest << "Fav_count: " << fav_count << "  Score: " << score << "\n";
+
+    auto poolList = J["pools"];
+    if (poolList.isArray() && poolList.size() > 0) {
+        quest << "pools:";
+        for (Json::ArrayIndex i = 0; i < poolList.size(); i++) {
+            quest << " " << poolList[i].asInt();
+        }
+        quest << '\n';
+    }
+    quest << "id: " << id;
+    return quest.str();
+}
+
 
 bool e621::check(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
-
+    if(!message.find("621") == 0) return false;
+    if(message_type == "group"){
+        auto it = group.find(group_id);
+        if(it == group.end() || it->second == false){
+            return false;
+        }
+    } else {
+        auto it = user.find(user_id);
+        if(it == user.end() || it->second == false){
+            return false;
+        }
+    }
+    return true;
 }
 std::string e621::help(){
-
+    return "";
 }

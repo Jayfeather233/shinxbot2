@@ -158,7 +158,7 @@ void init(){
 
     for(;;){
         try{
-            Json::Value J = string_to_json(cq_send("get_login_info", ""));
+            Json::Value J = string_to_json(cq_get("get_login_info"));
             botqq = J["data"]["user_id"].asInt64();
             break;
         } catch (...) {
@@ -186,6 +186,7 @@ void init(){
 }
 
 int main(){
+    curl_global_init(CURL_GLOBAL_ALL);
 
     init();
 
@@ -195,6 +196,7 @@ int main(){
     functions.push_back(new fudu());
     functions.push_back(new forward());
     functions.push_back(new r_color());
+    functions.push_back(new e621());
 
     events.push_back(new talkative());
     events.push_back(new m_change());
@@ -209,6 +211,7 @@ int main(){
     for(eventprocess *u : events){
         delete []u;
     }
+    curl_global_cleanup();
 
     return 0;
 }
@@ -223,10 +226,12 @@ std::string cq_send(std::string message, std::string message_type, int64_t user_
 }
 
 std::string cq_send(std::string end_point, Json::Value J){
-    return do_post("127.0.0.1:" + std::to_string(send_port), end_point, J);
+    std::string re = do_post("127.0.0.1:" + std::to_string(send_port), end_point, J);
+    return re;
 }
-std::string cq_get(std::string end_point, Json::Value J){
-    return do_get("127.0.0.1:" + std::to_string(send_port), end_point);
+std::string cq_get(std::string end_point){
+    std::string re = do_get("127.0.0.1:" + std::to_string(send_port), end_point);
+    return re;
 }
 
 std::mutex mylock;

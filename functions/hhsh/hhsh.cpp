@@ -21,8 +21,8 @@ void hhsh::process(std::string message, std::string message_type, int64_t user_i
     std::string res;
     bool flg = false;
 
-    Json::Value::ArrayIndex sz = Ja.size();
-    for(Json::Value::ArrayIndex i = 0; i < sz; i++){
+    Json::ArrayIndex sz = Ja.size();
+    for(Json::ArrayIndex i = 0; i < sz; i++){
         J = Ja[i];
         if(flg) res += '\n';
         flg = true;
@@ -33,12 +33,12 @@ void hhsh::process(std::string message, std::string message_type, int64_t user_i
                 res.append(J["name"].asString()).append("有可能是：\n");
                 int t = 0;
                 Json::Value maybe_value = J["inputting"];
-                Json::Value::ArrayIndex msz = maybe_value.size();
-                for(Json::Value::ArrayIndex i = 0; i < msz; i++){
+                Json::ArrayIndex msz = maybe_value.size();
+                for(Json::ArrayIndex i = 0; i < msz; i++){
                     res.append(maybe_value[i].asString());
                     res += ' ';
                     t++;
-                    if(t >= 10) break;
+                    //if(t >= 10) break;
                 }
             }
         } else if (J.isMember("trans")){
@@ -48,12 +48,12 @@ void hhsh::process(std::string message, std::string message_type, int64_t user_i
                 res.append(J["name"].asString()).append("是：\n");
                 int t = 0;
                 Json::Value maybe_value = J["trans"];
-                Json::Value::ArrayIndex msz = maybe_value.size();
-                for(Json::Value::ArrayIndex i = 0; i < msz; i++){
+                Json::ArrayIndex msz = maybe_value.size();
+                for(Json::ArrayIndex i = 0; i < msz; i++){
                     res.append(maybe_value[i].asString());
                     res += ' ';
                     t++;
-                    if(t >= 10) break;
+                    //if(t >= 10) break;
                 }
             }
         } else {
