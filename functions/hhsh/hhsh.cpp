@@ -5,6 +5,12 @@
 #include <jsoncpp/json/json.h>
 
 void hhsh::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
+
+    if(message.length()<=5){
+        cq_send("首字母缩写识别： hhsh + 缩写 ", message_type, user_id, group_id);
+        return;
+    }
+
     Json::Value J;
     J["text"] = my_replace(message.substr(4), ' ', ',');
 

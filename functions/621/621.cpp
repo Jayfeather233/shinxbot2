@@ -65,14 +65,20 @@ std::string e621::deal_input(const std::string &input, bool is_pool){
     return res;
 }
 
+std::string number_trans(int64_t u){
+    if (u > 1000000) return std::to_string(u / 1000000) + "M";
+    else if (u > 1000) return std::to_string(u / 1000) + "k";
+    else return std::to_string(u);
+}
+
 void e621::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     message = trim(message);
-    if(message.find("621.set") == 0) {
-        admin_set(trim(message.substr(7)), user_id, group_id);
+    if(message.find("621.add") == 0) {
+        admin_set(trim(message.substr(7)), message_type, user_id, group_id, true);
         return;
     }
     if(message.find("621.del") == 0) {
-        admin_del(trim(message.substr(7)), user_id, group_id);
+        admin_set(trim(message.substr(7)), message_type, user_id, group_id, false);
         return;
     }
 
@@ -124,10 +130,12 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
         get_tag = true;
         input = trim(input.substr(4));
     }
-    
     if(input.find(".input") == 0){
         cq_send(deal_input(input.substr(6), is_pool), message_type, user_id, group_id);
         return;
+    }
+    if(input.length() <= 1){
+        input += " fav:jayfeather233 eeveelution";
     }
     input = deal_input(input, is_pool);
 
@@ -179,12 +187,80 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
             setlog(LOG::INFO, "621 at group " + std::to_string(group_id) + " by " + std::to_string(user_id));
         }
     } else {
+        int64_t pool_id = J["posts"][0]["pools"][0].asInt64();
+        
+        Json::Value J3 = string_to_json(
+            do_get("https://e621.net", "pools.json?search[id]=" + std::to_string(pool_id),
+                    {{"user-agent", "AutoSearch/1.0 (by " + username + " on e621)"},
+                    {"Authorization", "basic " + base64::to_base64(username + ":" + authorkey)}})
+        )[0];
 
+        std::string res_message;
+        res_message = "转发\n";
+        res_message += std::to_string(get_botqq()) + " " + J3["category"].asString() + ": " + J3["name"].asString() + "\n";
+        res_message += std::to_string(get_botqq()) + " 合并行\n简介：" + J3["description"].asString() + "\n结束合并\n";
+        res_message += std::to_string(get_botqq()) + " 共有 " + std::to_string(J3["post_count"].asInt64()) + "张\n";
+        J3 = J3["post_ids"];
+        Json::ArrayIndex sz = J3.size();
+        for(Json::ArrayIndex i = 0; i < sz; i++){
+            for(Json::ArrayIndex j = 0; j < count; j++){
+                if(J3[i].asInt64() == J["posts"][j]["id"].asInt64()){
+                    res_message += std::to_string(get_botqq()) + " 合并行\n";
+                    res_message += get_image_info(J["posts"][j], count, is_pool, 1);
+                    res_message += "\n结束合并\n";
+                }
+            }
+        }
+
+        Json::Value J_send;
+        J_send["post_type"] = "message";
+        J_send["message"] = res_message;
+        J_send["message_type"] = message_type;
+        J_send["message_id"] = -1;
+        J_send["user_id"] = user_id;
+        J_send["group_id"] = group_id;
+        input_process(new std::string(J_send.toStyledString()));
+        setlog(LOG::INFO, "621 pool at group " + std::to_string(group_id) + " by " + std::to_string(user_id));
     }
 }
 
-void e621::admin_set(const std::string &input, int64_t user_id, int64_t group_id){}
-void e621::admin_del(const std::string &input, int64_t user_id, int64_t group_id){}
+void e621::admin_set(const std::string &input, const std::string message_type, int64_t user_id, int64_t group_id, bool flg){
+    std::istringstream iss(input);
+    auto it = admin.find(user_id);
+    if(it == admin.end() || it->second == false){
+        return;
+    }
+    std::string type;
+    iss >> type;
+    if(type == "this"){
+        if(message_type == "group"){
+            group[group_id] = flg;
+        } else {
+            user[user_id] = flg;
+        }
+    } else {
+        int64_t id;
+        iss >> id;
+        if(type == "group"){
+            group[id] = flg;
+        } else if(type == "user"){
+            user[id] = flg;
+        } else {
+            cq_send("621.set [this/group/user] [id (when not 'this')]", message_type, user_id, group_id);
+        }
+    }
+    save();
+    cq_send("set done.", message_type, user_id, group_id);
+}
+void e621::save(){
+    Json::Value J;
+    J["authorkey"] = authorkey;
+    J["username"] = username;
+    J["user"] = parse_map_to_ja(user);
+    J["group"] = parse_map_to_ja(group);
+    J["admin"] = parse_map_to_ja(admin);
+    J["n_search"] = parse_map_to_ja(n_search);
+}
 std::string e621::get_image_tags(const Json::Value &J){
     std::string s;
     Json::ArrayIndex sz;

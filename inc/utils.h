@@ -29,6 +29,7 @@ std::string cq_get(std::string end_point);
 void setlog(LOG type, std::string message);
 int64_t get_botqq();
 std::string get_local_path();
+void input_process(std::string *input);
 
 std::wstring string_to_wstring(const std::string &u);
 std::string wstring_to_string(const std::wstring &u);
