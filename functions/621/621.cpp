@@ -46,6 +46,8 @@ e621::e621(){
         for(Json::ArrayIndex i = 0; i < sz; i++){
             n_search.insert(J["n_search"][i].asString());
         }
+
+        afile.close();
     } else {
         
     }

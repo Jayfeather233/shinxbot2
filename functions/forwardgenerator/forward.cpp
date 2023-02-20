@@ -80,7 +80,7 @@ void forward::process(std::string message, std::string message_type, int64_t use
         cq_send("send_group_forward_msg", J);
         setlog(LOG::INFO, "forward at group " + std::to_string(group_id) + " by " + std::to_string(user_id));
     } else {
-        J["user_id"] = group_id;
+        J["user_id"] = user_id;
         cq_send("send_private_forward_msg", J);
         setlog(LOG::INFO, "forward by " + std::to_string(user_id));
     }

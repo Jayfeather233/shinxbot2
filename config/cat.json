@@ -1,0 +1,71 @@
+{
+  "adopt": [
+    "You adopted a new cat named {cat_name}!",
+    "Welcome to your new cat {cat_name}!"
+  ],
+  "intro": [
+    "Hi there! I'm {cat_name}.",
+    "Hello, I'm {cat_name}.",
+    "Hey, I'm {cat_name}."
+  ],
+  "feed": [
+    "You fed {cat_name}.",
+    "Nom nom nom. Thanks for the food!",
+    "Mmm, that was delicious. Thanks!",
+    "Yum, thanks for the food."
+  ],
+  "water": [
+    "You gave {cat_name} some water.",
+    "Ah, refreshing. Thanks for the water!",
+    "Thanks for the water, I was getting thirsty.",
+    "Mmm, that hits the spot. Thanks!"
+  ],
+  "play": [
+    "You played with {cat_name}.",
+    "Wheee, this is fun!",
+    "I'm having a blast!",
+    "Thanks for the fun time!",
+    "That was great. Let's do it again sometime!"
+  ],
+  "pat": [
+    "You patted {cat_name}.",
+    "Oh yeah, right there. That feels great!",
+    "Awww, thanks for the affection!",
+    "Thanks for the pets!",
+    "Purr purr purr. That feels good!"
+  ],
+  "care": [
+    "You take care of {cat_name}",
+    "I feel so loved! Thanks for taking care of me!",
+    "Thanks for making sure I have everything I need!",
+    "I'm a lucky cat to have such a great owner like you."
+  ],
+  "affection_low": [
+    "I'm feeling a bit neglected. Can we play?",
+    "I'm getting lonely here. How about some attention?",
+    "I miss you. Can we spend some time together?",
+    "I'm feeling a bit down. Some affection would cheer me up."
+  ],
+  "place": {
+    "living_room": [
+      "The living room is cozy and warm.",
+      "The living room is the perfect place to relax.",
+      "The living room is the heart of the home."
+    ],
+    "kitchen": [
+      "The kitchen smells like delicious food.",
+      "The kitchen is a busy and exciting place.",
+      "The kitchen is where all the action happens."
+    ],
+    "bedroom": [
+      "The bedroom is a peaceful and quiet space.",
+      "The bedroom is the perfect place for a cat nap.",
+      "The bedroom is where I like to relax and unwind."
+    ],
+    "bathroom": [
+      "The bathroom is a strange place for a cat to be.",
+      "The bathroom is where humans go to do their business.",
+      "The bathroom is not the most exciting place for a cat to be."
+    ]
+  }
+}

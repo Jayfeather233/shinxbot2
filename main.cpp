@@ -197,6 +197,7 @@ int main(){
     functions.push_back(new forward());
     functions.push_back(new r_color());
     functions.push_back(new e621());
+    functions.push_back(new catmain());
 
     events.push_back(new talkative());
     events.push_back(new m_change());
