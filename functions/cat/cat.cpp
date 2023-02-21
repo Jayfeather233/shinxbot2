@@ -151,7 +151,7 @@ std::string Cat::pat()
 }
 std::string Cat::feed()
 {
-    if(this->food >= 245){
+    if(this->food >= 90){
         this->lastVisitTime = time(nullptr);
         save_cat();
         return get_random_text(catmain::get_text()["feed"]["full"]);
@@ -159,8 +159,7 @@ std::string Cat::feed()
     this->food += 10;
     this->water += 5;
     this->affection += 5;
-    this->food = std::min(this->food, 255);
-    this->water = std::min(this->water, 255);
+    this->water = std::min(this->water, 100);
     this->affection = std::min(this->affection, 255);
     this->lastVisitTime = time(nullptr);
     save_cat();
@@ -168,13 +167,12 @@ std::string Cat::feed()
 }
 std::string Cat::water_f()
 {
-    if(this->water >= 245){
+    if(this->water >= 90){
         this->lastVisitTime = time(nullptr);
         save_cat();
         return get_random_text(catmain::get_text()["water"]["full"]);
     }
     this->water += 10;
-    this->water = std::min(this->water, 255);
     this->lastVisitTime = time(nullptr);
     save_cat();
     return get_random_text(catmain::get_text()["water"]["thirsty"]);
@@ -194,8 +192,8 @@ std::string Cat::care()
     this->food += 5;
     this->water += 5;
     this->affection += 5;
-    this->food = std::min(this->food, 255);
-    this->water = std::min(this->water, 255);
+    this->food = std::min(this->food, 100);
+    this->water = std::min(this->water, 100);
     this->affection = std::min(this->affection, 255);
     this->lastVisitTime = time(nullptr);
     save_cat();
@@ -222,35 +220,42 @@ std::string Cat::process(const std::string &input)
         this->water -= int(10.0 * (time(nullptr) - this->lastVisitTime) / 3600 / 6);
         this->water -= int(10.0 * (time(nullptr) - this->lastVisitTime) / 3600 / 6);
     }
+    std::string res;
+
+    if(affection <= 50 && get_random(3) == 0){
+        res += get_random_text(catmain::get_text()["affection_low"]) + "\n";
+    }
+
     if (time(nullptr) - this->lastVisitTime > 60)
     {
-        move();
+        res += move() + "\n";
     }
     if (input.find("intro") != std::string::npos)
     {
-        return intro();
+        res += intro();
     }
     else if (input.find("pat") != std::string::npos)
     {
-        return pat();
+        res += pat();
     }
     else if (input.find("feed") != std::string::npos)
     {
-        return feed();
+        res += feed();
     }
     else if (input.find("water") != std::string::npos)
     {
-        return water_f();
+        res += water_f();
     }
     else if (input.find("play") != std::string::npos)
     {
-        return play();
+        res += play();
     }
     else if (input.find("care") != std::string::npos)
     {
-        return care();
+        res += care();
     }
     else{
-        return "I don't recognize that.";
+        res += "I don't recognize that.";
     }
+    return res;
 }
