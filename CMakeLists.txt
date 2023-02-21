@@ -4,7 +4,7 @@ project(cq_bot)
 
 find_package(OpenSSL REQUIRED)
 include_directories(${OPENSSL_INCLUDE_DIR})
-include_directories("./inc")
+include_directories("./utils")
 include_directories("./interfaces")
 include_directories("./functions")
 include_directories("./events")
