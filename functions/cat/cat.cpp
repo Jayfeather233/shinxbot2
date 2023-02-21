@@ -1,6 +1,7 @@
 #include "cat.h"
 
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <ctime>
 #include <filesystem>
@@ -103,6 +104,7 @@ Cat::Cat(const std::string &name, int64_t user_id) : _id(user_id)
 
 Cat::Cat(int64_t user_id) : _id(user_id)
 {
+    if(user_id == -1) return;
     std::ifstream afile;
     afile.open("./config/cats/" + std::to_string(_id) + ".json", std::ios::in);
 

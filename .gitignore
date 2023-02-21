@@ -1,0 +1,14 @@
+a.out
+.vscode/
+build/
+test/
+config/port.txt
+resource/temp
+resource/download
+resource/generate
+log/
+test.cpp
+config/621_level.json
+config/proxy.json
+config/cats/
+config/openai.json

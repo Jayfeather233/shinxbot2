@@ -51,7 +51,7 @@ std::string do_post(const std::string &httpaddr, const Json::Value &json_message
 
     // Perform the HTTP request
     CURLcode curl_result = curl_easy_perform(curl_handle);
-    if (curl_result != CURLE_OK) {
+    if (curl_result != CURLE_OK || response.length()<=1) {
         curl_slist_free_all(header_list);
         curl_easy_cleanup(curl_handle);
         std::cerr<<"Connect failed. "<<curl_easy_strerror(curl_result)<<std::endl;
@@ -101,7 +101,7 @@ std::string do_get(const std::string &httpaddr, const std::map<std::string, std:
 
     // Perform the HTTP request
     CURLcode curl_result = curl_easy_perform(curl_handle);
-    if (curl_result != CURLE_OK) {
+    if (curl_result != CURLE_OK || response.length()<=1) {
         curl_slist_free_all(header_list);
         curl_easy_cleanup(curl_handle);
         std::cerr<<"Connect failed. "<<curl_easy_strerror(curl_result)<<std::endl;
