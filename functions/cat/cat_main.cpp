@@ -70,7 +70,7 @@ Json::Value catmain::get_text(){
 }
 
 void catmain::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
-    if(message == "[cat].help"){
+    if(message == "&#91;cat&#93;.help"){
         cq_send("\
 An interactive cat!\n\
 First use adopt to have one.\n\
@@ -83,13 +83,15 @@ Then you can play, feed and so on!(start with[cat])", message_type, user_id, gro
             cq_send("You already have one!", message_type, user_id, group_id);
             return;
         } else {
-            std::string name = trim(message.substr(11));
+            std::string name = trim(message.substr(19));
             if(name.length() <= 3){
                 cq_send("Please give it a name", message_type, user_id, group_id);
                 return;
             } else {
                 Cat newcat(name, user_id);
+                cat_map[user_id] = newcat;
                 cq_send(newcat.adopt(), message_type, user_id, group_id);
+                save_map();
             }
         }
     } else {
@@ -98,12 +100,12 @@ Then you can play, feed and so on!(start with[cat])", message_type, user_id, gro
             cq_send("You don't have one!\nUse [cat].adopt name to get a cute cat!", message_type, user_id, group_id);
             return;
         } else {
-            cq_send(cat_map[user_id].process(message), message_type, user_id, group_id);
+            cq_send(it->second.process(message), message_type, user_id, group_id);
         }
     }
 }
 bool catmain::check(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
-    return message.find("[cat]") == 0;
+    return message.find("&#91;cat&#93;") == 0;
 }
 std::string catmain::help(){
     return "online cat. [cat].help";

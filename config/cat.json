@@ -8,18 +8,29 @@
     "Hello, I'm {cat_name}.",
     "Hey, I'm {cat_name}."
   ],
-  "feed": [
-    "You fed {cat_name}.",
-    "Nom nom nom. Thanks for the food!",
-    "Mmm, that was delicious. Thanks!",
-    "Yum, thanks for the food."
-  ],
-  "water": [
-    "You gave {cat_name} some water.",
-    "Ah, refreshing. Thanks for the water!",
-    "Thanks for the water, I was getting thirsty.",
-    "Mmm, that hits the spot. Thanks!"
-  ],
+  "feed": {
+    "hungry": [
+      "You fed {cat_name}.",
+      "Nom nom nom. Thanks for the food!",
+      "Mmm, that was delicious. Thanks!",
+      "Yum, thanks for the food."
+    ],
+    "full": [
+      "Your cat seems not hungry.",
+      "Sniffed the food, {cat_name} go away."
+    ]
+  },
+  "water": {
+    "thirsty": [
+      "You gave {cat_name} some water.",
+      "Ah, refreshing. Thanks for the water!",
+      "Thanks for the water, I was getting thirsty.",
+      "Mmm, that hits the spot. Thanks!"
+    ],
+    "full": [
+      "It already have enough water."
+    ]
+  },
   "play": [
     "You played with {cat_name}.",
     "Wheee, this is fun!",
@@ -50,22 +61,34 @@
     "living_room": [
       "The living room is cozy and warm.",
       "The living room is the perfect place to relax.",
-      "The living room is the heart of the home."
+      "The living room is the heart of the home.",
+      "{cat_name} is lounging on the couch.",
+      "{cat_name} is curled up on a chair.",
+      "{cat_name} is playing with a toy mouse."
     ],
     "kitchen": [
       "The kitchen smells like delicious food.",
       "The kitchen is a busy and exciting place.",
-      "The kitchen is where all the action happens."
+      "The kitchen is where all the action happens.",
+      "{cat_name} is investigating the countertop.",
+      "{cat_name} is drinking from its water bowl.",
+      "{cat_name} is licking its paw.",
+      "{cat_name} is meowing for food."
     ],
     "bedroom": [
       "The bedroom is a peaceful and quiet space.",
       "The bedroom is the perfect place for a cat nap.",
-      "The bedroom is where I like to relax and unwind."
+      "The bedroom is where I like to relax and unwind.",
+      "{cat_name} is sleeping on the bed.",
+      "{cat_name} is grooming itself.",
+      "{cat_name} is staring out the window."
     ],
     "bathroom": [
       "The bathroom is a strange place for a cat to be.",
       "The bathroom is where humans go to do their business.",
-      "The bathroom is not the most exciting place for a cat to be."
+      "The bathroom is not the most exciting place for a cat to be.",
+      "{cat_name} is sitting in the sink.",
+      "{cat_name} is playing with a piece of toilet paper."
     ]
   }
 }

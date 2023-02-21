@@ -40,7 +40,13 @@ std::string Cat::get_random_text(const Json::Value &J)
 {
     Json::ArrayIndex sz = J.size();
     std::string res = J[get_random(sz)].asString();
-    return std::regex_replace(res, std::regex("{cat_name}"), name);
+    size_t pos = res.find("{cat_name}");
+    while (pos != std::string::npos) {
+        res.replace(pos, 10, name);
+        pos = res.find("{cat_name}", pos + name.length());
+    }
+
+    return res;
 }
 
 std::string Cat::getinfo()
@@ -60,11 +66,12 @@ std::string Cat::get_humanread_info()
 {
     std::ostringstream oss;
     oss << "name:\t" << name <<std::endl;
+    oss << "color:\t" << bodyColor <<std::endl;
     oss << "pattern:\t" << colorPattern <<std::endl;
     oss << "food: " << (food > 50 ? "good" : "hungry") <<std::endl;
     oss << "water: " << (water > 50 ? "good" : "thirsty") <<std::endl;
     oss << "affection: " << (affection > 50 ? "good" : "not good") <<std::endl;
-    oss << "place: " << getLocationString(location) <<std::endl;
+    oss << "place: " << getLocationString(location);
 
     return oss.str();
 }
@@ -126,6 +133,10 @@ Cat::Cat(int64_t user_id) : _id(user_id)
     }
 }
 
+std::string Cat::adopt()
+{
+    return get_random_text(catmain::get_text()["adopt"]) + "\n" + get_humanread_info();
+}
 std::string Cat::intro()
 {
     return get_random_text(catmain::get_text()["intro"]) + "\n" + get_humanread_info();
@@ -133,30 +144,47 @@ std::string Cat::intro()
 std::string Cat::pat()
 {
     this->affection += 10;
+    this->affection = std::min(this->affection, 255);
     this->lastVisitTime = time(nullptr);
     save_cat();
     return get_random_text(catmain::get_text()["pat"]);
 }
 std::string Cat::feed()
 {
+    if(this->food >= 245){
+        this->lastVisitTime = time(nullptr);
+        save_cat();
+        return get_random_text(catmain::get_text()["feed"]["full"]);
+    }
     this->food += 10;
     this->water += 5;
     this->affection += 5;
+    this->food = std::min(this->food, 255);
+    this->water = std::min(this->water, 255);
+    this->affection = std::min(this->affection, 255);
     this->lastVisitTime = time(nullptr);
     save_cat();
-    return get_random_text(catmain::get_text()["feed"]);
+    return get_random_text(catmain::get_text()["feed"]["hungry"]);
 }
 std::string Cat::water_f()
 {
+    if(this->water >= 245){
+        this->lastVisitTime = time(nullptr);
+        save_cat();
+        return get_random_text(catmain::get_text()["water"]["full"]);
+    }
     this->water += 10;
+    this->water = std::min(this->water, 255);
     this->lastVisitTime = time(nullptr);
     save_cat();
-    return get_random_text(catmain::get_text()["water"]);
+    return get_random_text(catmain::get_text()["water"]["thirsty"]);
 }
 std::string Cat::play()
 {
     this->affection += 10;
     this->food -= 5;
+    this->food = std::max(this->food, 0);
+    this->affection = std::min(this->affection, 255);
     this->lastVisitTime = time(nullptr);
     save_cat();
     return get_random_text(catmain::get_text()["play"]);
@@ -166,13 +194,12 @@ std::string Cat::care()
     this->food += 5;
     this->water += 5;
     this->affection += 5;
+    this->food = std::min(this->food, 255);
+    this->water = std::min(this->water, 255);
+    this->affection = std::min(this->affection, 255);
     this->lastVisitTime = time(nullptr);
     save_cat();
     return get_random_text(catmain::get_text()["care"]);
-}
-std::string Cat::adopt()
-{
-    return get_random_text(catmain::get_text()["adopt"]);
 }
 std::string Cat::move()
 {
