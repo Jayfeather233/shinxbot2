@@ -17,12 +17,12 @@ string patterns[] = {"solid", "tabby", "tortoiseshell", "calico", "siamese"};
 
 std::string Cat::generateRandomColor()
 {
-    return colors[rand() % 5];
+    return colors[get_random(5)];
 }
 
 std::string Cat::generateRandomPattern()
 {
-    return patterns[rand() % 5];
+    return patterns[get_random(5)];
 }
 
 std::string Cat::getLocationString(Place location)
@@ -42,7 +42,8 @@ std::string Cat::get_random_text(const Json::Value &J)
     Json::ArrayIndex sz = J.size();
     std::string res = J[get_random(sz)].asString();
     size_t pos = res.find("{cat_name}");
-    while (pos != std::string::npos) {
+    while (pos != std::string::npos)
+    {
         res.replace(pos, 10, name);
         pos = res.find("{cat_name}", pos + name.length());
     }
@@ -66,12 +67,12 @@ std::string Cat::getinfo()
 std::string Cat::get_humanread_info()
 {
     std::ostringstream oss;
-    oss << "name:\t" << name <<std::endl;
-    oss << "color:\t" << bodyColor <<std::endl;
-    oss << "pattern:\t" << colorPattern <<std::endl;
-    oss << "food: " << (food > 50 ? "good" : "hungry") <<std::endl;
-    oss << "water: " << (water > 50 ? "good" : "thirsty") <<std::endl;
-    oss << "affection: " << (affection > 50 ? "good" : "not good") <<std::endl;
+    oss << "name:\t" << name << std::endl;
+    oss << "color:\t" << bodyColor << std::endl;
+    oss << "pattern:\t" << colorPattern << std::endl;
+    oss << "food: " << (food > 50 ? "good" : "hungry") << std::endl;
+    oss << "water: " << (water > 50 ? "good" : "thirsty") << std::endl;
+    oss << "affection: " << (affection > 50 ? "good" : "not good") << std::endl;
     oss << "place: " << getLocationString(location);
 
     return oss.str();
@@ -104,7 +105,8 @@ Cat::Cat(const std::string &name, int64_t user_id) : _id(user_id)
 
 Cat::Cat(int64_t user_id) : _id(user_id)
 {
-    if(user_id == -1) return;
+    if (user_id == -1)
+        return;
     std::ifstream afile;
     afile.open("./config/cats/" + std::to_string(_id) + ".json", std::ios::in);
 
@@ -153,7 +155,8 @@ std::string Cat::pat()
 }
 std::string Cat::feed()
 {
-    if(this->food >= 90){
+    if (this->food >= 90)
+    {
         this->lastVisitTime = time(nullptr);
         save_cat();
         return get_random_text(catmain::get_text()["feed"]["full"]);
@@ -169,7 +172,8 @@ std::string Cat::feed()
 }
 std::string Cat::water_f()
 {
-    if(this->water >= 90){
+    if (this->water >= 90)
+    {
         this->lastVisitTime = time(nullptr);
         save_cat();
         return get_random_text(catmain::get_text()["water"]["full"]);
@@ -204,14 +208,22 @@ std::string Cat::care()
 std::string Cat::move()
 {
     Place new_pos;
-    do{
+    do
+    {
         new_pos = static_cast<Place>(get_random(4));
-    }while(new_pos == location);
+    } while (new_pos == location);
     location = new_pos;
     std::ostringstream oss;
     oss << "Your cat moved to " + getLocationString(location) << std::endl;
     oss << get_random_text(catmain::get_text()["place"][getLocationString(location)]);
     return oss.str();
+}
+
+std::string Cat::rename(const std::string &name)
+{
+    this->name = name;
+    save_cat();
+    return "change name to " + name;
 }
 
 std::string Cat::process(const std::string &input)
@@ -224,7 +236,8 @@ std::string Cat::process(const std::string &input)
     }
     std::string res;
 
-    if(affection <= 50 && get_random(3) == 0){
+    if (affection <= 50 && get_random(3) == 0)
+    {
         res += get_random_text(catmain::get_text()["affection_low"]) + "\n";
     }
 
@@ -232,15 +245,15 @@ std::string Cat::process(const std::string &input)
     {
         res += move() + "\n";
     }
-    if (input.find("intro") != std::string::npos)
+    if (input.find("intro") != std::string::npos || input.find("info") != std::string::npos)
     {
         res += intro();
     }
-    else if (input.find("pat") != std::string::npos)
+    else if (input.find("pat") != std::string::npos || input.find("pet") != std::string::npos)
     {
         res += pat();
     }
-    else if (input.find("feed") != std::string::npos)
+    else if (input.find("feed") != std::string::npos || input.find("food") != std::string::npos)
     {
         res += feed();
     }
@@ -256,7 +269,12 @@ std::string Cat::process(const std::string &input)
     {
         res += care();
     }
-    else{
+    else if (input.find("abandon") != std::string::npos)
+    {
+        res += "YOU.SHOULD.NOT.DO.THAT.";
+    }
+    else
+    {
         res += "I don't recognize that.";
     }
     return res;

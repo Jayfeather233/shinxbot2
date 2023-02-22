@@ -78,20 +78,35 @@ First use adopt to have one.\n\
 Then you can play, feed and so on!(start with[cat])", message_type, user_id, group_id);
         return;
     }
-    if(message.find("adopt") != std::string::npos){
+    if(message.find(".adopt") == 13){
         auto it = cat_map.find(user_id);
         if(it != cat_map.end()){
             cq_send("You already have one!", message_type, user_id, group_id);
             return;
         } else {
             std::string name = trim(message.substr(19));
-            if(name.length() <= 3){
+            if(name.length() <= 0){
                 cq_send("Please give it a name", message_type, user_id, group_id);
                 return;
             } else {
                 Cat newcat(name, user_id);
                 cat_map[user_id] = newcat;
                 cq_send(newcat.adopt(), message_type, user_id, group_id);
+                save_map();
+            }
+        }
+    } else if(message.find(".rename") == 13){
+        auto it = cat_map.find(user_id);
+        if(it == cat_map.end()){
+            cq_send("You don't have one!", message_type, user_id, group_id);
+            return;
+        } else {
+            std::string name = trim(message.substr(20));
+            if(name.length() <= 0){
+                cq_send("Please give it a name", message_type, user_id, group_id);
+                return;
+            } else {
+                cq_send(it->second.rename(name), message_type, user_id, group_id);
                 save_map();
             }
         }

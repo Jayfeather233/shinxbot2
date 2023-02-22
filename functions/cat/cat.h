@@ -43,6 +43,7 @@ public:
     std::string get_humanread_info();
     std::string intro();
     std::string adopt();
+    std::string rename(const std::string &name);
     std::string process(const std::string &input);
     void save_cat();
 };
