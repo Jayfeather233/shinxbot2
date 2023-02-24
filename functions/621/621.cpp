@@ -62,11 +62,13 @@ std::string e621::deal_input(const std::string &input, bool is_pool){
     if(res.find("order:") == res.npos && !is_pool){
         res += "+order:random";
     }
-    for(std::string it : n_search){
-        if(res.find(it) == res.npos){
-            res += "+-" + it;
+    res += "+-animated";
+    if(!is_pool)
+        for(std::string it : n_search){
+            if(res.find(it) == res.npos){
+                res += "+-" + it;
+            }
         }
-    }
     return res;
 }
 

@@ -76,7 +76,7 @@ int start_server(){
     int server_fd, new_socket;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
-    char buffer[10240] = {0};
+    char buffer[4096] = {0};
 
     // Create server socket
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
@@ -112,12 +112,20 @@ int start_server(){
             std::cerr << "Error accepting connection\n";
             continue;
         }
-        int valread = read(new_socket, buffer, 10230);
+        std::string s_buffer;
+        int valread;
+        while(1){
+            valread = read(new_socket, buffer, 4000);
+            s_buffer += buffer;
+            if(valread<4000){
+                break;
+            }
+        }
         if(valread == -1){
             std::cerr<<"Error read message.\n";
         }
 
-        std::istringstream iss((std::string)buffer);
+        std::istringstream iss(s_buffer);
         std::string line;
         while(getline(iss, line)){
             if(line[0]=='{'){
