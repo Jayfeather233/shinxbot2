@@ -206,6 +206,7 @@ int main(){
     functions.push_back(new r_color());
     functions.push_back(new e621());
     functions.push_back(new catmain());
+    functions.push_back(new ocr());
 
     events.push_back(new talkative());
     events.push_back(new m_change());
@@ -225,7 +226,7 @@ int main(){
     return 0;
 }
 
-std::string cq_send(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
+std::string cq_send(const std::string &message, const std::string &message_type, int64_t user_id, int64_t group_id){
     Json::Value input;
     input["message"] = message;
     input["message_type"] = message_type;
@@ -234,13 +235,11 @@ std::string cq_send(std::string message, std::string message_type, int64_t user_
     return cq_send("send_msg", input);
 }
 
-std::string cq_send(std::string end_point, Json::Value J){
-    std::string re = do_post("127.0.0.1:" + std::to_string(send_port) + "/" + end_point, J);
-    return re;
+std::string cq_send(const std::string &end_point, const Json::Value &J){
+    return do_post("127.0.0.1:" + std::to_string(send_port) + "/" + end_point, J, {}, false);
 }
-std::string cq_get(std::string end_point){
-    std::string re = do_get("127.0.0.1:" + std::to_string(send_port) + "/" + end_point);
-    return re;
+std::string cq_get(const std::string &end_point){
+    return do_get("127.0.0.1:" + std::to_string(send_port) + "/" + end_point, {}, false);
 }
 
 std::mutex mylock;

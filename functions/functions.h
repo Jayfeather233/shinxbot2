@@ -6,3 +6,4 @@
 #include "./forwardgenerator/forward.h"
 #include "./random_color/random_color.h"
 #include "./cat/cat.h"
+#include "./ocr/ocr.h"

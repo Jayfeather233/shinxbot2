@@ -20,13 +20,13 @@ enum LOG{
  * basic headers will automatically included,
  * you can add your own headers through map<>headers
 */
-std::string do_post(const std::string &httpaddr, const Json::Value &json_message, const std::map<std::string, std::string> &headers = {});
+std::string do_post(const std::string &httpaddr, const Json::Value &json_message, const std::map<std::string, std::string> &headers = {}, const bool proxy_flg = true);
 /**
  * do a http get.
  * basic headers will automatically included,
  * you can add your own headers through map<>headers
 */
-std::string do_get(const std::string &httpaddr, const std::map<std::string, std::string> &headers = {});
+std::string do_get(const std::string &httpaddr, const std::map<std::string, std::string> &headers = {}, const bool proxy_flg = true);
 /**
  * divide a http address.
  * Example: url = https://www.abc.com/hello/world
@@ -48,18 +48,18 @@ Json::Value string_to_json(std::string str);
  * send a message to go-cqhttp
  * message_type can be "group" or "private"
 */
-std::string cq_send(std::string message, std::string message_type, int64_t user_id, int64_t group_id);
+std::string cq_send(const std::string &message, const std::string &message_type, int64_t user_id, int64_t group_id);
 /**
  * send a message to go-cqhttp
  * end_point can be "send_msg", "set_friend_add_request"... that supported by go-cq
  * J is the value
 */
-std::string cq_send(std::string end_point, Json::Value J);
+std::string cq_send(const std::string &end_point, const Json::Value &J);
 /**
  * get some info from go-cqhttp
  * end_point can be "get_login_info"... that supported by go-cq
 */
-std::string cq_get(std::string end_point);
+std::string cq_get(const std::string &end_point);
 /**
  * output the message to file and stdout.
 */

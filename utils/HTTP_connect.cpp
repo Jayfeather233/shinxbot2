@@ -8,7 +8,7 @@ static size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdat
     response->append(ptr, num_bytes);
     return num_bytes;
 }
-std::string do_post(const std::string &httpaddr, const Json::Value &json_message, const std::map<std::string, std::string> &headers) {
+std::string do_post(const std::string &httpaddr, const Json::Value &json_message, const std::map<std::string, std::string> &headers, const bool proxy_flg) {
 
     // Create a new curl handle
     CURL *curl_handle = curl_easy_init();
@@ -35,12 +35,14 @@ std::string do_post(const std::string &httpaddr, const Json::Value &json_message
     std::string json_string = json_message.toStyledString();
     curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, json_string.c_str());
 
-    const char *http_proxy = std::getenv("http_proxy");
-    if (!http_proxy) {
-        http_proxy = std::getenv("HTTP_PROXY");
-    }
-    if (http_proxy) {
-        curl_easy_setopt(curl_handle, CURLOPT_PROXY, http_proxy);
+    if(proxy_flg){
+        const char *http_proxy = std::getenv("http_proxy");
+        if (!http_proxy) {
+            http_proxy = std::getenv("HTTP_PROXY");
+        }
+        if (http_proxy) {
+            curl_easy_setopt(curl_handle, CURLOPT_PROXY, http_proxy);
+        }
     }
 
 
@@ -64,7 +66,7 @@ std::string do_post(const std::string &httpaddr, const Json::Value &json_message
     return response;
 }
 
-std::string do_get(const std::string &httpaddr, const std::map<std::string, std::string> &headers) {
+std::string do_get(const std::string &httpaddr, const std::map<std::string, std::string> &headers, const bool proxy_flg) {
 
     // Create a new curl handle
     CURL *curl_handle = curl_easy_init();
@@ -86,12 +88,14 @@ std::string do_get(const std::string &httpaddr, const std::map<std::string, std:
     }
     curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, header_list);
 
-    const char *http_proxy = std::getenv("http_proxy");
-    if (!http_proxy) {
-        http_proxy = std::getenv("HTTP_PROXY");
-    }
-    if (http_proxy) {
-        curl_easy_setopt(curl_handle, CURLOPT_PROXY, http_proxy);
+    if(proxy_flg){
+        const char *http_proxy = std::getenv("http_proxy");
+        if (!http_proxy) {
+            http_proxy = std::getenv("HTTP_PROXY");
+        }
+        if (http_proxy) {
+            curl_easy_setopt(curl_handle, CURLOPT_PROXY, http_proxy);
+        }
     }
 
     // Set the callback function for receiving data from the HTTP response
