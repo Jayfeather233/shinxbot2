@@ -207,6 +207,7 @@ int main(){
     functions.push_back(new e621());
     functions.push_back(new catmain());
     functions.push_back(new ocr());
+    functions.push_back(new httpcats());
 
     events.push_back(new talkative());
     events.push_back(new m_change());
