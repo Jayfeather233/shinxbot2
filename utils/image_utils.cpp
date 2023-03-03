@@ -4,9 +4,9 @@
 #include <fstream>
 #include <string>
 
-void download(const std::string& httpAddress, const std::string& filePath, const std::string& fileName) {
+void download(const std::string& httpAddress, const std::string& filePath, const std::string& fileName, const bool proxy) {
     try {
-        std::string data = do_get(httpAddress);
+        std::string data = do_get(httpAddress, {}, proxy);
         std::ofstream out(filePath + "/" + fileName, std::ios::out | std::ios::binary);
         out.write(data.c_str(), data.size());
         out.close();

@@ -20,13 +20,13 @@ enum LOG{
  * basic headers will automatically included,
  * you can add your own headers through map<>headers
 */
-std::string do_post(const std::string &httpaddr, const Json::Value &json_message, const std::map<std::string, std::string> &headers = {}, const bool proxy_flg = true);
+std::string do_post(const std::string &httpaddr, const Json::Value &json_message, const std::map<std::string, std::string> &headers = {}, const bool proxy_flg = false);
 /**
  * do a http get.
  * basic headers will automatically included,
  * you can add your own headers through map<>headers
 */
-std::string do_get(const std::string &httpaddr, const std::map<std::string, std::string> &headers = {}, const bool proxy_flg = true);
+std::string do_get(const std::string &httpaddr, const std::map<std::string, std::string> &headers = {}, const bool proxy_flg = false);
 /**
  * divide a http address.
  * Example: url = https://www.abc.com/hello/world
@@ -109,4 +109,4 @@ void addRandomNoise(const std::string& filePath);
  * download a image from a http address.
  * save it into "filePath/fileName"
 */
-void download(const std::string& httpAddr, const std::string& filePath, const std::string& fileName);
+void download(const std::string& httpAddr, const std::string& filePath, const std::string& fileName, const bool proxy = false);

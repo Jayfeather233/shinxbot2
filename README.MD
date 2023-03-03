@@ -16,6 +16,12 @@
 
 - 来点色图：随机色卡
 
+- 赛博养猫
+
+- cat image for http code。来源[httpcats](https://httpcats.com/)
+
+- 图片OCR
+
 
 ### 关于源文件
 
@@ -40,6 +46,8 @@ maybe it will work
 ```
 
 这些库怎么装？问chatGPT。
+
+需要先配置并启动[go-cqhttp](https://github.com/Mrs4s/go-cqhttp)。打开 "反向HTTP POST地址"，并设置你自己的接收端口。（一般在go-cqhttp目录下的config.yaml）
 
 linux: 运行build.sh，自动执行cmake和make编译并运行
 

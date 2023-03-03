@@ -1,6 +1,7 @@
 #include "utils.h"
 
 #include <iostream>
+#include <mutex>
 
 static size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdata) {
     std::string *response = (std::string *) userdata;
@@ -8,8 +9,12 @@ static size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdat
     response->append(ptr, num_bytes);
     return num_bytes;
 }
+
+std::mutex http_lock;
+
 std::string do_post(const std::string &httpaddr, const Json::Value &json_message, const std::map<std::string, std::string> &headers, const bool proxy_flg) {
 
+    std::lock_guard<std::mutex> guard(http_lock);
     // Create a new curl handle
     CURL *curl_handle = curl_easy_init();
     if (!curl_handle) {
@@ -68,6 +73,7 @@ std::string do_post(const std::string &httpaddr, const Json::Value &json_message
 
 std::string do_get(const std::string &httpaddr, const std::map<std::string, std::string> &headers, const bool proxy_flg) {
 
+    std::lock_guard<std::mutex> guard(http_lock);
     // Create a new curl handle
     CURL *curl_handle = curl_easy_init();
     if (!curl_handle) {

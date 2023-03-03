@@ -116,7 +116,7 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
             Json::Value Ja = string_to_json(
                 do_get("https://e621.net/tags/autocomplete.json?search[name_matches]=" + message + "&expiry=7",
                     {{"user-agent", "AutoSearch/1.0 (by " + username + " on e621)"},
-                    {"Authorization", "basic " + base64::to_base64(username + ":" + authorkey)}}));
+                    {"Authorization", "basic " + base64::to_base64(username + ":" + authorkey)}}, true));
             std::string res;
             Json::ArrayIndex sz = Ja.size();
             for(Json::ArrayIndex i = 0; i < sz; i++){
@@ -152,7 +152,7 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
             J = string_to_json(
                 do_get("https://e621.net/posts.json?limit=50&tags=" + input,
                         {{"user-agent", "AutoSearch/1.0 (by " + username + " on e621)"},
-                        {"Authorization", "basic " + base64::to_base64(username + ":" + authorkey)}})
+                        {"Authorization", "basic " + base64::to_base64(username + ":" + authorkey)}}, true)
             );
             break;
         } catch (...){
@@ -198,7 +198,7 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
         Json::Value J3 = string_to_json(
             do_get("https://e621.net/pools.json?search[id]=" + std::to_string(pool_id),
                     {{"user-agent", "AutoSearch/1.0 (by " + username + " on e621)"},
-                    {"Authorization", "basic " + base64::to_base64(username + ":" + authorkey)}})
+                    {"Authorization", "basic " + base64::to_base64(username + ":" + authorkey)}}, true)
         )[0];
 
         std::string res_message;
@@ -329,7 +329,7 @@ std::string e621::get_image_info(const Json::Value &J, int count, bool poolFlag,
     std::string imageLocalPath = std::to_string(id) + '.' + fileExt;
 
     if (!std::ifstream("./resource/download/e621/" + imageLocalPath)) {
-        download(imageUrl, "./resource/download/e621", imageLocalPath);
+        download(imageUrl, "./resource/download/e621", imageLocalPath, true);
     }
     addRandomNoise("./resource/download/e621/" + imageLocalPath);
 

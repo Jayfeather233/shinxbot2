@@ -17,7 +17,7 @@ void hhsh::process(std::string message, std::string message_type, int64_t user_i
     Json::Value Ja;
 
     try{
-        Ja = string_to_json(do_post("https://lab.magiconch.com/api/nbnhhsh/guess", J));
+        Ja = string_to_json(do_post("https://lab.magiconch.com/api/nbnhhsh/guess", J, {}, true));
     } catch (...) {
         setlog(LOG::WARNING, "failed to connect to hhsh");
         cq_send("failed to connect to hhsh", message_type, user_id, group_id);

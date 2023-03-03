@@ -137,7 +137,7 @@ int start_server(){
         std::stringstream response_body;
         response_body << (std::string)"HTTP/1.1 200 OK\r\n"+
                     "Content-Length: 0\r\n"+
-                    "Content-Type: application/json\r\n\n";
+                    "Content-Type: application/json\r\n\r\n";
         std::string response = response_body.str();
         const char* response_cstr = response.c_str();
         send(new_socket, response_cstr, strlen(response_cstr), 0);
@@ -237,10 +237,10 @@ std::string cq_send(const std::string &message, const std::string &message_type,
 }
 
 std::string cq_send(const std::string &end_point, const Json::Value &J){
-    return do_post("127.0.0.1:" + std::to_string(send_port) + "/" + end_point, J, {}, false);
+    return do_post("127.0.0.1:" + std::to_string(send_port) + "/" + end_point, J);
 }
 std::string cq_get(const std::string &end_point){
-    return do_get("127.0.0.1:" + std::to_string(send_port) + "/" + end_point, {}, false);
+    return do_get("127.0.0.1:" + std::to_string(send_port) + "/" + end_point);
 }
 
 std::mutex mylock;
