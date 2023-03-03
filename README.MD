@@ -22,6 +22,8 @@
 
 - 图片OCR
 
+- openai的`gpt-3.5-turbo` API支持
+
 
 ### 关于源文件
 
@@ -63,6 +65,8 @@ functions传参仅为消息相关，events传入事件的JSON数据
 
 1. ./functions 下新建目录并把代码放入，写一个类继承./interfaces/processable.h中的类并实现virtual方法（可以参考我其他功能的写法）
 
-2. ./functions/functions.h 中加入你的.h
+2. 继承的virtual方法里只要check()成功了就会执行process()方法
 
-3. main.cpp中main函数里加入functions.push_back(new your_name());
+3. ./functions/functions.h 中加入你的.h
+
+4. main.cpp中main函数里加入functions.push_back(new your_name());
