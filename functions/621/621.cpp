@@ -62,7 +62,7 @@ std::string e621::deal_input(const std::string &input, bool is_pool){
     if(res.find("order:") == res.npos && !is_pool){
         res += "+order:random";
     }
-    res += "+-animated";
+    //res += "+-animated";
     if(!is_pool)
         for(std::string it : n_search){
             if(res.find(it) == res.npos){
@@ -331,9 +331,14 @@ std::string e621::get_image_info(const Json::Value &J, int count, bool poolFlag,
     if (!std::ifstream("./resource/download/e621/" + imageLocalPath)) {
         download(imageUrl, "./resource/download/e621", imageLocalPath, true);
     }
-    addRandomNoise("./resource/download/e621/" + imageLocalPath);
+    if(fileExt != "gif" && fileExt != "webm" && fileExt != "mp4")
+        addRandomNoise("./resource/download/e621/" + imageLocalPath);
 
-    quest << "[CQ:image,file=file://" << get_local_path() << "/resource/download/e621/" << imageLocalPath << ",id=40000]\n";
+    if(fileExt != "webm" && fileExt != "mp4"){
+        quest << "[CQ:image,file=file://" << get_local_path() << "/resource/download/e621/" << imageLocalPath << ",id=40000]\n";
+    } else {
+        quest << "Get video. id: " + std::to_string(id) << std::endl;
+    }
     quest << "Fav_count: " << fav_count << "  Score: " << score << "\n";
 
     auto poolList = J["pools"];

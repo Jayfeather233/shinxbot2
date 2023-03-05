@@ -58,8 +58,13 @@ gpt3_5::gpt3_5(){
                 default_prompt = res[tmp];
             }
         }
+        sz = res["op"].size();
+        for(Json::ArrayIndex i = 0; i < sz; i ++){
+            op_list.insert(res["op"][i].asInt64());
+        }
     }
     is_lock = false;
+    is_open = false;
 }
 
 int64_t getlength(const Json::Value &J){
@@ -76,28 +81,44 @@ std::mutex gptlock;
 void gpt3_5::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     message = trim(message.substr(3));
     int64_t id = message_type == "group" ? (group_id<<1) : ((user_id<<1)|1);
-    if(message.find("reset") == 0){
+    if(message.find(".reset") == 0){
         history[id] = default_prompt;
         cq_send("reset done. (pre-prompt was also reset)", message_type, user_id, group_id);
         return;
     }
-    if(message.find("change")==0){
-        message = trim(message.substr(6));
-        auto it = modes.find(message);
-        if(it == modes.end()){
-            std::string res = "avaliable mdoes:";
-            for(std::string u : modes){
-                res += " " + u;
+    if(message.find(".change")==0){
+        if(op_list.find(user_id) != op_list.end()){
+            message = trim(message.substr(7));
+            auto it = modes.find(message);
+            if(it == modes.end()){
+                std::string res = "avaliable mdoes:";
+                for(std::string u : modes){
+                    res += " " + u;
+                }
+                cq_send(res, message_type, user_id, group_id);
+            } else {
+                history[id] = mode_prompt[*it];
+                cq_send("change done.", message_type, user_id, group_id);
             }
-            cq_send(res, message_type, user_id, group_id);
         } else {
-            history[id] = mode_prompt[*it];
-            cq_send("change done.", message_type, user_id, group_id);
+                cq_send("Not on op list.", message_type, user_id, group_id);
+        }
+        return;
+    }
+    if(message.find(".sw")==0){
+        if(op_list.find(user_id) != op_list.end()){
+            is_open = !is_open;
+        } else {
+                cq_send("Not on op list.", message_type, user_id, group_id);
         }
         return;
     }
     if(is_lock){
         cq_send("请等待上次输入的回复。", message_type, user_id, group_id);
+        return;
+    }
+    if(!is_open){
+        cq_send("已关闭。", message_type, user_id, group_id);
         return;
     }
     if(history.find(id) == history.end()){
@@ -119,10 +140,9 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
     J["model"] = "gpt-3.5-turbo";
     J["messages"] = history[id];
     J["temperature"] = 0.7;
-    setlog(LOG::INFO, "openai: before send user " + std::to_string(user_id));
     J = string_to_json(do_post("https://api.openai.com/v1/chat/completions", J, {{"Content-Type","application/json"},{"Authorization", "Bearer " + key}}, true));
-    std::cout<<J.toStyledString()<<std::endl;
-    setlog(LOG::INFO, "openai: after send user " + std::to_string(user_id));
+    //std::cout<<J.toStyledString()<<std::endl;
+    setlog(LOG::INFO, "openai: user " + std::to_string(user_id));
     is_lock = false;
     if(J.isMember("error")){
         cq_send("Openai ERROR: " + J["error"]["message"].asString(), message_type, user_id, group_id);

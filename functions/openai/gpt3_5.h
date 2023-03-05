@@ -6,11 +6,12 @@
 
 class gpt3_5 : public processable {
 private:
-    bool is_lock;
+    bool is_lock, is_open;
     Json::Value default_prompt;
     std::map<int64_t, Json::Value> pre_prompt;
     std::map<int64_t, Json::Value> history;
     std::set<std::string> modes;
+    std::set<int64_t> op_list;
     std::map<std::string, Json::Value> mode_prompt;
     std::string key;
 public:
