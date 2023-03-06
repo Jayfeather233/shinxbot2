@@ -58,7 +58,7 @@ gpt3_5::gpt3_5(){
             modes.insert(tmp);
             mode_prompt[tmp] = res[tmp];
             if(i == 0){
-                default_prompt = res[tmp];
+                default_prompt = tmp;
             }
         }
         sz = res["op"].size();
@@ -109,11 +109,7 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
     int64_t id = message_type == "group" ? (group_id<<1) : ((user_id<<1)|1);
     if(message.find(".reset") == 0){
         auto it = pre_default.find(id);
-        if(it!=pre_default.end()){
-            history[id] = mode_prompt[it->second];
-        } else {
-            history[id] = default_prompt;
-        }
+        history[id].clear();
         cq_send("reset done.", message_type, user_id, group_id);
         return;
     }
@@ -128,7 +124,7 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
                 }
                 cq_send(res, message_type, user_id, group_id);
             } else {
-                history[id] = mode_prompt[*it];
+                history[id].clear();
                 pre_default[id] = *it;
                 cq_send("change done.", message_type, user_id, group_id);
             }
@@ -155,7 +151,7 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
         return;
     }
     if(history.find(id) == history.end()){
-        history[id] = default_prompt;
+        pre_default[id] = default_prompt;
     }
     std::lock_guard<std::mutex> lock(gptlock);
     is_lock = true;
@@ -165,13 +161,21 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
     history[id].append(J);
     J = history[id];
     while(getlength(J)>4000 - MAX_REPLY){
-        J.removeIndex(1, &ign);
+        J.removeIndex(0, &ign);
     }
 
     history[id] = J;
     J = Json::Value();
     J["model"] = "gpt-3.5-turbo";
-    J["messages"] = history[id];
+    Json::Value K = mode_prompt[pre_default[id]];
+    auto it = history.find(id);
+    if(it!=history.end()){
+        Json::ArrayIndex sz = it->second.size();
+        for(Json::ArrayIndex i = 0; i < sz; i++){
+            K.append(it->second[i]);
+        }
+    }
+    J["messages"] = K;
     J["temperature"] = 0.7;
     J["max_tokens"] = MAX_REPLY;
     try{
