@@ -24,6 +24,8 @@
  * message, and therefore important instructions are often better placed in a user message.
 */
 
+const int MAX_REPLY = 1000;
+
 gpt3_5::gpt3_5(){
     if(!std::filesystem::exists("./config/openai.json")){
         std::cout<<"Please config your openai key in openai.json (and restart)"<<std::endl;
@@ -31,8 +33,9 @@ gpt3_5::gpt3_5(){
         of << 
             "{"
             "\"key\": \"\","
-            "\"mode\": [\"sfw\"],"
-            "\"sfw\": [{\"role\": \"system\", \"content\": \"You are a helpful assistant.\"}]"
+            "\"mode\": [\"default\"],"
+            "\"default\": [{\"role\": \"system\", \"content\": \"You are a helpful assistant.\"}],"
+            "\"black_list\": [\"股票\"]"
             "}";
         of.close();
     } else {
@@ -62,9 +65,13 @@ gpt3_5::gpt3_5(){
         for(Json::ArrayIndex i = 0; i < sz; i ++){
             op_list.insert(res["op"][i].asInt64());
         }
+        sz = res["black_list"].size();
+        for(Json::ArrayIndex i = 0; i < sz; i ++){
+            black_list.insert(res["black_list"][i].asString());
+        }
     }
     is_lock = false;
-    is_open = false;
+    is_open = true;
 }
 
 int64_t getlength(const Json::Value &J){
@@ -78,12 +85,35 @@ int64_t getlength(const Json::Value &J){
 
 std::mutex gptlock;
 
+std::string gpt3_5::do_black(std::string msg){
+    std::string p1,p2;
+    for(std::string u : black_list){
+        size_t pos = msg.find(u);
+        while(pos != std::string::npos){
+            p1 = msg.substr(0,pos);
+            p2 = msg.substr(pos + u.length());
+            msg = p1 + "__" + p2;
+            pos = msg.find(u, pos);
+        }
+    }
+}
+
 void gpt3_5::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     message = trim(message.substr(3));
+    message = do_black(message);
+    if(message.find(".test") == 0){
+        cq_send(message, message_type, user_id, group_id);
+        return;
+    }
     int64_t id = message_type == "group" ? (group_id<<1) : ((user_id<<1)|1);
     if(message.find(".reset") == 0){
-        history[id] = default_prompt;
-        cq_send("reset done. (pre-prompt was also reset)", message_type, user_id, group_id);
+        auto it = pre_default.find(id);
+        if(it!=pre_default.end()){
+            history[id] = mode_prompt[it->second];
+        } else {
+            history[id] = default_prompt;
+        }
+        cq_send("reset done.", message_type, user_id, group_id);
         return;
     }
     if(message.find(".change")==0){
@@ -98,6 +128,7 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
                 cq_send(res, message_type, user_id, group_id);
             } else {
                 history[id] = mode_prompt[*it];
+                pre_default[id] = *it;
                 cq_send("change done.", message_type, user_id, group_id);
             }
         } else {
@@ -108,8 +139,9 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
     if(message.find(".sw")==0){
         if(op_list.find(user_id) != op_list.end()){
             is_open = !is_open;
+            cq_send("is_open: " + std::to_string(is_open), message_type, user_id, group_id);
         } else {
-                cq_send("Not on op list.", message_type, user_id, group_id);
+            cq_send("Not on op list.", message_type, user_id, group_id);
         }
         return;
     }
@@ -131,7 +163,7 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
     J["content"] = message;
     history[id].append(J);
     J = history[id];
-    while(getlength(J)>2000){
+    while(getlength(J)>4000 - MAX_REPLY){
         J.removeIndex(1, &ign);
     }
 
@@ -140,14 +172,25 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
     J["model"] = "gpt-3.5-turbo";
     J["messages"] = history[id];
     J["temperature"] = 0.7;
-    J = string_to_json(do_post("https://api.openai.com/v1/chat/completions", J, {{"Content-Type","application/json"},{"Authorization", "Bearer " + key}}, true));
-    //std::cout<<J.toStyledString()<<std::endl;
+    J["max_tokens"] = MAX_REPLY;
+    try{
+        J = string_to_json(do_post("https://api.openai.com/v1/chat/completions", J, {{"Content-Type","application/json"},{"Authorization", "Bearer " + key}}, true));
+    } catch (...){
+        J.clear();
+        J["error"]["message"] = "http connection failed.";
+    }
     setlog(LOG::INFO, "openai: user " + std::to_string(user_id));
     is_lock = false;
     if(J.isMember("error")){
         cq_send("Openai ERROR: " + J["error"]["message"].asString(), message_type, user_id, group_id);
     }else{
-        cq_send(J["choices"][0]["message"]["content"].asString(), message_type, user_id, group_id);
+        std::string msg = J["choices"][0]["message"]["content"].asString();
+        msg = do_black(msg);
+        cq_send(msg, message_type, user_id, group_id);
+        J.clear();
+        J["role"] = "assistant";
+        J["content"] = msg;
+        history[id].append(J);
     }
 }
 bool gpt3_5::check(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
