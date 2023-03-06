@@ -28,7 +28,7 @@ const int MAX_REPLY = 1000;
 
 gpt3_5::gpt3_5(){
     if(!std::filesystem::exists("./config/openai.json")){
-        std::cout<<"Please config your openai key in openai.json (and restart)"<<std::endl;
+        std::cout<<"Please config your openai key in openai.json (and restart) OR see openai_example.json"<<std::endl;
         std::ofstream of("./config/openai.json", std::ios::out);
         of << 
             "{"

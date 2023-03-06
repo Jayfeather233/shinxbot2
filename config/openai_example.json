@@ -1,0 +1,43 @@
+{
+    "key": "abcdefg",
+    "mode": [
+        "a1", "so the default mode will be a1(delete this)",
+        "a2",
+        "a3"
+    ],
+    "op": [
+        123456789,
+        "This means the user(QQ ID) can do op operation(delete this line)"
+    ],
+    "a1": [
+        {
+            "role": "system",
+            "content": "You are a helpful assistant."
+        }
+    ],
+    "a2": [
+        {
+            "role": "user",
+            "content": "xx"
+        },
+        {
+            "role": "assistant",
+            "content": "xx"
+        },
+        {
+            "role": "user",
+            "content": "xx"
+        },
+        {
+            "role": "assistant",
+            "content": "xx"
+        }
+    ],
+    "a3": [
+        {
+            "role": "system",
+            "content": "You are a helpful assistant."
+        }
+    ],
+    "black_list": ["股票","涩涩","色色", "Words in here will be replaced with __"]
+}
