@@ -96,6 +96,7 @@ std::string gpt3_5::do_black(std::string msg){
             pos = msg.find(u, pos);
         }
     }
+    return msg;
 }
 
 void gpt3_5::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
