@@ -24,6 +24,7 @@
  * message, and therefore important instructions are often better placed in a user message.
 */
 
+const int MAX_TOKEN = 4000;
 const int MAX_REPLY = 1000;
 
 gpt3_5::gpt3_5(){
@@ -108,8 +109,10 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
     }
     int64_t id = message_type == "group" ? (group_id<<1) : ((user_id<<1)|1);
     if(message.find(".reset") == 0){
-        auto it = pre_default.find(id);
-        history[id].clear();
+        auto it = history.find(id);
+        if(it!=history.end()){
+            it->second.clear();
+        }
         cq_send("reset done.", message_type, user_id, group_id);
         return;
     }
@@ -160,7 +163,7 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
     J["content"] = message;
     history[id].append(J);
     J = history[id];
-    while(getlength(J)>4000 - MAX_REPLY){
+    while(getlength(J) > MAX_TOKEN - MAX_REPLY){
         J.removeIndex(0, &ign);
     }
 
@@ -202,5 +205,5 @@ bool gpt3_5::check(std::string message, std::string message_type, int64_t user_i
     return message.find(".ai") == 0;
 }
 std::string gpt3_5::help(){
-    return "Openai gpt3.5: start with ai.";
+    return "Openai gpt3.5: start with .ai";
 }

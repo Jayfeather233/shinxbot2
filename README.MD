@@ -20,9 +20,9 @@
 
 - cat image for http code。来源[httpcats](https://httpcats.com/)
 
-- 图片OCR
+- 图片OCR (qq自带的那个)
 
-- openai的`gpt-3.5-turbo` API支持
+- openai的 `gpt-3.5-turbo` API支持
 
 
 ### 关于源文件
