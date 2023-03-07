@@ -62,7 +62,15 @@ void input_process(std::string *input){
                 } else {
                     for (processable *func : functions) {
                         if (func->check(message, message_type, user_id, group_id)) {
-                            func->process(message, message_type, user_id, group_id);
+                            try{
+                                func->process(message, message_type, user_id, group_id);
+                            } catch (std::string e){
+                                cq_send("Throw an string: " + e, message_type, user_id, group_id);
+                            } catch (std::exception e){
+                                cq_send((std::string)"Throw an exception: " + e.what(), message_type, user_id, group_id);
+                            } catch (...){
+                                cq_send((std::string)"Throw an unknown error", message_type, user_id, group_id);
+                            }
                         }
                     }
                 }
