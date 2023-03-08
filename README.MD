@@ -41,8 +41,10 @@
 
 ```
 libcurl: sudo apt-get install libcurl4-openssl-dev
-jsoncpp: install libjsoncpp-dev
-CImg: download and include CImg.h and install libjpeg-dev libpng-dev
+openssl: sudo apt-get install openssl-dev
+jsoncpp: sudo apt-get install libjsoncpp-dev
+CImg: download and include CImg.h
+      and sudo apt-get install libjpeg-dev libpng-dev
 base64: download and include base64.hpp
 maybe it will work
 ```
