@@ -7,52 +7,19 @@
 Json::Value catmain::cat_text;
 
 catmain::catmain(){
-    std::ifstream afile;
-    afile.open("./config/cat.json", std::ios::in);
-
-    if (afile.is_open()){
-        std::string ans, line;
-        while (!afile.eof())
-        {
-            getline(afile, line);
-            ans += line + "\n";
-        }
-        afile.close();
-
+    std::string ans = readfile("./config/cat.json");
+    if (ans != ""){
         Json::Value J = string_to_json(ans);
-
         cat_text = J;
-
-        afile.close();
     } else {
         setlog(LOG::ERROR, "Missing file: ./config/cat.json");
     }
 
-    afile.open("./config/cats/user_list.json", std::ios::in);
-    if (afile.is_open()){
-        std::string ans, line;
-        while (!afile.eof())
-        {
-            getline(afile, line);
-            ans += line + "\n";
-        }
-        afile.close();
-
-        Json::Value user_list = string_to_json(ans);
-
-        auto sz = user_list.size();
-
-        for(Json::ArrayIndex i = 0; i < sz; ++i){
-            cat_map[user_list[i].asInt64()] = Cat((int64_t)user_list[i].asInt64());
-        }
-
-        afile.close();
-    } else {
-        if(!std::filesystem::exists("./config/cats"))
-            std::filesystem::create_directory("./config/cats");
-        std::ofstream of("./config/cats/user_list.json", std::ios::out);
-        of << "[]";
-        of.close();
+    ans = readfile("./config/cats/user_list.json", "[]");
+    Json::Value user_list = string_to_json(ans);
+    auto sz = user_list.size();
+    for(Json::ArrayIndex i = 0; i < sz; ++i){
+        cat_map[user_list[i].asInt64()] = Cat((int64_t)user_list[i].asInt64());
     }
 }
 
@@ -61,9 +28,7 @@ void catmain::save_map(){
     for(auto it : cat_map){
         J.append(it.first);
     }
-    std::ofstream of("./config/cats/user_list.json", std::ios::out);
-    of << J.toStyledString();
-    of.close();
+    writefile("./config/cats/user_list.json", J.toStyledString());
 }
 
 Json::Value catmain::get_text(){

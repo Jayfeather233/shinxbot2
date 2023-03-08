@@ -204,8 +204,6 @@ void init(){
 int main(){
     curl_global_init(CURL_GLOBAL_ALL);
 
-    init();
-
     functions.push_back(new AnimeImg());
     functions.push_back(new auto114());
     functions.push_back(new hhsh());
@@ -222,6 +220,8 @@ int main(){
     events.push_back(new m_change());
     events.push_back(new friendadd());
     events.push_back(new poke());
+    
+    init();
 
     start_server();
 

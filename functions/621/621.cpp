@@ -7,49 +7,18 @@
 #include <fstream>
 #include <iostream>
 
-void parse_ja_to_map(const Json::Value &J, std::map<int64_t, bool>&mp){
-    Json::ArrayIndex sz = J.size();
-    for(Json::ArrayIndex i = 0; i < sz; i++){
-        mp[J[i].asInt64()] = true;
-    }
-}
-Json::Value parse_map_to_ja(const std::map<int64_t, bool>&mp){
-    Json::Value Ja;
-    for(auto u : mp){
-        if(u.second){
-            Ja.append(u.first);
-        }
-    }
-    return Ja;
-}
-
 e621::e621(){
-    std::ifstream afile;
-    afile.open("./config/621_level.json", std::ios::in);
+    std::string ans = readfile("./config/621_level.json", "{}");
+    Json::Value J = string_to_json(ans);
 
-    if(afile.is_open()){
-        std::string ans, line;
-        while (!afile.eof()) {
-            getline(afile, line);
-            ans += line + "\n";
-        }
-        afile.close();
-
-        Json::Value J = string_to_json(ans);
-
-        username = J["username"].asString();
-        authorkey = J["authorkey"].asString();
-        parse_ja_to_map(J["group"], group);
-        parse_ja_to_map(J["user"], user);
-        parse_ja_to_map(J["admin"], admin);
-        Json::ArrayIndex sz = J["n_search"].size();
-        for(Json::ArrayIndex i = 0; i < sz; i++){
-            n_search.insert(J["n_search"][i].asString());
-        }
-
-        afile.close();
-    } else {
-        
+    username = J["username"].asString();
+    authorkey = J["authorkey"].asString();
+    parse_json_to_map(J["group"], group);
+    parse_json_to_map(J["user"], user);
+    parse_json_to_map(J["admin"], admin);
+    Json::ArrayIndex sz = J["n_search"].size();
+    for(Json::ArrayIndex i = 0; i < sz; i++){
+        n_search.insert(J["n_search"][i].asString());
     }
 }
 
@@ -262,20 +231,16 @@ void e621::save(){
     Json::Value J;
     J["authorkey"] = authorkey;
     J["username"] = username;
-    J["user"] = parse_map_to_ja(user);
-    J["group"] = parse_map_to_ja(group);
-    J["admin"] = parse_map_to_ja(admin);
+    J["user"] = parse_map_to_json(user);
+    J["group"] = parse_map_to_json(group);
+    J["admin"] = parse_map_to_json(admin);
     Json::Value J2;
     for(std::string u : n_search){
         J2.append(u);
     }
     J["n_search"] = J2;
 
-    std::ofstream ofs("./config/621_level.json");
-    if(ofs.is_open()){
-        ofs << J.toStyledString();
-        ofs.close();
-    }
+    writefile("./config/621_level.json", J.toStyledString());
 }
 std::string e621::get_image_tags(const Json::Value &J){
     std::string s;

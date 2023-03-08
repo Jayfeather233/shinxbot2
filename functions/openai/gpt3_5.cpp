@@ -40,14 +40,7 @@ gpt3_5::gpt3_5(){
             "}";
         of.close();
     } else {
-        std::ifstream afile("./config/openai.json", std::ios::in);
-        std::string ans, line;
-        while (!afile.eof())
-        {
-            getline(afile, line);
-            ans += line + "\n";
-        }
-        afile.close();
+        std::string ans = readfile("./config/openai.json");
 
         Json::Value res = string_to_json(ans);
 
@@ -62,14 +55,9 @@ gpt3_5::gpt3_5(){
                 default_prompt = tmp;
             }
         }
-        sz = res["op"].size();
-        for(Json::ArrayIndex i = 0; i < sz; i ++){
-            op_list.insert(res["op"][i].asInt64());
-        }
-        sz = res["black_list"].size();
-        for(Json::ArrayIndex i = 0; i < sz; i ++){
-            black_list.insert(res["black_list"][i].asString());
-        }
+
+        parse_json_to_set(res["op"], op_list);
+        parse_json_to_set(res["black_list"], black_list);
     }
     is_lock = false;
     is_open = true;

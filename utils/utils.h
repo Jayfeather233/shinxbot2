@@ -4,6 +4,8 @@
 #include <string>
 #include <curl/curl.h>
 #include <locale>
+#include <map>
+#include <set>
 
 #define cimg_display 0
 #define cimg_use_png 1
@@ -110,3 +112,66 @@ void addRandomNoise(const std::string& filePath);
  * save it into "filePath/fileName"
 */
 void download(const std::string& httpAddr, const std::string& filePath, const std::string& fileName, const bool proxy = false);
+
+/**
+ * read string from file
+*/
+std::string readfile(const std::string &file_path, const std::string &default_content = "");
+
+/**
+ * write string to file
+*/
+void writefile(const std::string file_path, const std::string &content, bool is_append = false);
+
+/**
+ * open a file
+*/
+std::fstream openfile(const std::string file_path, const std::ios_base::openmode mode);
+
+/**
+ * Convert a json array to a map
+*/
+template <typename des_type, typename data_type>
+void parse_json_to_map(const Json::Value &J, std::map<des_type, data_type>&mp, data_type data = true){
+    Json::ArrayIndex sz = J.size();
+    for(Json::ArrayIndex i = 0; i < sz; i++){
+        mp[J[i].as<des_type>()] = data;
+    }
+}
+
+/**
+ * Convert a map to json array
+*/
+template <typename des_type, typename data_type>
+Json::Value parse_map_to_json(const std::map<des_type, data_type>&mp){
+    Json::Value Ja;
+    for(auto u : mp){
+        if(u.second){
+            Ja.append(u.first);
+        }
+    }
+    return Ja;
+}
+
+/**
+ * Convert a json array to a set
+*/
+template <typename des_type>
+void parse_json_to_set(const Json::Value &J, std::set<des_type>&mp){
+    Json::ArrayIndex sz = J.size();
+    for(Json::ArrayIndex i = 0; i < sz; i++){
+        mp.insert(J[i].as<des_type>());
+    }
+}
+
+/**
+ * Convert a set to json array
+*/
+template <typename des_type>
+Json::Value parse_set_to_json(const std::set<des_type>&mp){
+    Json::Value Ja;
+    for(auto u : mp){
+        Ja.append(u);
+    }
+    return Ja;
+}

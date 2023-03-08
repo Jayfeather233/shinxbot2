@@ -80,14 +80,7 @@ std::string Cat::get_humanread_info()
 
 void Cat::save_cat()
 {
-    ofstream outfile("./config/cats/" + std::to_string(_id) + ".json");
-    if (!outfile.is_open())
-    {
-        std::filesystem::create_directory("./config/cats");
-        outfile.open("./config/cats/" + std::to_string(_id) + ".json");
-    }
-    outfile << getinfo();
-    outfile.close();
+    writefile("./config/cats/" + std::to_string(_id) + ".json", getinfo());
 }
 
 Cat::Cat(const std::string &name, int64_t user_id) : _id(user_id)
@@ -107,19 +100,11 @@ Cat::Cat(int64_t user_id) : _id(user_id)
 {
     if (user_id == -1)
         return;
-    std::ifstream afile;
-    afile.open("./config/cats/" + std::to_string(_id) + ".json", std::ios::in);
 
-    if (afile.is_open())
+    std::string ans = readfile("./config/cats/" + std::to_string(_id) + ".json");
+
+    if (ans != "")
     {
-        std::string ans, line;
-        while (!afile.eof())
-        {
-            getline(afile, line);
-            ans += line + "\n";
-        }
-        afile.close();
-
         Json::Value J = string_to_json(ans);
 
         name = J["name"].asString();
