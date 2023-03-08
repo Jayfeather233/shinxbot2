@@ -25,7 +25,7 @@ e621::e621(){
 std::string e621::deal_input(const std::string &input, bool is_pool){
     std::string res = my_replace(input, ' ', '+');
     
-    if(res.find("score:") == res.npos && res.find("favcount:") == res.npos && !is_pool){
+    if(res.find("score:") == res.npos && res.find("favcount:") == res.npos && !is_pool && res.find("id:") == res.npos){
         res += "+score:>200+favcount:>400";
     }
     if(res.find("order:") == res.npos && !is_pool){

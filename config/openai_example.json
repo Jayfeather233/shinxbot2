@@ -5,6 +5,8 @@
         "a2",
         "a3"
     ],
+    "MAX_TOKEN": 4000,
+    "MAX_REPLY": 700,
     "op": [
         123456789,
         "This means the user(QQ ID) can do op operation(delete this line)"

@@ -24,8 +24,8 @@
  * message, and therefore important instructions are often better placed in a user message.
 */
 
-const int MAX_TOKEN = 4000;
-const int MAX_REPLY = 1000;
+int MAX_TOKEN = 4000;
+int MAX_REPLY = 1000;
 
 gpt3_5::gpt3_5(){
     if(!std::filesystem::exists("./config/openai.json")){
@@ -36,7 +36,9 @@ gpt3_5::gpt3_5(){
             "\"key\": \"\","
             "\"mode\": [\"default\"],"
             "\"default\": [{\"role\": \"system\", \"content\": \"You are a helpful assistant.\"}],"
-            "\"black_list\": [\"股票\"]"
+            "\"black_list\": [\"股票\"],"
+            "\"MAX_TOKEN\": 4000,"
+            "\"MAX_REPLY\": 700,"
             "}";
         of.close();
     } else {
@@ -58,6 +60,9 @@ gpt3_5::gpt3_5(){
 
         parse_json_to_set(res["op"], op_list);
         parse_json_to_set(res["black_list"], black_list);
+
+        MAX_TOKEN = res["MAX_TOKEN"].asInt();
+        MAX_REPLY = res["MAX_REPLY"].asInt();
     }
     is_lock = false;
     is_open = true;
@@ -128,6 +133,26 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
         if(op_list.find(user_id) != op_list.end()){
             is_open = !is_open;
             cq_send("is_open: " + std::to_string(is_open), message_type, user_id, group_id);
+        } else {
+            cq_send("Not on op list.", message_type, user_id, group_id);
+        }
+        return;
+    }
+    if(message.find(".set") == 0){
+        if(op_list.find(user_id) != op_list.end()){
+            std::string type;
+            int64_t num;
+            std::istringstream iss(message.substr(4));
+            iss >> type >> num;
+            if(type == "reply"){
+                MAX_REPLY = num;
+                cq_send("set MAX_REPLY to " + std::to_string(num), message_type, user_id, group_id);
+            } else if(type == "token"){
+                MAX_TOKEN = num;
+                cq_send("set MAX_TOKEN to " + std::to_string(num), message_type, user_id, group_id);
+            } else {
+                cq_send("Unknown type", message_type, user_id, group_id);
+            }
         } else {
             cq_send("Not on op list.", message_type, user_id, group_id);
         }

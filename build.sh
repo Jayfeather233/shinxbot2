@@ -7,6 +7,6 @@ mkdir ./resource/temp
 
 cd ./build
 cmake -DCMAKE_BUILD_TYPE=Release ..
-make -j8
+make
 cd ..
 ./build/cq_bot
