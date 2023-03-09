@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.11)
 
 project(cq_bot)
 
+add_definitions(-DUSE_OPENSSL)
+
 find_package(OpenSSL REQUIRED)
 include_directories(${OPENSSL_INCLUDE_DIR})
 include_directories("./utils")
