@@ -201,7 +201,7 @@ void init(){
     LOG_output[2] = std::ofstream("./log/" + oss.str() + "/erro.log", std::ios_base::app);
 }
 
-int main(){
+int notmain(){
     curl_global_init(CURL_GLOBAL_ALL);
 
     functions.push_back(new AnimeImg());

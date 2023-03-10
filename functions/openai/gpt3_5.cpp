@@ -114,7 +114,7 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
             message = trim(message.substr(7));
             auto it = modes.find(message);
             if(it == modes.end()){
-                std::string res = "avaliable mdoes:";
+                std::string res = "avaliable modes:";
                 for(std::string u : modes){
                     res += " " + u;
                 }
