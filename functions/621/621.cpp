@@ -147,9 +147,9 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
         int i;
         for(i=0;i<3;i++){
             if(get_tag){
-                J2 = string_to_json(cq_send(get_image_tags(J), message_type,user_id, group_id));
+                J2 = string_to_json(cq_send(get_image_tags(J) + (i ? "\ntx原因无法发送原图" : ""), message_type,user_id, group_id));
             } else {
-                J2 = string_to_json(cq_send(get_image_info(J, count, is_pool, i), message_type,user_id, group_id));
+                J2 = string_to_json(cq_send(get_image_info(J, count, is_pool, i) + (i ? "\ntx原因无法发送原图" : ""), message_type,user_id, group_id));
             }
             if(J2["status"].asString() != "failed"){
                 break;

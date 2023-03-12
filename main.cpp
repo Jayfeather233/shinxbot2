@@ -120,42 +120,61 @@ int start_server(){
             std::cerr << "Error accepting connection\n";
             continue;
         }
-        std::string s_buffer;
-        int valread;
-        while(1){
-            valread = read(new_socket, buffer, 4000);
-            s_buffer += buffer;
-            if(valread<4000){
-                break;
+        try{
+            std::string s_buffer;
+            int valread;
+            while(1){
+                valread = read(new_socket, buffer, 4000);
+                s_buffer += buffer;
+                if(valread<4000){
+                    break;
+                }
             }
-        }
-        if(valread == -1){
-            std::cerr<<"Error read message.\n";
-        }
-
-        std::istringstream iss(s_buffer);
-        std::string line;
-        while(getline(iss, line)){
-            if(line[0]=='{'){
-                std::string *u = new std::string(line);
-                std::thread(input_process, u).detach();
+            if(valread == -1){
+                std::cerr<<"Error read message.\n";
             }
-        }
 
-        std::stringstream response_body;
-        response_body << (std::string)"HTTP/1.1 200 OK\r\n"+
-                    "Content-Length: 0\r\n"+
-                    "Content-Type: application/json\r\n\r\n";
-        std::string response = response_body.str();
-        const char* response_cstr = response.c_str();
-        send(new_socket, response_cstr, strlen(response_cstr), 0);
+            std::istringstream iss(s_buffer);
+            std::string line;
+            while(getline(iss, line)){
+                if(line[0]=='{'){
+                    std::string *u = new std::string(line);
+                    std::thread(input_process, u).detach();
+                }
+            }
+
+            std::stringstream response_body;
+            response_body << (std::string)"HTTP/1.1 200 OK\r\n"+
+                        "Content-Length: 0\r\n"+
+                        "Content-Type: application/json\r\n\r\n";
+            std::string response = response_body.str();
+            const char* response_cstr = response.c_str();
+            send(new_socket, response_cstr, strlen(response_cstr), 0);
+        } catch (...){}
         close(new_socket);
     }
     return 0;
 }
 
-void init(){
+void get_log(){
+    std::ostringstream oss;
+    std::time_t nt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    tm tt = *localtime(&nt);
 
+    oss << tt.tm_year + 1900 << '_' << tt.tm_mon + 1 << '_' << tt.tm_mday;
+
+    if(!std::filesystem::exists(("./log/" + oss.str()).c_str())){
+        if(!std::filesystem::exists("./log")){
+            std::filesystem::create_directory("./log");
+        }
+        std::filesystem::create_directory(("./log/" + oss.str()).c_str());
+    }
+    LOG_output[0] = std::ofstream("./log/" + oss.str() + "/info.log", std::ios_base::app);
+    LOG_output[1] = std::ofstream("./log/" + oss.str() + "/warn.log", std::ios_base::app);
+    LOG_output[2] = std::ofstream("./log/" + oss.str() + "/erro.log", std::ios_base::app);
+}
+
+void init(){
     std::ifstream iport("./config/port.txt");
     if(iport.is_open()){
         iport >> send_port >> receive_port;
@@ -184,21 +203,7 @@ void init(){
     }
     std::cout<<"botqq:"<<botqq<<std::endl;
 
-    std::ostringstream oss;
-    std::time_t nt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    tm tt = *localtime(&nt);
-
-    oss << tt.tm_year + 1900 << '_' << tt.tm_mon + 1 << '_' << tt.tm_mday;
-
-    if(!std::filesystem::exists(("./log/" + oss.str()).c_str())){
-        if(!std::filesystem::exists("./log")){
-            std::filesystem::create_directory("./log");
-        }
-        std::filesystem::create_directory(("./log/" + oss.str()).c_str());
-    }
-    LOG_output[0] = std::ofstream("./log/" + oss.str() + "/info.log", std::ios_base::app);
-    LOG_output[1] = std::ofstream("./log/" + oss.str() + "/warn.log", std::ios_base::app);
-    LOG_output[2] = std::ofstream("./log/" + oss.str() + "/erro.log", std::ios_base::app);
+    get_log();
 }
 
 int main(){
