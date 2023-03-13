@@ -135,12 +135,13 @@ int start_server(){
             }
 
             std::istringstream iss(s_buffer);
-            std::string line;
+            std::string line,res;
             while(getline(iss, line)){
-                if(line[0]=='{'){
-                    std::string *u = new std::string(line);
-                    std::thread(input_process, u).detach();
-                }
+                res += line;
+            }
+            if(res[0]=='{'){
+                std::string *u = new std::string(res);
+                std::thread(input_process, u).detach();
             }
 
             std::stringstream response_body;

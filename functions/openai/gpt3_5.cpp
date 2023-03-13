@@ -66,6 +66,19 @@ gpt3_5::gpt3_5(){
     }
     is_lock = false;
     is_open = true;
+
+    if(std::filesystem::exists("./config/gpt3_5")){
+        std::filesystem::path gpt_files = "./config/gpt3_5";
+        std::filesystem::directory_iterator di(gpt_files);
+        for(auto &entry : di){
+            if(entry.is_regular_file()){
+                std::istringstream iss(entry.path().filename().string());
+                int64_t id;
+                iss>>id;
+                history[id] = string_to_json(readfile(entry.path()));
+            }
+        }
+    }
 }
 
 int64_t getlength(const Json::Value &J){
@@ -110,7 +123,7 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
         return;
     }
     if(message.find(".change")==0){
-        if(op_list.find(user_id) != op_list.end()){
+        if(op_list.find(user_id) != op_list.end() || (id&1)){
             message = trim(message.substr(7));
             auto it = modes.find(message);
             if(it == modes.end()){
@@ -213,6 +226,7 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
         J["content"] = msg;
         history[id].append(J);
     }
+    writefile("./config/gpt3_5/" + std::to_string(id) + ".json", history[id].toStyledString());
 }
 bool gpt3_5::check(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     return message.find(".ai") == 0;
