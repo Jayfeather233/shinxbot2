@@ -49,7 +49,7 @@ void writefile(const std::string file_path, const std::string &content, bool is_
     try{
         ofile = openfile(file_path, is_append ? std::ios::app : std::ios::out);
     } catch (...){}
-    ofile << file_path;
+    ofile << content;
     ofile.flush();
     ofile.close();
 }
