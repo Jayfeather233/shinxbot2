@@ -293,7 +293,7 @@ std::string e621::get_image_info(const Json::Value &J, int count, bool poolFlag,
     std::string fileExt = imageUrl.substr(extPos);
     std::string imageLocalPath = std::to_string(id) + '.' + fileExt;
 
-    if (!std::ifstream("./resource/download/e621/" + imageLocalPath)) {
+    if (!std::ifstream("./resource/download/e621/" + imageLocalPath) && fileExt != "webm" && fileExt != "mp4") {
         download(imageUrl, "./resource/download/e621", imageLocalPath, true);
     }
     if(fileExt != "gif" && fileExt != "webm" && fileExt != "mp4")
