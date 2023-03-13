@@ -19,8 +19,8 @@ void addRandomNoise(const std::string& filePath) {
     CImg<unsigned char> image(filePath.c_str());
     int w = image.width();
     int h = image.height();
-    if((int64_t)w * h > 9000000){
-        double resize_d = sqrt((double)w * h / 9000000.0);
+    if((int64_t)w * h > 4000000){
+        double resize_d = sqrt((double)w * h / 4000000.0);
         image.resize((size_t)(w / resize_d),(size_t)(w / resize_d));
         w = image.width();
         h = image.height();

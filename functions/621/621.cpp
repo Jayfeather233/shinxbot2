@@ -300,7 +300,7 @@ std::string e621::get_image_info(const Json::Value &J, int count, bool poolFlag,
         addRandomNoise("./resource/download/e621/" + imageLocalPath);
 
     if(fileExt != "webm" && fileExt != "mp4"){
-        quest << "[CQ:image,file=file://" << get_local_path() << "/resource/download/e621/" << imageLocalPath << ",id=40000]\n";
+        quest << (fileExt == "gif" ? "Get gif:\n" : "") << "[CQ:image,file=file://" << get_local_path() << "/resource/download/e621/" << imageLocalPath << ",id=40000]\n";
     } else {
         quest << "Get video. id: " + std::to_string(id) << std::endl;
     }
