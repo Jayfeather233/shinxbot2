@@ -89,6 +89,9 @@ void gpt3_5::save_file(){
     J["black_list"] = parse_set_to_json(black_list);
     J["MAX_TOKEN"] = MAX_TOKEN;
     J["MAX_REPLY"] = MAX_REPLY;
+    for(std::string u : modes){
+        J[u] = mode_prompt[u];
+    }
     writefile("./config/openai.json", J.toStyledString());
 }
 
