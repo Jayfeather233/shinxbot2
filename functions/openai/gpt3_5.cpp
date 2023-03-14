@@ -81,6 +81,17 @@ gpt3_5::gpt3_5(){
     }
 }
 
+void gpt3_5::save_file(){
+    Json::Value J;
+    J["key"] = key;
+    J["mode"] = parse_set_to_json(modes);
+    J["op"] = parse_set_to_json(op_list);
+    J["black_list"] = parse_set_to_json(black_list);
+    J["MAX_TOKEN"] = MAX_TOKEN;
+    J["MAX_REPLY"] = MAX_REPLY;
+    writefile("./config/openai.json", J.toStyledString());
+}
+
 int64_t getlength(const Json::Value &J){
     int64_t l = 0;
     Json::ArrayIndex sz = J.size();
@@ -169,6 +180,7 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
         } else {
             cq_send("Not on op list.", message_type, user_id, group_id);
         }
+        save_file();
         return;
     }
     if(is_lock){

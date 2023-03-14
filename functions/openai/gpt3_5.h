@@ -18,6 +18,7 @@ private:
     std::string key;
 public:
     gpt3_5();
+    void save_file();
     std::string do_black(std::string u);
     void process(std::string message, std::string message_type, int64_t user_id, int64_t group_id);
     bool check(std::string message, std::string message_type, int64_t user_id, int64_t group_id);

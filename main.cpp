@@ -259,11 +259,20 @@ std::string cq_get(const std::string &end_point){
 
 std::mutex mylock;
 
+tm last_getlog;
+
 void setlog(LOG type, std::string message){
+    std::lock_guard<std::mutex> lock(mylock);
+    
     std::time_t nt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     tm tt = *localtime(&nt);
 
-    std::lock_guard<std::mutex> lock(mylock);
+    if(!(tt.tm_year == last_getlog.tm_year &&
+        tt.tm_mon == last_getlog.tm_mon &&
+        tt.tm_mday == last_getlog.tm_mday)){
+            last_getlog = tt;
+            get_log();
+    }
 
     std::ostringstream oss;
     oss << "[" << tt.tm_hour << ":" << tt.tm_min << ":"<< tt.tm_sec << "][" << LOG_name[type] << "] "
