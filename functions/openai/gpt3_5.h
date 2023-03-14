@@ -11,7 +11,7 @@ private:
     std::map<int64_t, std::string> pre_default;
     std::map<int64_t, Json::Value> pre_prompt;
     std::map<int64_t, Json::Value> history;
-    std::set<std::string> modes;
+    Json::Value modes;
     std::set<int64_t> op_list;
     std::set<std::string> black_list;
     std::map<std::string, Json::Value> mode_prompt;

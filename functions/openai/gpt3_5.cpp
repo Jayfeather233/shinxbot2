@@ -49,9 +49,9 @@ gpt3_5::gpt3_5(){
         key = res["key"].asString();
 
         Json::ArrayIndex sz = res["mode"].size();
+        modes = res["mode"];
         for(Json::ArrayIndex i = 0; i < sz; i ++){
             std::string tmp = res["mode"][i].asString();
-            modes.insert(tmp);
             mode_prompt[tmp] = res[tmp];
             if(i == 0){
                 default_prompt = tmp;
@@ -84,13 +84,14 @@ gpt3_5::gpt3_5(){
 void gpt3_5::save_file(){
     Json::Value J;
     J["key"] = key;
-    J["mode"] = parse_set_to_json(modes);
+    J["mode"] = modes;
     J["op"] = parse_set_to_json(op_list);
     J["black_list"] = parse_set_to_json(black_list);
     J["MAX_TOKEN"] = MAX_TOKEN;
     J["MAX_REPLY"] = MAX_REPLY;
-    for(std::string u : modes){
-        J[u] = mode_prompt[u];
+    Json::ArrayIndex sz = modes.size();
+    for(Json::ArrayIndex i = 0; i < sz; i ++){
+        J[modes[i].asString()] = mode_prompt[modes[i].asString()];
     }
     writefile("./config/openai.json", J.toStyledString());
 }
@@ -139,21 +140,26 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
     if(message.find(".change")==0){
         if(op_list.find(user_id) != op_list.end() || (id&1)){
             message = trim(message.substr(7));
-            auto it = modes.find(message);
-            if(it == modes.end()){
-                std::string res = "avaliable modes:";
-                for(std::string u : modes){
-                    res += " " + u;
+            Json::ArrayIndex sz = modes.size();
+            bool flg = 0;
+            std::string res = "avaliable modes:";
+            for(Json::ArrayIndex i =0; i < sz; i++){
+                res += " " + modes[i].asString();
+                if(modes[i].asString() == message){
+                    flg = true;
+                    history[id].clear();
+                    pre_default[id] = message;
+                    cq_send("change done.", message_type, user_id, group_id);
+                    break;
                 }
+            }
+            if(!flg){
                 cq_send(res, message_type, user_id, group_id);
-            } else {
-                history[id].clear();
-                pre_default[id] = *it;
-                cq_send("change done.", message_type, user_id, group_id);
             }
         } else {
                 cq_send("Not on op list.", message_type, user_id, group_id);
         }
+        writefile("./config/gpt3_5/" + std::to_string(id) + ".json", history[id].toStyledString());
         return;
     }
     if(message.find(".sw")==0){
