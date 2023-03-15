@@ -273,12 +273,18 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
     setlog(LOG::INFO, "openai: user " + std::to_string(user_id));
     is_lock[keyid] = false;
     if(J.isMember("error")){
-        cq_send("Openai ERROR: " + J["error"]["message"].asString() + "\nIf prompt is too long, try .ai.reset", message_type, user_id, group_id);
-    }else{
+        if(J["error"]["message"].asString().find("This model's maximum context length is") == 0){
+            cq_send("Openai ERROR: history message is too long. Please try again.", message_type, user_id, group_id);
+            history[id].removeIndex(0, &ign);
+            history[id].removeIndex(0, &ign);
+        } else {
+            cq_send("Openai ERROR: " + J["error"]["message"].asString() + "\nIf prompt is too long, try .ai.reset", message_type, user_id, group_id);
+        }
+    } else {
         std::string msg = J["choices"][0]["message"]["content"].asString();
         msg = do_black(msg);
 
-        if(MAX_TOKEN - J["usage"]["total_tokens"].asInt64() < RED_LINE){
+        if(MAX_TOKEN - RED_LINE < static_cast<int>(J["usage"]["total_tokens"].asInt64())){
             history[id].removeIndex(0, &ign);
             history[id].removeIndex(0, &ign);
         }
