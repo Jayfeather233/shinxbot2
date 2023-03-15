@@ -191,6 +191,15 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
         }
         return;
     }
+    if(message.find(".debug")==0){
+        if(op_list.find(user_id) != op_list.end()){
+            is_debug = !is_debug;
+            cq_send("is_debug: " + std::to_string(is_debug), message_type, user_id, group_id);
+        } else {
+            cq_send("Not on op list.", message_type, user_id, group_id);
+        }
+        return;
+    }
     if(message.find(".set") == 0){
         if(op_list.find(user_id) != op_list.end()){
             std::string type;
@@ -262,11 +271,11 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
     setlog(LOG::INFO, "openai: user " + std::to_string(user_id));
     is_lock[keyid] = false;
     if(J.isMember("error")){
-        cq_send("Openai ERROR: " + J["error"]["message"].asString() + "\nIf prompt too long, try .ai.reset", message_type, user_id, group_id);
+        cq_send("Openai ERROR: " + J["error"]["message"].asString() + "\nIf prompt is too long, try .ai.reset", message_type, user_id, group_id);
     }else{
         std::string msg = J["choices"][0]["message"]["content"].asString();
         msg = do_black(msg);
-        // msg += J["usage"].toStyledString();
+        if(is_debug) msg += J["usage"].toStyledString();
         cq_send(msg, message_type, user_id, group_id);
         J.clear();
         J["role"] = "assistant";
