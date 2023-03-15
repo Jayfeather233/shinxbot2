@@ -27,13 +27,15 @@
 int MAX_TOKEN = 4000;
 int MAX_REPLY = 1000;
 
+std::vector<std::mutex> gptlock;
+
 gpt3_5::gpt3_5(){
     if(!std::filesystem::exists("./config/openai.json")){
         std::cout<<"Please config your openai key in openai.json (and restart) OR see openai_example.json"<<std::endl;
         std::ofstream of("./config/openai.json", std::ios::out);
         of << 
             "{"
-            "\"key\": \"\","
+            "\"keys\": [\"\"],"
             "\"mode\": [\"default\"],"
             "\"default\": [{\"role\": \"system\", \"content\": \"You are a helpful assistant.\"}],"
             "\"black_list\": [\"股票\"],"
@@ -46,12 +48,17 @@ gpt3_5::gpt3_5(){
 
         Json::Value res = string_to_json(ans);
 
-        key = res["key"].asString();
+        Json::ArrayIndex sz = res["keys"].size();
+        for(Json::ArrayIndex i = 0; i < sz; ++i){
+            key.push_back(res["keys"][i].asString());
+            is_lock.push_back(false);
+            gptlock.push_back(std::mutex());
+        }
 
         Json::ArrayIndex sz = res["mode"].size();
-        modes = res["mode"];
         for(Json::ArrayIndex i = 0; i < sz; i ++){
             std::string tmp = res["mode"][i].asString();
+            modes.push_back(tmp);
             mode_prompt[tmp] = res[tmp];
             if(i == 0){
                 default_prompt = tmp;
@@ -64,8 +71,8 @@ gpt3_5::gpt3_5(){
         MAX_TOKEN = res["MAX_TOKEN"].asInt();
         MAX_REPLY = res["MAX_REPLY"].asInt();
     }
-    is_lock = false;
     is_open = true;
+    key_cycle = 0;
 
     if(std::filesystem::exists("./config/gpt3_5")){
         std::filesystem::path gpt_files = "./config/gpt3_5";
@@ -83,15 +90,16 @@ gpt3_5::gpt3_5(){
 
 void gpt3_5::save_file(){
     Json::Value J;
-    J["key"] = key;
-    J["mode"] = modes;
+    for(std::string u : key)
+        J["keys"].append(u);
+    for(std::string u : modes)
+        J["mode"].append(u);
     J["op"] = parse_set_to_json(op_list);
     J["black_list"] = parse_set_to_json(black_list);
     J["MAX_TOKEN"] = MAX_TOKEN;
     J["MAX_REPLY"] = MAX_REPLY;
-    Json::ArrayIndex sz = modes.size();
-    for(Json::ArrayIndex i = 0; i < sz; i ++){
-        J[modes[i].asString()] = mode_prompt[modes[i].asString()];
+    for(std::string u : modes){
+        J[u] = mode_prompt[u];
     }
     writefile("./config/openai.json", J.toStyledString());
 }
@@ -105,8 +113,6 @@ int64_t getlength(const Json::Value &J){
     return l;
 }
 
-std::mutex gptlock;
-
 std::string gpt3_5::do_black(std::string msg){
     std::string p1,p2;
     for(std::string u : black_list){
@@ -119,6 +125,17 @@ std::string gpt3_5::do_black(std::string msg){
         }
     }
     return msg;
+}
+
+size_t gpt3_5::get_avaliable_key(){
+    size_t u;
+    for(int i = 0; i < key.size(); i++){
+        if(!is_lock[u = (key_cycle + i)%key.size()]){
+            key_cycle = u;
+            return u;
+        }
+    }
+    return key_cycle;
 }
 
 void gpt3_5::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
@@ -140,12 +157,11 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
     if(message.find(".change")==0){
         if(op_list.find(user_id) != op_list.end() || (id&1)){
             message = trim(message.substr(7));
-            Json::ArrayIndex sz = modes.size();
             bool flg = 0;
             std::string res = "avaliable modes:";
-            for(Json::ArrayIndex i =0; i < sz; i++){
-                res += " " + modes[i].asString();
-                if(modes[i].asString() == message){
+            for(std::string u : modes){
+                res += " " + u;
+                if(u == message){
                     flg = true;
                     history[id].clear();
                     pre_default[id] = message;
@@ -192,7 +208,8 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
         save_file();
         return;
     }
-    if(is_lock){
+    size_t keyid = get_avaliable_key();
+    if(is_lock[keyid]){
         cq_send("请等待上次输入的回复。", message_type, user_id, group_id);
         return;
     }
@@ -203,14 +220,14 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
     if(history.find(id) == history.end()){
         pre_default[id] = default_prompt;
     }
-    std::lock_guard<std::mutex> lock(gptlock);
-    is_lock = true;
-    Json::Value J, ign;
-    J["role"] = "user";
-    J["content"] = message;
-    history[id].append(J);
+    std::lock_guard<std::mutex> lock(gptlock[keyid]);
+    is_lock[keyid] = true;
+    Json::Value J, user_input_J, ign;
+    user_input_J["role"] = "user";
+    user_input_J["content"] = message;
     J = history[id];
     while(getlength(J) > MAX_TOKEN - MAX_REPLY){
+        J.removeIndex(0, &ign);
         J.removeIndex(0, &ign);
     }
 
@@ -229,22 +246,24 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
     J["temperature"] = 0.7;
     J["max_tokens"] = MAX_REPLY;
     try{
-        J = string_to_json(do_post("https://api.openai.com/v1/chat/completions", J, {{"Content-Type","application/json"},{"Authorization", "Bearer " + key}}, true));
+        J = string_to_json(do_post("https://api.openai.com/v1/chat/completions", J, {{"Content-Type","application/json"},{"Authorization", "Bearer " + key[keyid]}}, true));
     } catch (...){
         J.clear();
         J["error"]["message"] = "http connection failed.";
     }
     setlog(LOG::INFO, "openai: user " + std::to_string(user_id));
-    is_lock = false;
+    is_lock[keyid] = false;
     if(J.isMember("error")){
         cq_send("Openai ERROR: " + J["error"]["message"].asString(), message_type, user_id, group_id);
     }else{
         std::string msg = J["choices"][0]["message"]["content"].asString();
         msg = do_black(msg);
+        msg += J["usage"].toStyledString();
         cq_send(msg, message_type, user_id, group_id);
         J.clear();
         J["role"] = "assistant";
         J["content"] = msg;
+        history[id].append(user_input_J);
         history[id].append(J);
     }
     writefile("./config/gpt3_5/" + std::to_string(id) + ".json", history[id].toStyledString());
