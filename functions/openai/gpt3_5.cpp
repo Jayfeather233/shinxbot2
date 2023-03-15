@@ -26,6 +26,7 @@
 
 int MAX_TOKEN = 4000;
 int MAX_REPLY = 1000;
+int RED_LINE = 1000;
 const int MAX_KEYS = 255;
 
 std::mutex gptlock[MAX_KEYS];
@@ -42,6 +43,7 @@ gpt3_5::gpt3_5(){
             "\"black_list\": [\"股票\"],"
             "\"MAX_TOKEN\": 4000,"
             "\"MAX_REPLY\": 700,"
+            "\"RED_LINE\": 1000,"
             "}";
         of.close();
     } else {
@@ -70,6 +72,7 @@ gpt3_5::gpt3_5(){
 
         MAX_TOKEN = res["MAX_TOKEN"].asInt();
         MAX_REPLY = res["MAX_REPLY"].asInt();
+        RED_LINE = res["RED_LINE"].asInt();
     }
     is_open = true;
     key_cycle = 0;
@@ -98,6 +101,7 @@ void gpt3_5::save_file(){
     J["black_list"] = parse_set_to_json(black_list);
     J["MAX_TOKEN"] = MAX_TOKEN;
     J["MAX_REPLY"] = MAX_REPLY;
+    J["RED_LINE"] = RED_LINE;
     for(std::string u : modes){
         J[u] = mode_prompt[u];
     }
@@ -199,6 +203,9 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
             } else if(type == "token"){
                 MAX_TOKEN = num;
                 cq_send("set MAX_TOKEN to " + std::to_string(num), message_type, user_id, group_id);
+            } else if(type == "red"){
+                RED_LINE = num;
+                cq_send("set RED_LINE to " + std::to_string(num), message_type, user_id, group_id);
             } else {
                 cq_send("Unknown type", message_type, user_id, group_id);
             }
@@ -225,15 +232,15 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
     Json::Value J, user_input_J, ign;
     user_input_J["role"] = "user";
     user_input_J["content"] = message;
-    J = history[id];
-    while(getlength(J) > MAX_TOKEN - MAX_REPLY){
-        J.removeIndex(0, &ign);
-        J.removeIndex(0, &ign);
-    }
+    // J = history[id];
+    // while(getlength(J) > MAX_TOKEN - MAX_REPLY){
+    //     J.removeIndex(0, &ign);
+    //     J.removeIndex(0, &ign);
+    // }
 
-    history[id] = J;
-    J = Json::Value();
-    J["model"] = "gpt-3.5-turbo";
+    // history[id] = J;
+    // J = Json::Value();
+    J["model"] = "gpt-3.5-turbo-0301";
     Json::Value K = mode_prompt[pre_default[id]];
     auto it = history.find(id);
     if(it!=history.end()){
@@ -242,6 +249,7 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
             K.append(it->second[i]);
         }
     }
+    K.append(user_input_J);
     J["messages"] = K;
     J["temperature"] = 0.7;
     J["max_tokens"] = MAX_REPLY;
@@ -254,17 +262,22 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
     setlog(LOG::INFO, "openai: user " + std::to_string(user_id));
     is_lock[keyid] = false;
     if(J.isMember("error")){
-        cq_send("Openai ERROR: " + J["error"]["message"].asString(), message_type, user_id, group_id);
+        cq_send("Openai ERROR: " + J["error"]["message"].asString() + "\nIf prompt too long, try .ai.reset", message_type, user_id, group_id);
     }else{
         std::string msg = J["choices"][0]["message"]["content"].asString();
         msg = do_black(msg);
-        msg += J["usage"].toStyledString();
+        // msg += J["usage"].toStyledString();
         cq_send(msg, message_type, user_id, group_id);
         J.clear();
         J["role"] = "assistant";
         J["content"] = msg;
         history[id].append(user_input_J);
         history[id].append(J);
+
+        if(MAX_TOKEN - J["usage"]["total_tokens"].asInt64() < RED_LINE){
+            history[id].removeIndex(0, &ign);
+            history[id].removeIndex(0, &ign);
+        }
     }
     writefile("./config/gpt3_5/" + std::to_string(id) + ".json", history[id].toStyledString());
 }

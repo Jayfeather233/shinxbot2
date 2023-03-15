@@ -7,6 +7,7 @@
     ],
     "MAX_TOKEN": 4000,
     "MAX_REPLY": 700,
+    "RED_LINE": 1000,
     "op": [
         123456789,
         "This means the user(QQ ID) can do op operation(delete this line)"
