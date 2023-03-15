@@ -1,5 +1,5 @@
 {
-    "key": "abcdefg",
+    "keys": ["abcdefg"],
     "mode": [
         "a1", "so the default mode will be a1(delete this)",
         "a2",

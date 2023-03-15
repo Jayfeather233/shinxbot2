@@ -55,7 +55,7 @@ gpt3_5::gpt3_5(){
             gptlock.push_back(std::mutex());
         }
 
-        Json::ArrayIndex sz = res["mode"].size();
+        sz = res["mode"].size();
         for(Json::ArrayIndex i = 0; i < sz; i ++){
             std::string tmp = res["mode"][i].asString();
             modes.push_back(tmp);
