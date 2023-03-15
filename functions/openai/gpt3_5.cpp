@@ -275,6 +275,12 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
     }else{
         std::string msg = J["choices"][0]["message"]["content"].asString();
         msg = do_black(msg);
+
+        if(MAX_TOKEN - J["usage"]["total_tokens"].asInt64() < RED_LINE){
+            history[id].removeIndex(0, &ign);
+            history[id].removeIndex(0, &ign);
+        }
+        
         std::string usage = J["usage"].toStyledString();
         J.clear();
         J["role"] = "assistant";
@@ -283,11 +289,6 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
         cq_send(msg, message_type, user_id, group_id);
         history[id].append(user_input_J);
         history[id].append(J);
-
-        if(MAX_TOKEN - J["usage"]["total_tokens"].asInt64() < RED_LINE){
-            history[id].removeIndex(0, &ign);
-            history[id].removeIndex(0, &ign);
-        }
     }
     writefile("./config/gpt3_5/" + std::to_string(id) + ".json", history[id].toStyledString());
 }
