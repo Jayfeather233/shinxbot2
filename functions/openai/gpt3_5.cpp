@@ -85,7 +85,9 @@ gpt3_5::gpt3_5(){
                 std::istringstream iss(entry.path().filename().string());
                 int64_t id;
                 iss>>id;
-                history[id] = string_to_json(readfile(entry.path()));
+                Json::Value J = string_to_json(readfile(entry.path()));
+                history[id] = J["history"];
+                pre_default[id] = J["pre_prompt"].asString();
             }
         }
     }
@@ -281,7 +283,7 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
             history[id].removeIndex(0, &ign);
         }
         
-        std::string usage = J["usage"].toStyledString();
+        std::string usage = "\n" + J["usage"].toStyledString();
         J.clear();
         J["role"] = "assistant";
         J["content"] = msg;
@@ -290,7 +292,10 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
         history[id].append(user_input_J);
         history[id].append(J);
     }
-    writefile("./config/gpt3_5/" + std::to_string(id) + ".json", history[id].toStyledString());
+    J.clear();
+    J["pre_prompt"] = pre_default[id];
+    J["history"] = history[id];
+    writefile("./config/gpt3_5/" + std::to_string(id) + ".json", J.toStyledString());
 }
 bool gpt3_5::check(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     return message.find(".ai") == 0;
