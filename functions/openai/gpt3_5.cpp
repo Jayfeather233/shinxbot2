@@ -275,11 +275,11 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
     }else{
         std::string msg = J["choices"][0]["message"]["content"].asString();
         msg = do_black(msg);
-        if(is_debug) msg += J["usage"].toStyledString();
-        cq_send(msg, message_type, user_id, group_id);
         J.clear();
         J["role"] = "assistant";
         J["content"] = msg;
+        if(is_debug) msg += J["usage"].toStyledString();
+        cq_send(msg, message_type, user_id, group_id);
         history[id].append(user_input_J);
         history[id].append(J);
 
