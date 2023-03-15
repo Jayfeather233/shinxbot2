@@ -26,8 +26,9 @@
 
 int MAX_TOKEN = 4000;
 int MAX_REPLY = 1000;
+const int MAX_KEYS = 255;
 
-std::vector<std::mutex> gptlock;
+std::mutex gptlock[MAX_KEYS];
 
 gpt3_5::gpt3_5(){
     if(!std::filesystem::exists("./config/openai.json")){
@@ -52,7 +53,6 @@ gpt3_5::gpt3_5(){
         for(Json::ArrayIndex i = 0; i < sz; ++i){
             key.push_back(res["keys"][i].asString());
             is_lock.push_back(false);
-            gptlock.push_back(std::mutex());
         }
 
         sz = res["mode"].size();
