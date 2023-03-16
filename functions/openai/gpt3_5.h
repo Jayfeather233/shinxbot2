@@ -23,6 +23,7 @@ public:
     gpt3_5();
     size_t get_avaliable_key();
     void save_file();
+    void save_history(int64_t id);
     std::string do_black(std::string u);
     void process(std::string message, std::string message_type, int64_t user_id, int64_t group_id);
     bool check(std::string message, std::string message_type, int64_t user_id, int64_t group_id);

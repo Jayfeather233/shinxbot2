@@ -144,6 +144,13 @@ size_t gpt3_5::get_avaliable_key(){
     return key_cycle;
 }
 
+void gpt3_5::save_history(int64_t id){
+    Json::Value J;
+    J["pre_prompt"] = pre_default[id];
+    J["history"] = history[id];
+    writefile("./config/gpt3_5/" + std::to_string(id) + ".json", J.toStyledString());
+}
+
 void gpt3_5::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     message = trim(message.substr(3));
     message = do_black(message);
@@ -158,6 +165,7 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
             it->second.clear();
         }
         cq_send("reset done.", message_type, user_id, group_id);
+        save_history(id);
         return;
     }
     if(message.find(".change")==0){
@@ -181,7 +189,7 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
         } else {
                 cq_send("Not on op list.", message_type, user_id, group_id);
         }
-        writefile("./config/gpt3_5/" + std::to_string(id) + ".json", history[id].toStyledString());
+        save_history(id);
         return;
     }
     if(message.find(".sw")==0){
@@ -298,10 +306,7 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
         history[id].append(user_input_J);
         history[id].append(J);
     }
-    J.clear();
-    J["pre_prompt"] = pre_default[id];
-    J["history"] = history[id];
-    writefile("./config/gpt3_5/" + std::to_string(id) + ".json", J.toStyledString());
+    save_history(id);
 }
 bool gpt3_5::check(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     return message.find(".ai") == 0;
