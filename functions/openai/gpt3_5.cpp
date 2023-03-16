@@ -159,7 +159,7 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
         return;
     }
     int64_t id = message_type == "group" ? (group_id<<1) : ((user_id<<1)|1);
-    if(message.find(".reset") == 0){
+    if(message.find(".reset") == 0 || message.find(" reset") == 0){
         auto it = history.find(id);
         if(it!=history.end()){
             it->second.clear();
@@ -282,9 +282,10 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
     is_lock[keyid] = false;
     if(J.isMember("error")){
         if(J["error"]["message"].asString().find("This model's maximum context length is") == 0){
-            cq_send("Openai ERROR: history message is too long. Please try again.", message_type, user_id, group_id);
+            cq_send("Openai ERROR: history message is too long. Please try again or try .ai.reset", message_type, user_id, group_id);
             history[id].removeIndex(0, &ign);
             history[id].removeIndex(0, &ign);
+            save_history(id);
         } else {
             cq_send("Openai ERROR: " + J["error"]["message"].asString() + "\nIf prompt is too long, try .ai.reset", message_type, user_id, group_id);
         }
