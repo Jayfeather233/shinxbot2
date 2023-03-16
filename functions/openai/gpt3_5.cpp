@@ -293,9 +293,20 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
         std::string msg = J["choices"][0]["message"]["content"].asString();
         msg = do_black(msg);
 
-        if(MAX_TOKEN - RED_LINE < static_cast<int>(J["usage"]["total_tokens"].asInt64())){
-            history[id].removeIndex(0, &ign);
-            history[id].removeIndex(0, &ign);
+        int tokens = static_cast<int>(J["usage"]["total_tokens"].asInt64());
+
+        if(MAX_TOKEN < tokens){
+            history[id].clear();
+        } else {
+            for(int i = 5;i>=1;i--){
+                if(MAX_TOKEN - RED_LINE / i < tokens){
+                    for(int j = 0; j < i; j++){
+                        history[id].removeIndex(0, &ign);
+                        history[id].removeIndex(0, &ign);
+                    }
+                    break;
+                }
+            }
         }
         
         std::string usage = "\n" + J["usage"].toStyledString();
