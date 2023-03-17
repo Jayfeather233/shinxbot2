@@ -15,7 +15,7 @@ std::mutex http_lock;
 
 std::string do_post(const std::string &httpaddr, const Json::Value &json_message, const std::map<std::string, std::string> &headers, const bool proxy_flg)
 {
-
+    setlog(LOG::INFO, "Connect to" + httpaddr);
     // std::lock_guard<std::mutex> guard(http_lock);
     // Create a new curl handle
     CURL *curl_handle = curl_easy_init();
@@ -71,9 +71,11 @@ std::string do_post(const std::string &httpaddr, const Json::Value &json_message
         curl_slist_free_all(header_list);
         curl_easy_cleanup(curl_handle);
         std::cerr << "Connect failed. " << curl_easy_strerror(curl_result) << std::endl;
-        throw "curl failed.";
+        setlog(LOG::ERROR, "Connect to " + httpaddr + " failed with code " + curl_easy_strerror(curl_result) );
+        return "";
     }
 
+    setlog(LOG::INFO, "Connect done");
     // Clean up resources and return the response
     curl_slist_free_all(header_list);
     curl_easy_cleanup(curl_handle);
@@ -85,6 +87,7 @@ std::string do_get(const std::string &httpaddr, const std::map<std::string, std:
 
     // std::lock_guard<std::mutex> guard(http_lock);
     // Create a new curl handle
+    setlog(LOG::INFO, "Connect to" + httpaddr);
     CURL *curl_handle = curl_easy_init();
     if (!curl_handle)
     {
@@ -93,10 +96,10 @@ std::string do_get(const std::string &httpaddr, const std::map<std::string, std:
     // Do not throw when timeout
     curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1L);
 
-    // Set the URL to POST to
+    // Set the GET URL
     curl_easy_setopt(curl_handle, CURLOPT_URL, httpaddr.c_str());
 
-    // Set the request method to POST
+    // Set the request method to GET
     curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1L);
 
     // Set the request headers
@@ -133,9 +136,11 @@ std::string do_get(const std::string &httpaddr, const std::map<std::string, std:
         curl_slist_free_all(header_list);
         curl_easy_cleanup(curl_handle);
         std::cerr << "Connect failed. " << curl_easy_strerror(curl_result) << std::endl;
-        throw "curl failed.";
+        setlog(LOG::ERROR, "Connect to " + httpaddr + " failed with code " + curl_easy_strerror(curl_result) );
+        return "";
     }
 
+    setlog(LOG::INFO, "Connect done");
     // Clean up resources and return the response
     curl_slist_free_all(header_list);
     curl_easy_cleanup(curl_handle);

@@ -125,6 +125,9 @@ int start_server(){
             int valread;
             while(1){
                 valread = read(new_socket, buffer, 4000);
+                if(valread < 0){
+                    break;
+                }
                 s_buffer += buffer;
                 if(valread<4000){
                     break;
