@@ -159,7 +159,7 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
         return;
     }
     int64_t id = message_type == "group" ? (group_id<<1) : ((user_id<<1)|1);
-    if(message.find(".reset") == 0 || message.find(" reset") == 0){
+    if(message.find(".reset") == 0 || message.find("reset") == 0){
         auto it = history.find(id);
         if(it!=history.end()){
             it->second.clear();
