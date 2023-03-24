@@ -9,6 +9,7 @@ class gpt3_5 : public processable {
 private:
     std::vector<bool> is_lock;
     bool is_open, is_debug;
+    std::string close_message; // The reason for is_open=false
     std::string default_prompt;
     std::map<int64_t, std::string> pre_default;
     std::map<int64_t, Json::Value> pre_prompt;

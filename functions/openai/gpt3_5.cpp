@@ -195,6 +195,7 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
     if(message.find(".sw")==0){
         if(op_list.find(user_id) != op_list.end()){
             is_open = !is_open;
+            close_message = trim(message.substr(3));
             cq_send("is_open: " + std::to_string(is_open), message_type, user_id, group_id);
         } else {
             cq_send("Not on op list.", message_type, user_id, group_id);
@@ -240,7 +241,7 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
         return;
     }
     if(!is_open){
-        cq_send("已关闭。", message_type, user_id, group_id);
+        cq_send("已关闭。" + close_message, message_type, user_id, group_id);
         return;
     }
     if(history.find(id) == history.end()){
