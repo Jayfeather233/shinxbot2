@@ -102,9 +102,9 @@ void read_server_message(int new_socket){
         std::string line;
         while(std::getline(iss, line)){
             if(line[0]=='{'){
-                input_process(new std::string(line));
-                // std::string *u = new std::string(line);
-                // std::thread(input_process, u).detach();
+                // input_process(new std::string(line));
+                std::string *u = new std::string(line);
+                std::thread(input_process, u).detach();
             }
         }
 
@@ -159,7 +159,8 @@ int start_server(){
             std::cerr << "Error accepting connection\n";
             continue;
         }
-        std::thread(read_server_message, new_socket).detach();
+        //std::thread(read_server_message, new_socket).detach();
+        read_server_message(new_socket);
     }
     return 0;
 }

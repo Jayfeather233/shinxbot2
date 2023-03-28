@@ -25,15 +25,16 @@ e621::e621(){
 
 std::string e621::deal_input(const std::string &input, bool is_pool){
     std::string res = my_replace(input, ' ', '+');
+    bool is_id = res.find("id:") != res.npos;
     
-    if(res.find("score:") == res.npos && res.find("favcount:") == res.npos && !is_pool && res.find("id:") == res.npos){
+    if(res.find("score:") == res.npos && res.find("favcount:") == res.npos && !is_pool && !is_id){
         res += "+score:>200+favcount:>400";
     }
     if(res.find("order:") == res.npos && !is_pool){
         res += "+order:random";
     }
     //res += "+-animated";
-    if(!is_pool)
+    if(!is_pool && !is_id)
         for(std::string it : n_search){
             if(res.find(it) == res.npos){
                 res += "+-" + it;
