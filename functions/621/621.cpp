@@ -3,6 +3,7 @@
 #include "utils.h"
 #include <base64.hpp>
 
+#include <filesystem>
 #include <jsoncpp/json/json.h>
 #include <fstream>
 #include <iostream>
@@ -149,7 +150,7 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
             if(get_tag){
                 J2 = string_to_json(cq_send(get_image_tags(J) + (i ? "\ntx原因无法发送原图" : ""), message_type,user_id, group_id));
             } else {
-                J2 = string_to_json(cq_send(get_image_info(J, count, is_pool, i) + (i ? "\ntx原因无法发送原图" : ""), message_type,user_id, group_id));
+                J2 = string_to_json(cq_send(get_image_info(J, count, is_pool, i, group_id) + (i ? "\ntx原因无法发送原图" : ""), message_type,user_id, group_id));
             }
             if(J2["status"].asString() != "failed"){
                 break;
@@ -181,7 +182,7 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
             for(Json::ArrayIndex j = 0; j < count; j++){
                 if(J3[i].asInt64() == J["posts"][j]["id"].asInt64()){
                     res_message += std::to_string(get_botqq()) + " 合并行\n";
-                    res_message += get_image_info(J["posts"][j], count, is_pool, 1);
+                    res_message += get_image_info(J["posts"][j], count, is_pool, 1, group_id);
                     res_message += "\n结束合并\n";
                 }
             }
@@ -262,7 +263,7 @@ std::string e621::get_image_tags(const Json::Value &J){
     return s;
 }
 
-std::string e621::get_image_info(const Json::Value &J, int count, bool poolFlag, int retry) {
+std::string e621::get_image_info(const Json::Value &J, int count, bool poolFlag, int retry, int64_t group_id) {
     std::string imageUrl;
     if (J.isMember("file") && retry <= 0){
         imageUrl = J["file"]["url"].asString();
@@ -293,7 +294,7 @@ std::string e621::get_image_info(const Json::Value &J, int count, bool poolFlag,
     std::string fileExt = imageUrl.substr(extPos);
     std::string imageLocalPath = std::to_string(id) + '.' + fileExt;
 
-    if (!std::ifstream("./resource/download/e621/" + imageLocalPath) && fileExt != "webm" && fileExt != "mp4") {
+    if (!std::ifstream("./resource/download/e621/" + imageLocalPath)) {
         download(imageUrl, "./resource/download/e621", imageLocalPath, true);
     }
     if(fileExt != "gif" && fileExt != "webm" && fileExt != "mp4")
@@ -302,6 +303,7 @@ std::string e621::get_image_info(const Json::Value &J, int count, bool poolFlag,
     if(fileExt != "webm" && fileExt != "mp4"){
         quest << (fileExt == "gif" ? "Get gif:\n" : "") << "[CQ:image,file=file://" << get_local_path() << "/resource/download/e621/" << imageLocalPath << ",id=40000]\n";
     } else {
+        upload_file("./resource/download/e621/" + imageLocalPath, group_id, "e621");
         quest << "Get video. id: " + std::to_string(id) << std::endl;
     }
     quest << "Fav_count: " << fav_count << "  Score: " << score << "\n";
