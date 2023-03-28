@@ -79,6 +79,45 @@ void input_process(std::string *input){
     }
 }
 
+void read_server_message(int new_socket){
+    char buffer[4096];
+    try{
+        std::string s_buffer;
+        int valread;
+        while(1){
+            valread = read(new_socket, buffer, 4000);
+            if(valread < 0){
+                break;
+            }
+            s_buffer += buffer;
+            if(valread<4000){
+                break;
+            }
+        }
+        if(valread == -1){
+            std::cerr<<"Error read message.\n";
+        }
+
+        std::istringstream iss(s_buffer);
+        std::string line;
+        while(std::getline(iss, line)){
+            if(line[0]=='{'){
+                input_process(new std::string(line));
+                // std::string *u = new std::string(line);
+                // std::thread(input_process, u).detach();
+            }
+        }
+
+        std::stringstream response_body;
+        response_body << (std::string)"HTTP/1.1 200 OK\r\n"+
+                    "Content-Length: 0\r\n"+
+                    "Content-Type: application/json\r\n\r\n";
+        std::string response = response_body.str();
+        const char* response_cstr = response.c_str();
+        send(new_socket, response_cstr, strlen(response_cstr), 0);
+    } catch (...){}
+    close(new_socket);
+}
 
 int start_server(){
     int server_fd, new_socket;
@@ -120,41 +159,7 @@ int start_server(){
             std::cerr << "Error accepting connection\n";
             continue;
         }
-        try{
-            std::string s_buffer;
-            int valread;
-            while(1){
-                valread = read(new_socket, buffer, 4000);
-                if(valread < 0){
-                    break;
-                }
-                s_buffer += buffer;
-                if(valread<4000){
-                    break;
-                }
-            }
-            if(valread == -1){
-                std::cerr<<"Error read message.\n";
-            }
-
-            std::istringstream iss(s_buffer);
-            std::string line;
-            while(std::getline(iss, line)){
-                if(line[0]=='{'){
-                    std::string *u = new std::string(line);
-                    std::thread(input_process, u).detach();
-                }
-            }
-
-            std::stringstream response_body;
-            response_body << (std::string)"HTTP/1.1 200 OK\r\n"+
-                        "Content-Length: 0\r\n"+
-                        "Content-Type: application/json\r\n\r\n";
-            std::string response = response_body.str();
-            const char* response_cstr = response.c_str();
-            send(new_socket, response_cstr, strlen(response_cstr), 0);
-        } catch (...){}
-        close(new_socket);
+        std::thread(read_server_message, new_socket).detach();
     }
     return 0;
 }

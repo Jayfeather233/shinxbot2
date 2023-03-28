@@ -72,10 +72,11 @@ std::string do_post(const std::string &httpaddr, const Json::Value &json_message
         curl_easy_cleanup(curl_handle);
         std::cerr << "Connect failed. " << curl_easy_strerror(curl_result) << std::endl;
         setlog(LOG::ERROR, "Connect to " + httpaddr + " failed with code " + curl_easy_strerror(curl_result) );
-        return "";
+        throw "HTTP Connect failed.";
+        // return "";
     }
 
-    setlog(LOG::INFO, "Connect done");
+    // setlog(LOG::INFO, "Connect done");
     // Clean up resources and return the response
     curl_slist_free_all(header_list);
     curl_easy_cleanup(curl_handle);
@@ -137,10 +138,11 @@ std::string do_get(const std::string &httpaddr, const std::map<std::string, std:
         curl_easy_cleanup(curl_handle);
         std::cerr << "Connect failed. " << curl_easy_strerror(curl_result) << std::endl;
         setlog(LOG::ERROR, "Connect to " + httpaddr + " failed with code " + curl_easy_strerror(curl_result) );
-        return "";
+        throw "HTTP Connect failed.";
+        // return "";
     }
 
-    setlog(LOG::INFO, "Connect done");
+    // setlog(LOG::INFO, "Connect done");
     // Clean up resources and return the response
     curl_slist_free_all(header_list);
     curl_easy_cleanup(curl_handle);
