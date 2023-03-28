@@ -214,7 +214,7 @@ void init(){
     get_log();
 }
 
-int notmain(){
+int main(){
     curl_global_init(CURL_GLOBAL_ALL);
 
     functions.push_back(new AnimeImg());
