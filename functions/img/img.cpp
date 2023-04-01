@@ -140,7 +140,7 @@ void img::process(std::string message, std::string message_type, int64_t user_id
     if(it == images.end()) return;
     int index;
     if(indexs.length() < 1){
-        index = get_random(it->second);
+        index = get_random(it->second) + 1;
     } else {
         index = get_userid(indexs);
     }
