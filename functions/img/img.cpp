@@ -110,7 +110,7 @@ void img::commands(std::string message, std::string message_type, int64_t user_i
                     is_deling[user_id] = true;
                     del_name[user_id] = name;
                 } else {
-                    del_single(name, get_userid(indexs));
+                    del_single(name, get_userid(indexs)-1);
                     cq_send("已删除", message_type, user_id, group_id);
                 }
             }
@@ -143,11 +143,12 @@ void img::process(std::string message, std::string message_type, int64_t user_id
     } else {
         index = get_userid(indexs);
     }
-    if(index <= 0 || index > it->second){
+    index --;
+    if(index < 0 || index >= it->second){
         cq_send("索引越界！(1~" + std::to_string(it->second) + ")", message_type, user_id, group_id);
         return;
     }
-    cq_send("[CQ:image,file=file://" + get_local_path() + "/resource/mt/"+name+"/"+std::to_string(index-1)+",id=40000]", message_type, user_id, group_id);
+    cq_send("[CQ:image,file=file://" + get_local_path() + "/resource/mt/"+name+"/"+std::to_string(index)+",id=40000]", message_type, user_id, group_id);
 }
 bool img::check(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     return true;
