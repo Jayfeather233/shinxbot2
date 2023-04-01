@@ -229,6 +229,7 @@ int main(){
     functions.push_back(new ocr());
     functions.push_back(new httpcats());
     functions.push_back(new gpt3_5());
+    functions.push_back(new img());
 
     events.push_back(new talkative());
     events.push_back(new m_change());
