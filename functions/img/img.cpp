@@ -8,7 +8,7 @@ img::img(){
     for(std::string u : J.getMemberNames()){
         images[u] = J[u].asInt64();
     }
-    parse_json_to_map(J["op_list"], op_list, true);
+    // parse_json_to_map(J["op_list"], op_list, true);
 }
 
 void img::save(){
@@ -105,7 +105,7 @@ void img::commands(std::string message, std::string message_type, int64_t user_i
                 std::string name, indexs;
                 std::istringstream iss(wstring_to_string(wmessage.substr(2)));
                 iss >> name >> indexs;
-                if(iss.eof()){
+                if(indexs.length() <= 0){
                     cq_send("即将删除 *所有* " + name + "图片，请确认[N/y]", message_type, user_id, group_id);
                     is_deling[user_id] = true;
                     del_name[user_id] = name;
