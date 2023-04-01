@@ -6,9 +6,10 @@
 img::img(){
     Json::Value J = string_to_json(readfile("./config/img.json", "{}"));
     for(std::string u : J.getMemberNames()){
-        images[u] = J[u].asInt64();
+        if(u != "op_list")
+            images[u] = J[u].asInt64();
     }
-    // parse_json_to_map(J["op_list"], op_list, true);
+    parse_json_to_map(J["op_list"], op_list, true);
 }
 
 void img::save(){
