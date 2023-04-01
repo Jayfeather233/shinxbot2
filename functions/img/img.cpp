@@ -18,10 +18,10 @@ void img::save(){
 }
 
 void img::add_image(std::string name, std::string image){
-    int index = image.find("[CQ:image,file=");
-    index += 15;
+    int index = image.find(",url=");
+    index += 5;
     int index2 = index;
-    while(image[index2]!=','){
+    while(image[index2]!=']'){
         ++index2;
     }
     download(image.substr(index, index2-index), "./resource/mt/" + name, std::to_string(images[name]));
