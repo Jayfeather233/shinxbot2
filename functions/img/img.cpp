@@ -49,6 +49,7 @@ void img::del_single(std::string name, int index){
 }
 
 void img::commands(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
+    std::cout<<message<<std::endl;
     if(is_deling[user_id]){
         if(message == "y" || message == "Y"){
             del_all(del_name[user_id]);
