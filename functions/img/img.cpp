@@ -18,6 +18,7 @@ void img::save(){
     for (auto it : images){
         if(it.second != 0) J[it.first] = it.second;
     }
+    J["op_list"] = parse_map_to_json(op_list);
     writefile("./config/img.json", J.toStyledString());
 }
 
