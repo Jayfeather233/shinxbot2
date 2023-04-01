@@ -50,7 +50,7 @@ void img::del_single(std::string name, int index){
 }
 
 void img::commands(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
-    std::cout<<message<<std::endl;
+    // std::cout<<message<<std::endl;
     if(is_deling[user_id]){
         if(message == "y" || message == "Y"){
             del_all(del_name[user_id]);
@@ -129,8 +129,8 @@ void img::commands(std::string message, std::string message_type, int64_t user_i
 void img::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     if(message.find("美图 ") == 0 || (is_adding[user_id] == true && message.find("[CQ:image,")!=message.npos) || is_deling[user_id] == true){
         commands(message, message_type, user_id, group_id);
-        is_adding[user_id] = false;
-        is_deling[user_id] = false;
+        // is_adding[user_id] = false;
+        // is_deling[user_id] = false;
         return;
     }
     is_adding[user_id] = false;
