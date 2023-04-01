@@ -33,6 +33,7 @@ void img::commands(std::string message, std::string message_type, int64_t user_i
     if(is_adding[user_id] == true && message.find("[CQ:image,")!=message.npos){
         add_image(add_name[user_id], trim(message));
         is_adding[user_id] = false;
+        cq_send("已加入" + add_name[user_id], message_type, user_id, group_id);
     } else {
         std::wstring wmessage = trim(string_to_wstring(message).substr(3));
         if(wmessage.length() <= 0){
@@ -58,6 +59,7 @@ void img::commands(std::string message, std::string message_type, int64_t user_i
                 }
                 name += wmessage[i];
             }
+            name = trim(name);
             wmessage = trim(wmessage.substr(i));
             if(wmessage.length() <= 1){
                 is_adding[user_id] = true;
