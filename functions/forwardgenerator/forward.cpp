@@ -67,7 +67,18 @@ Json::Value forward::get_content(std::wistringstream &wiss, int64_t group_id){
 void forward::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     std::wstring w_mess = string_to_wstring(message).substr(2);
     if(w_mess == L"帮助"){
-        cq_send("格式为：\n转发\n[@某人或qq号] 消息（一整行）\n[@某人或qq号] 合并行\n（多行消息）\n结束合并\n...\n[@某人或qq号] 转发\n（此处为转发内套转发）\n结束转发\n...\n结束转发 ",
+        cq_send("格式为：\n"
+        "转发\n"
+        "@某人或qq号 消息（一整行）\n"
+        "@某人或qq号 合并行\n"
+        "（多行消息）\n"
+        "结束合并\n"
+        "...\n"
+        "@某人或qq号 转发\n"
+        "（此处为转发内套转发）\n"
+        "结束转发\n"
+        "...\n"
+        "结束转发 ",
             message_type,user_id,group_id);
         return;
     }

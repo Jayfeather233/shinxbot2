@@ -9,3 +9,4 @@
 #include "./ocr/ocr.h"
 #include "./httpcats/httpcats.h"
 #include "./openai/gpt3_5.h"
+#include "./img/img.h"

@@ -7,9 +7,17 @@
 void download(const std::string& httpAddress, const std::string& filePath, const std::string& fileName, const bool proxy) {
     try {
         std::string data = do_get(httpAddress, {}, proxy);
-        std::ofstream out(filePath + "/" + fileName, std::ios::out | std::ios::binary);
-        out.write(data.c_str(), data.size());
-        out.close();
+        std::fstream ofile;
+        try{
+            ofile = openfile(filePath + "/" + fileName, std::ios::out | std::ios::binary);
+        } catch (...){}
+        ofile << data;
+        ofile.flush();
+        ofile.close();
+        // writefile(filePath + "/" + fileName, data);
+        // std::ofstream out(, std::ios::out | std::ios::binary);
+        // out.write(data.c_str(), data.size());
+        // out.close();
     } catch (const std::exception& e) {
         std::cerr << "Exception occurred: " << e.what() << std::endl;
     }
