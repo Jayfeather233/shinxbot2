@@ -2,6 +2,7 @@
 
 #include "utils.h"
 #include <filesystem>
+#include <iostream>
 
 img::img(){
     Json::Value J = string_to_json(readfile("./config/img.json", "{}"));
