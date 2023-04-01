@@ -53,6 +53,7 @@ void img::commands(std::string message, std::string message_type, int64_t user_i
         if(message == "y" || message == "Y"){
             del_all(del_name[user_id]);
             cq_send("删除 *所有* "+del_name[user_id], message_type, user_id, group_id);
+            is_deling[user_id] = false;
         } else {
             cq_send("取消删除", message_type, user_id, group_id);
             is_deling[user_id] = false;
@@ -92,7 +93,6 @@ void img::commands(std::string message, std::string message_type, int64_t user_i
                 is_adding[user_id] = true;
                 add_name[user_id] = wstring_to_string(name);
                 cq_send("图来！", message_type, user_id, group_id);
-                return;
             } else {
                 is_adding[user_id] = false;
                 add_image(wstring_to_string(name), wstring_to_string(wmessage));
