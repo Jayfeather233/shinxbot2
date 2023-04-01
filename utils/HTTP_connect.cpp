@@ -15,7 +15,7 @@ std::mutex http_lock;
 
 std::string do_post(const std::string &httpaddr, const Json::Value &json_message, const std::map<std::string, std::string> &headers, const bool proxy_flg)
 {
-    setlog(LOG::INFO, "Connect to" + httpaddr);
+    // setlog(LOG::INFO, "Connect to" + httpaddr);
     // std::lock_guard<std::mutex> guard(http_lock);
     // Create a new curl handle
     CURL *curl_handle = curl_easy_init();
@@ -88,7 +88,7 @@ std::string do_get(const std::string &httpaddr, const std::map<std::string, std:
 
     // std::lock_guard<std::mutex> guard(http_lock);
     // Create a new curl handle
-    setlog(LOG::INFO, "Connect to" + httpaddr);
+    // setlog(LOG::INFO, "Connect to" + httpaddr);
     CURL *curl_handle = curl_easy_init();
     if (!curl_handle)
     {
