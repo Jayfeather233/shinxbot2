@@ -53,7 +53,7 @@ void img::commands(std::string message, std::string message_type, int64_t user_i
             int i;
             wmessage = trim(wmessage.substr(2));
             for(i = 0; i < wmessage.length(); i++){
-                if(wmessage[i] == L' '){
+                if(wmessage[i] == L' ' || wmessage[i] == L'['){
                     break;
                 }
                 name += wmessage[i];
@@ -67,6 +67,7 @@ void img::commands(std::string message, std::string message_type, int64_t user_i
             } else {
                 is_adding[user_id] = false;
                 add_image(wstring_to_string(name), wstring_to_string(wmessage));
+                cq_send("已加入" + wstring_to_string(name), message_type, user_id, group_id);
             }
         }
     }
