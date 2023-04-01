@@ -51,7 +51,8 @@ void img::commands(std::string message, std::string message_type, int64_t user_i
         } else if(wmessage.find(L"加入")==0){
             std::wstring name = L"";
             int i;
-            for(i = 2; i < wmessage.length(); i++){
+            wmessage = trim(wmessage.substr(2));
+            for(i = 0; i < wmessage.length(); i++){
                 if(wmessage[i] == L' '){
                     break;
                 }
