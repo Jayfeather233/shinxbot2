@@ -5,6 +5,7 @@
 
 static size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdata)
 {
+    if(ptr == NULL || userdata == NULL) return 0;
     std::string *response = (std::string *)userdata;
     size_t num_bytes = size * nmemb;
     response->append(ptr, num_bytes);
@@ -21,11 +22,11 @@ std::string do_post(const std::string &httpaddr, const Json::Value &json_message
     CURL *curl_handle = curl_easy_init();
     if (!curl_handle)
     {
-        throw std::runtime_error("Failed to initialize curl");
+        throw "Failed to initialize curl";
     }
-    // Do not throw when timeout, for 20 seconds
+    // Do not throw when timeout, for 60 seconds
     curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1L);
-    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 20);
+    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 60);
 
     // Set the URL to POST to
     curl_easy_setopt(curl_handle, CURLOPT_URL, httpaddr.c_str());
@@ -73,7 +74,7 @@ std::string do_post(const std::string &httpaddr, const Json::Value &json_message
         curl_easy_cleanup(curl_handle);
         std::cerr << "Connect failed. " << curl_easy_strerror(curl_result) << std::endl;
         setlog(LOG::ERROR, "Connect to " + httpaddr + " failed with code " + curl_easy_strerror(curl_result) );
-        throw "HTTP Connect failed.";
+        throw (std::string)"HTTP Connect failed." + curl_easy_strerror(curl_result);
         // return "";
     }
 
@@ -93,11 +94,11 @@ std::string do_get(const std::string &httpaddr, const std::map<std::string, std:
     CURL *curl_handle = curl_easy_init();
     if (!curl_handle)
     {
-        throw std::runtime_error("Failed to initialize curl");
+        throw "Failed to initialize curl";
     }
-    // Do not throw when timeout, for 20 seconds
+    // Do not throw when timeout, for 60 seconds
     curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1L);
-    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 20);
+    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 60);
 
     // Set the GET URL
     curl_easy_setopt(curl_handle, CURLOPT_URL, httpaddr.c_str());
@@ -140,7 +141,7 @@ std::string do_get(const std::string &httpaddr, const std::map<std::string, std:
         curl_easy_cleanup(curl_handle);
         std::cerr << "Connect failed. " << curl_easy_strerror(curl_result) << std::endl;
         setlog(LOG::ERROR, "Connect to " + httpaddr + " failed with code " + curl_easy_strerror(curl_result) );
-        throw "HTTP Connect failed.";
+        throw (std::string)"HTTP Connect failed." + curl_easy_strerror(curl_result);
         // return "";
     }
 

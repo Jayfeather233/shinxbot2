@@ -275,6 +275,9 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
     J["max_tokens"] = MAX_REPLY;
     try{
         J = string_to_json(do_post("https://api.openai.com/v1/chat/completions", J, {{"Content-Type","application/json"},{"Authorization", "Bearer " + key[keyid]}}, true));
+    } catch (std::string e){
+        J.clear();
+        J["error"]["message"] = e;
     } catch (...){
         J.clear();
         J["error"]["message"] = "http connection failed.";
