@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <thread>
 #include <mutex>
+#include <csignal>
 
 int send_port;
 int receive_port;
@@ -217,6 +218,7 @@ void init(){
 
 int main(){
     curl_global_init(CURL_GLOBAL_ALL);
+    signal(SIGPIPE, SIG_IGN);
 
     functions.push_back(new AnimeImg());
     functions.push_back(new auto114());
