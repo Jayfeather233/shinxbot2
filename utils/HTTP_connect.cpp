@@ -24,9 +24,9 @@ std::string do_post(const std::string &httpaddr, const Json::Value &json_message
     {
         throw "Failed to initialize curl";
     }
-    // Do not throw when timeout, for 60 seconds
+    // Do not throw when timeout, for 180 seconds
     curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1L);
-    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 60);
+    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 180);
 
     // Set the URL to POST to
     curl_easy_setopt(curl_handle, CURLOPT_URL, httpaddr.c_str());
@@ -96,9 +96,9 @@ std::string do_get(const std::string &httpaddr, const std::map<std::string, std:
     {
         throw "Failed to initialize curl";
     }
-    // Do not throw when timeout, for 60 seconds
+    // Do not throw when timeout, for 180 seconds
     curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1L);
-    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 60);
+    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 180);
 
     // Set the GET URL
     curl_easy_setopt(curl_handle, CURLOPT_URL, httpaddr.c_str());
