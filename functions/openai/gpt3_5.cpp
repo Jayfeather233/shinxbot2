@@ -291,7 +291,7 @@ void gpt3_5::process(std::string message, std::string message_type, int64_t user
             history[id].removeIndex(0, &ign);
             save_history(id);
         } else {
-            cq_send("Openai ERROR: " + J["error"]["message"].asString() + "\nIf prompt is too long, try .ai.reset", message_type, user_id, group_id);
+            cq_send("Openai ERROR: " + J["error"]["message"].asString(), message_type, user_id, group_id);
         }
     } else {
         std::string msg = J["choices"][0]["message"]["content"].asString();
