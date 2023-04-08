@@ -25,6 +25,9 @@ e621::e621(){
 
 std::string e621::deal_input(const std::string &input, bool is_pool){
     std::string res = my_replace(input, ' ', '+');
+    if(input.length() < 1){
+        res += "+pokemon+fav:jayfeather233";
+    }
     bool is_id = res.find("id:") != res.npos;
     
     if(res.find("score:") == res.npos && res.find("favcount:") == res.npos && !is_pool && !is_id){
@@ -73,9 +76,10 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
     }
 
     if(message == "621.default") {
-        std::string res = "\
-如未指定favcount或score，默认加上favcount:>400 score:>200\n\
-如未指定以下tags，默认不搜索";
+        std::string res =
+"如未指定任何内容，默认加上fav:jayfeather233 pokemon\n"
+"如未指定favcount或score，默认加上favcount:>400 score:>200\n"
+"如未指定以下tags，默认不搜索";
         for(std::string it : n_search){
             res += it + ",";
         }
@@ -110,9 +114,6 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
     if(input.find(".input") == 0){
         cq_send(deal_input(input.substr(6), is_pool), message_type, user_id, group_id);
         return;
-    }
-    if(input.length() <= 1){
-        input += " fav:jayfeather233 eeveelution";
     }
     input = deal_input(input, is_pool);
 
