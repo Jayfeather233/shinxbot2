@@ -136,7 +136,7 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
         return;
     }
     
-    int count = J["posts"].size();
+    Json::ArrayIndex count = J["posts"].size();
     if(count == 0){
         cq_send("No image found.", message_type, user_id, group_id);
         setlog(LOG::WARNING, "621 at group " + std::to_string(group_id) + " by " + std::to_string(user_id) + " but no image found.");
@@ -264,7 +264,7 @@ std::string e621::get_image_tags(const Json::Value &J){
     return s;
 }
 
-std::string e621::get_image_info(const Json::Value &J, int count, bool poolFlag, int retry, int64_t group_id) {
+std::string e621::get_image_info(const Json::Value &J, size_t count, bool poolFlag, int retry, int64_t group_id) {
     std::string imageUrl;
     if (J.isMember("file") && retry <= 0){
         imageUrl = J["file"]["url"].asString();

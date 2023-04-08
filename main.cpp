@@ -42,7 +42,7 @@ void input_process(std::string *input){
     } else if(post_type == "message"){
         if(J.isMember("message_type") && J.isMember("message")){
             std::string message = J["message"].asString();
-            int message_id = J["message_id"].asInt();
+            // int message_id = J["message_id"].asInt();
             std::string message_type = J["message_type"].asString();
             if(message_type == "group" || message_type == "private"){
                 int64_t user_id = 0, group_id = -1;
@@ -65,9 +65,11 @@ void input_process(std::string *input){
                         if (func->check(message, message_type, user_id, group_id)) {
                             try{
                                 func->process(message, message_type, user_id, group_id);
-                            } catch (std::string e){
+                            } catch (char* e){
+                                cq_send((std::string)"Throw an char*: " + e, message_type, user_id, group_id);
+                            }  catch (std::string e){
                                 cq_send("Throw an string: " + e, message_type, user_id, group_id);
-                            } catch (std::exception e){
+                            } catch (std::exception& e){
                                 cq_send((std::string)"Throw an exception: " + e.what(), message_type, user_id, group_id);
                             } catch (...){
                                 cq_send((std::string)"Throw an unknown error", message_type, user_id, group_id);
@@ -124,7 +126,7 @@ int start_server(){
     int server_fd, new_socket;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
-    char buffer[4096] = {0};
+    // char buffer[4096] = {0};
 
     // Create server socket
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {

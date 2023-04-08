@@ -14,7 +14,7 @@ private:
     std::string deal_input(const std::string &input, bool is_pool);
     void admin_set(const std::string &input, const std::string message_type, int64_t user_id, int64_t group_id, bool flg);
     std::string get_image_tags(const Json::Value &J);
-    std::string get_image_info(const Json::Value &J, int count, bool poolFlag, int retry, int64_t group_id);
+    std::string get_image_info(const Json::Value &J, size_t count, bool poolFlag, int retry, int64_t group_id);
     void save();
 public:
     e621();

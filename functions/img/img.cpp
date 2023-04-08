@@ -82,7 +82,7 @@ void img::commands(std::string message, std::string message_type, int64_t user_i
             cq_send(oss.str(), message_type, user_id, group_id);
         } else if(wmessage.find(L"加入")==0){
             std::wstring name = L"";
-            int i;
+            size_t i;
             wmessage = trim(wmessage.substr(2));
             for(i = 0; i < wmessage.length(); i++){
                 if(wmessage[i] == L' ' || wmessage[i] == L'['){

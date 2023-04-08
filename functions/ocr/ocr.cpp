@@ -6,7 +6,7 @@
 std::map<int64_t, bool> in_queue;
 
 void ocr::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
-    int index = message.find("[CQ:image,file=");
+    size_t index = message.find("[CQ:image,file=");
     if(index == std::string::npos){
         cq_send("图来！", message_type, user_id, group_id);
         in_queue[user_id] = true;
@@ -14,7 +14,7 @@ void ocr::process(std::string message, std::string message_type, int64_t user_id
     }
     in_queue[user_id] = false;
     index += 15;
-    int index2 = index;
+    size_t index2 = index;
     while(message[index2]!=','){
         ++index2;
     }
