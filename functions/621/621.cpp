@@ -84,6 +84,7 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
             res += it + ",";
         }
         cq_send(res, message_type, user_id, group_id);
+        return;
     }
     if(message.find("621.autocomplete") == 0){
         message = trim(message.substr(16));
@@ -312,6 +313,7 @@ std::string e621::get_image_info(const Json::Value &J, size_t count, bool poolFl
     } else {
         upload_file("./resource/download/e621/" + imageLocalPath, group_id, "e621");
         quest << "Get video. id: " + std::to_string(id) << std::endl;
+        quest << "QQ放不了.webm。请下载后用本地播放器打开。" << std::endl;
     }
     quest << "Fav_count: " << fav_count << "  Score: " << score << "\n";
 
