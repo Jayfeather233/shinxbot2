@@ -297,23 +297,27 @@ std::string e621::get_image_info(const Json::Value &J, size_t count, bool poolFl
     std::string fileExt = imageUrl.substr(extPos);
     std::string imageLocalPath = std::to_string(id) + '.' + fileExt;
 
+    bool is_downloaded = false;
     if (!std::ifstream("./resource/download/e621/" + imageLocalPath)) {
         for(int i=0;i<3;i++){
             try{
                 download(imageUrl, "./resource/download/e621", imageLocalPath, true);
+                is_downloaded = true;
                 break;
             } catch (...){}
         }
     }
-    if(fileExt != "gif" && fileExt != "webm" && fileExt != "mp4")
+    if(is_downloaded && fileExt != "gif" && fileExt != "webm" && fileExt != "mp4")
         addRandomNoise("./resource/download/e621/" + imageLocalPath);
 
-    if(fileExt != "webm" && fileExt != "mp4"){
+    if(is_downloaded && fileExt != "webm" && fileExt != "mp4"){
         quest << (fileExt == "gif" ? "Get gif:\n" : "") << "[CQ:image,file=file://" << get_local_path() << "/resource/download/e621/" << imageLocalPath << ",id=40000]\n";
-    } else {
+    } else if(is_downloaded){
         upload_file("./resource/download/e621/" + imageLocalPath, group_id, "e621");
         quest << "Get video. id: " + std::to_string(id) << std::endl;
         quest << "QQ放不了.webm。请下载后用本地播放器打开。" << std::endl;
+    } else {
+        quest << "图片下载失败" <<std::endl;
     }
     quest << "Fav_count: " << fav_count << "  Score: " << score << "\n";
 
