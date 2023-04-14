@@ -306,6 +306,8 @@ std::string e621::get_image_info(const Json::Value &J, size_t count, bool poolFl
                 break;
             } catch (...){}
         }
+    } else {
+        is_downloaded = true;
     }
     if(is_downloaded && fileExt != "gif" && fileExt != "webm" && fileExt != "mp4")
         addRandomNoise("./resource/download/e621/" + imageLocalPath);
