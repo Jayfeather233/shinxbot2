@@ -28,6 +28,9 @@ std::string e621::deal_input(const std::string &input, bool is_pool){
     if(input.length() < 1){
         res += "+pokemon+fav:jayfeather233";
     }
+    if(input[0]=='+'){
+        res += "+fav:jayfeather233";
+    }
     bool is_id = res.find("id:") != res.npos;
     
     if(res.find("score:") == res.npos && res.find("favcount:") == res.npos && !is_pool && !is_id){
