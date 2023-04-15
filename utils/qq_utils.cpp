@@ -42,12 +42,12 @@ void upload_file(const std::filesystem::path &file, const int64_t &group_id, con
         //         cq_send("create folder: " + path + " failed: " + J["msg"].asString(), "group", -1, group_id);
         //     }
         // } // Cannot use?
-        // std::string id = get_folder_id(group_id, path);
+        std::string id = get_folder_id(group_id, path);
         Json::Value J;
         J["group_id"] = group_id;
         J["file"] = (std::filesystem::current_path() / file).lexically_normal().string();
         J["name"] = file.filename().string();
-        // J["folder"] = id;
+        J["folder"] = id;
         J = string_to_json(cq_send("upload_group_file", J));
         if(J.isMember("msg")){
             cq_send("Upload file failed: " + J["msg"].asString(), "group", -1, group_id);
