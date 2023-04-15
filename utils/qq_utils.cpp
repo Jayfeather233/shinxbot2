@@ -32,7 +32,7 @@ std::string get_folder_id(const int64_t &group_id, const std::string &path){
 */
 void upload_file(const std::filesystem::path &file, const int64_t &group_id, const std::string &path){
     try{
-        if(!is_folder_exist(group_id, path)){
+        if(!is_folder_exist(group_id, path) && is_group_op(group_id, get_botqq())){
             Json::Value J;
             J["group_id"] = group_id;
             J["name"] = path;
@@ -54,4 +54,12 @@ void upload_file(const std::filesystem::path &file, const int64_t &group_id, con
         setlog(LOG::WARNING, "File upload failed.");
         cq_send("File upload failed.", "group", -1, group_id);
     }
+}
+
+bool is_group_op(const int64_t &group_id, const int64_t &user_id){
+    Json::Value J;
+    J["group_id"] = group_id;
+    J["user_id"] = user_id;
+    J = string_to_json(cq_send("get_group_member_info", J))["data"];
+    return J["role"].asString() != "member";
 }
