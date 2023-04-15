@@ -318,16 +318,15 @@ std::string e621::get_image_info(const Json::Value &J, size_t count, bool poolFl
     if(is_downloaded && fileExt != "webm" && fileExt != "mp4"){
         quest << (fileExt == "gif" ? "Get gif:\n" : "") << "[CQ:image,file=file://" << get_local_path() << "/resource/download/e621/" << imageLocalPath << ",id=40000]\n";
     } else if(is_downloaded){
-        if(!std::filesystem::exists("./resource/download/e621/" + std::to_string(id) + ".mp4")){
-            std::string commandx = "ffmpeg -i ./resource/download/e621/" + imageLocalPath
-             + " -vf \"noise=alls=30:allf=t+u, tpad=stop=1:stop_mode=clone, format=yuv420p, geq=random(1)*255:128:128 [fgsm]; [in][fgsm] overlay [out]\" ./resource/download/e621/" + std::to_string(id) + ".mp4";
-            
-            int ret = system(commandx.c_str());
-            if(ret != 0){
-                quest << "视频转换失败" << std::endl;
-            } else {
-                upload_file("./resource/download/e621/" + std::to_string(id) + ".mp4", group_id, "e621");
-            }
+        if(std::filesystem::exists("./resource/download/e621/" + std::to_string(id) + ".mp4")){
+            std::filesystem::remove("./resource/download/e621/" + std::to_string(id) + ".mp4");
+        }
+        std::string commandx = "ffmpeg -i ./resource/download/e621/" + imageLocalPath
+            + " -vf \"noise=alls=30:allf=t+u, tpad=stop=1:stop_mode=clone, format=yuv420p, geq=random(1)*255:128:128 [fgsm]; [in][fgsm] overlay [out]\" ./resource/download/e621/" + std::to_string(id) + ".mp4";
+        
+        int ret = system(commandx.c_str());
+        if(ret != 0){
+            quest << "视频转换失败" << std::endl;
         } else {
             upload_file("./resource/download/e621/" + std::to_string(id) + ".mp4", group_id, "e621");
         }
