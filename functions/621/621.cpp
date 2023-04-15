@@ -319,29 +319,37 @@ std::string e621::get_image_info(const Json::Value &J, size_t count, bool poolFl
     if(is_downloaded && fileExt != "webm" && fileExt != "mp4"){
         quest << (fileExt == "gif" ? "Get gif:\n" : "") << "[CQ:image,file=file://" << get_local_path() << "/resource/download/e621/" << imageLocalPath << ",id=40000]\n";
     } else if(is_downloaded){
-        std::string zip_name = std::to_string(id) + ".zip";
+        std::string zip_name = "./resource/download/e621/" + std::to_string(id) + ".zip";
         std::string file_name = "./resource/download/e621/" + imageLocalPath;
 
         zip_t* archive = zip_open(zip_name.c_str(), ZIP_CREATE | ZIP_TRUNCATE, nullptr);
-        zip_source_t* source = zip_source_file(archive, file_name.c_str(), 0, -1);
-        if(archive == NULL || source == NULL){
+        if(archive == NULL){
             quest << "zip创建出错" << std::endl;
         } else {
-            zip_file_add(archive, file_name.c_str(), source, ZIP_FL_ENC_GUESS);
-            zip_source_free(source);
-            source = zip_source_buffer(archive, nullptr, 0, 0);
-            zip_file_add(archive, "密码就是文件名", source, ZIP_FL_ENC_GUESS);
-            zip_source_free(source);
-            zip_set_default_password(archive, std::to_string(id).c_str());
+            zip_source_t* source1 = zip_source_file(archive, file_name.c_str(), 0, -1);
+            int ret = zip_file_add(archive, imageLocalPath.c_str(), source1, ZIP_FL_ENC_GUESS);
+            if(ret < 0){
+                zip_source_free(source1);
+            }
+            zip_source_t* source2 = zip_source_buffer(archive, nullptr, 0, 0);
+            ret = zip_file_add(archive, "密码就是文件名", source2, ZIP_FL_ENC_GUESS);
+            if(ret < 0){
+                zip_source_free(source1);
+            }
+            zip_stat_t st;
+            zip_stat(archive, imageLocalPath.c_str(), 0, &st);
+            zip_file_set_encryption(archive, st.index, ZIP_EM_AES_256, std::to_string(id).c_str());
             zip_close(archive);
-            upload_file("./resource/download/e621/" + zip_name, group_id, "e621");
+            upload_file(zip_name, group_id, "e621");
         }
 
-        int ret = system(("ffmpeg -i " + file_name + " -vframes 1 " + file_name + ".png").c_str());
+            std::cout<<1<<std::endl;
+        int ret = system(("ffmpeg -y -i " + file_name + " -vframes 1 " + file_name + ".png").c_str());
+            std::cout<<1<<std::endl;
         if(ret != 0){
             quest << "获取视频封面出错" << std::endl;
         } else {
-            quest << "[CQ:image,file=file://" << get_local_path() << file_name << ".png,id=40000]"<<std::endl;
+            quest << "[CQ:image,file=file://" << get_local_path() << file_name.substr(1) << ".png,id=40000]"<<std::endl;
         }
 
         quest << "Get video. id: " + std::to_string(id) << std::endl;
