@@ -323,7 +323,7 @@ std::string e621::get_image_info(const Json::Value &J, size_t count, bool poolFl
         if(ret != 0){
             quest << "视频转换失败" << std::endl;
         } else {
-            upload_file("./resource/download/e621/" + imageLocalPath, group_id, "e621");
+            upload_file("./resource/download/e621/" + std::to_string(id) + ".mp4", group_id, "e621");
         }
         quest << "Get video. id: " + std::to_string(id) << std::endl;
     } else {
