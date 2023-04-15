@@ -37,7 +37,7 @@
 
 ### 如何运行这个机器人
 
-需要几个支持库：[libcurl](https://curl.se/libcurl/) + openssl-dev / [jsoncpp](https://github.com/open-source-parsers/jsoncpp) / [CImg](https://www.cimg.eu/) / [base64](https://github.com/tobiaslocker/base64)
+需要几个支持库：[libcurl](https://curl.se/libcurl/) + openssl-dev / [jsoncpp](https://github.com/open-source-parsers/jsoncpp) / [CImg](https://www.cimg.eu/) / [base64](https://github.com/tobiaslocker/base64) / [libzip](https://github.com/nih-at/libzip)
 
 ```
 libcurl: sudo apt-get install libcurl4-openssl-dev
@@ -46,6 +46,7 @@ jsoncpp: sudo apt-get install libjsoncpp-dev
 CImg: download and move CImg.h to include path
       and sudo apt-get install libjpeg-dev libpng-dev
 base64: download and include base64.hpp
+libzip: sudo apt-get install libzip-dev
 maybe it will work
 ```
 
