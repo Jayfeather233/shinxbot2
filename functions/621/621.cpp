@@ -3,6 +3,7 @@
 #include "utils.h"
 #include <base64.hpp>
 
+#include <zip.h>
 #include <filesystem>
 #include <jsoncpp/json/json.h>
 #include <fstream>
@@ -318,17 +319,32 @@ std::string e621::get_image_info(const Json::Value &J, size_t count, bool poolFl
     if(is_downloaded && fileExt != "webm" && fileExt != "mp4"){
         quest << (fileExt == "gif" ? "Get gif:\n" : "") << "[CQ:image,file=file://" << get_local_path() << "/resource/download/e621/" << imageLocalPath << ",id=40000]\n";
     } else if(is_downloaded){
-        std::string commandx = "ffmpeg -y -i ./resource/download/e621/" + imageLocalPath + " -vf \"noise=alls=30:allf=t+u\" -b:v 100k -crf 30 -profile:v baseline ./resource/download/e621/" + std::to_string(id) + ".mp4";
-        
-        int ret = system(commandx.c_str());
-        if(ret != 0){
-            quest << "视频转换失败" << std::endl;
+        std::string zip_name = std::to_string(id) + ".zip";
+        std::string file_name = "./resource/download/e621/" + imageLocalPath;
+
+        zip_t* archive = zip_open(zip_name.c_str(), ZIP_CREATE | ZIP_TRUNCATE, nullptr);
+        zip_source_t* source = zip_source_file(archive, file_name.c_str(), 0, -1);
+        if(archive == NULL || source == NULL){
+            quest << "zip创建出错" << std::endl;
         } else {
-            upload_file("./resource/download/e621/" + std::to_string(id) + ".mp4", group_id, "e621");
+            zip_file_add(archive, file_name.c_str(), source, ZIP_FL_ENC_GUESS);
+            zip_source_free(source);
+            source = zip_source_buffer(archive, nullptr, 0, 0);
+            zip_file_add(archive, "密码就是文件名", source, ZIP_FL_ENC_GUESS);
+            zip_source_free(source);
+            zip_set_default_password(archive, std::to_string(id).c_str());
+            zip_close(archive);
+            upload_file("./resource/download/e621/" + zip_name, group_id, "e621");
         }
-        // upload_file("./resource/download/e621/" + imageLocalPath, group_id, "e621");
+
+        int ret = system(("ffmpeg -i " + file_name + " -vframes 1 " + file_name + ".png").c_str());
+        if(ret != 0){
+            quest << "获取视频封面出错" << std::endl;
+        } else {
+            quest << "[CQ:image,file=file://" << get_local_path() << file_name << ".png,id=40000]"<<std::endl;
+        }
+
         quest << "Get video. id: " + std::to_string(id) << std::endl;
-        // quest << "qq无法播放webm，请下载后用本地播放器打开" << std::endl;
     } else {
         quest << "图片下载失败" <<std::endl;
     }
