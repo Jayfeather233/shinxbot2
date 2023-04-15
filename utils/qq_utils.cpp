@@ -4,7 +4,7 @@
 bool is_folder_exist(const int64_t &group_id, const std::string &path){
     Json::Value J;
     J["group_id"] = group_id;
-    J = string_to_json(cq_send("get_group_root_files", J))["folders"];
+    J = string_to_json(cq_send("get_group_root_files", J))["data"]["folders"];
     Json::ArrayIndex sz = J.size();
     for(Json::ArrayIndex i=0;i<sz;i++){
         if(J[i]["folder_name"].asString() == path){
@@ -17,7 +17,7 @@ bool is_folder_exist(const int64_t &group_id, const std::string &path){
 std::string get_folder_id(const int64_t &group_id, const std::string &path){
     Json::Value J;
     J["group_id"] = group_id;
-    J = string_to_json(cq_send("get_group_root_files", J))["folders"];
+    J = string_to_json(cq_send("get_group_root_files", J))["data"]["folders"];
     Json::ArrayIndex sz = J.size();
     for(Json::ArrayIndex i=0;i<sz;i++){
         if(J[i]["folder_name"].asString() == path){
