@@ -1,7 +1,7 @@
 #include "utils.h"
 #include <filesystem>
 
-bool is_folder_exist(const int64_t &group_id, const std::string path){
+bool is_folder_exist(const int64_t &group_id, const std::string &path){
     Json::Value J;
     J["group_id"] = group_id;
     J = string_to_json(cq_send("get_group_root_files", J))["folders"];
@@ -14,7 +14,7 @@ bool is_folder_exist(const int64_t &group_id, const std::string path){
     return false;
 }
 
-std::string get_folder_id(const int64_t &group_id, const std::string path){
+std::string get_folder_id(const int64_t &group_id, const std::string &path){
     Json::Value J;
     J["group_id"] = group_id;
     J = string_to_json(cq_send("get_group_root_files", J))["folders"];
@@ -37,7 +37,10 @@ void upload_file(const std::filesystem::path &file, const int64_t &group_id, con
             J["group_id"] = group_id;
             J["name"] = path;
             J["parent_id"] = "/";
-            cq_send("create_group_file_folder", J);
+            J = string_to_json(cq_send("create_group_file_folder", J));
+            if(J.isMember("msg")){
+                cq_send("create folder: " + path + " failed: " + J["msg"].asString(), "group", -1, group_id);
+            }
         }
         std::string id = get_folder_id(group_id, path);
         Json::Value J;

@@ -186,9 +186,9 @@ void upload_file(const std::filesystem::path &file, const int64_t &group_id, con
 /**
  * Get the folder id in a group
 */
-std::string get_folder_id(const int64_t &group_id, const std::string path);
+std::string get_folder_id(const int64_t &group_id, const std::string &path);
 
 /**
  * Determine if a folder in group exists
 */
-bool is_folder_exist(const int64_t &group_id, const std::string path);
+bool is_folder_exist(const int64_t &group_id, const std::string &path);

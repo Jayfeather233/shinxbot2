@@ -315,9 +315,14 @@ std::string e621::get_image_info(const Json::Value &J, size_t count, bool poolFl
     if(is_downloaded && fileExt != "webm" && fileExt != "mp4"){
         quest << (fileExt == "gif" ? "Get gif:\n" : "") << "[CQ:image,file=file://" << get_local_path() << "/resource/download/e621/" << imageLocalPath << ",id=40000]\n";
     } else if(is_downloaded){
-        upload_file("./resource/download/e621/" + imageLocalPath, group_id, "e621");
+        std::string commandx = "ffmpeg -i ./resource/download/e621/" + imageLocalPath + " ./resource/download/e621/" + std::to_string(id) + ".mp4";
+        int ret = system(commandx.c_str());
+        if(ret != 0){
+            quest << "视频转换失败" << std::endl;
+        } else {
+            upload_file("./resource/download/e621/" + imageLocalPath, group_id, "e621");
+        }
         quest << "Get video. id: " + std::to_string(id) << std::endl;
-        quest << "QQ放不了.webm。请下载后用本地播放器打开。" << std::endl;
     } else {
         quest << "图片下载失败" <<std::endl;
     }
