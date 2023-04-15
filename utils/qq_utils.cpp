@@ -32,16 +32,15 @@ std::string get_folder_id(const int64_t &group_id, const std::string &path){
 */
 void upload_file(const std::filesystem::path &file, const int64_t &group_id, const std::string &path){
     try{
-        // if(!is_folder_exist(group_id, path)){
-        //     Json::Value J;
-        //     J["group_id"] = group_id;
-        //     J["name"] = path;
-        //     J["parent_id"] = "/";
-        //     J = string_to_json(cq_send("create_group_file_folder", J));
-        //     if(J.isMember("msg")){
-        //         cq_send("create folder: " + path + " failed: " + J["msg"].asString(), "group", -1, group_id);
-        //     }
-        // } // Cannot use?
+        if(!is_folder_exist(group_id, path)){
+            Json::Value J;
+            J["group_id"] = group_id;
+            J["name"] = path;
+            J = string_to_json(cq_send("create_group_file_folder", J));
+            if(J.isMember("msg")){
+                cq_send("create folder: " + path + " failed: " + J.toStyledString(), "group", -1, group_id);
+            }
+        } // Cannot use?
         std::string id = get_folder_id(group_id, path);
         Json::Value J;
         J["group_id"] = group_id;
