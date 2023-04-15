@@ -192,3 +192,8 @@ std::string get_folder_id(const int64_t &group_id, const std::string &path);
  * Determine if a folder in group exists
 */
 bool is_folder_exist(const int64_t &group_id, const std::string &path);
+
+/**
+ * Determine if someone is operator
+*/
+bool is_group_op(const int64_t &group_id, const int64_t &user_id);
