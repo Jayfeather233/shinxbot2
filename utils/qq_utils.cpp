@@ -48,6 +48,7 @@ void upload_file(const std::filesystem::path &file, const int64_t &group_id, con
         J["file"] = (std::filesystem::current_path() / file).lexically_normal().string();
         J["name"] = file.filename().string();
         J["folder"] = id;
+        cq_send(J.toStyledString(), "group", -1, group_id);
         J = string_to_json(cq_send("upload_group_file", J));
         if(J.isMember("msg")){
             cq_send("Upload file failed: " + J["msg"].asString(), "group", -1, group_id);
