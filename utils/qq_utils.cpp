@@ -50,7 +50,7 @@ void upload_file(const std::filesystem::path &file, const int64_t &group_id, con
         // cq_send(J.toStyledString(), "group", -1, group_id);
         J = string_to_json(cq_send("upload_group_file", J));
         if(J.isMember("msg")){
-            cq_send(J.toStyledString(), "group", -1, group_id);
+            cq_send(J.toStyledString() + id, "group", -1, group_id);
         }
     } catch (...) {
         setlog(LOG::WARNING, "File upload failed.");
