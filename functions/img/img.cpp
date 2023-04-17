@@ -99,8 +99,8 @@ void img::commands(std::string message, std::string message_type, int64_t user_i
                     if(images[it2] != 0) oss << it2 << '(' << images[it2] << ")\n";
                 }
             } else {
-                for(auto it2 : belongs[group_id].getMemberNames()){
-                    if(images[it2] != 0) oss << it2 << '(' << images[it2] << ")\n";
+                for(auto it2 : belongs[group_id]){
+                    if(images[it2.asString()] != 0) oss << it2.asString() << '(' << images[it2.asString()] << ")\n";
                 }
             }
             cq_send(oss.str(), message_type, user_id, group_id);
