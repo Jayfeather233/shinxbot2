@@ -170,20 +170,24 @@ void img::process(std::string message, std::string message_type, int64_t user_id
     std::istringstream iss (message);
     std::string name, indexs;
     iss>>name>>indexs;
-    auto it1 = belongs.find(group_id);
     std::map<std::string, int64_t>::iterator it2;
-    if(it1 == belongs.end()){
-        if(default_img.find(name) == default_img.end()){
-            it2 = images.end();
+    if(message_type == "group"){
+        auto it1 = belongs.find(group_id);
+        if(it1 == belongs.end()){
+            if(default_img.find(name) == default_img.end()){
+                it2 = images.end();
+            } else {
+                it2 = images.find(name);
+            }
         } else {
-            it2 = images.find(name);
+            if(is_member(belongs[group_id], name)){
+                it2 = images.find(name);
+            } else {
+                it2 = images.end();
+            }
         }
     } else {
-        if(is_member(belongs[group_id], name)){
-            it2 = images.find(name);
-        } else {
-            it2 = images.end();
-        }
+        it2 = images.find(name);
     }
     if(it2 == images.end()) return;
     int index;
@@ -198,6 +202,7 @@ void img::process(std::string message, std::string message_type, int64_t user_id
         return;
     }
     cq_send("[CQ:image,file=file://" + get_local_path() + "/resource/mt/"+name+"/"+std::to_string(index)+",id=40000]", message_type, user_id, group_id);
+    
 }
 bool img::check(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     return true;
