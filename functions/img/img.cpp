@@ -151,6 +151,13 @@ void img::commands(std::string message, std::string message_type, int64_t user_i
     }
 }
 
+bool is_member(Json::Value J, std::string u){
+    for(auto it : J){
+        if(u == it.asString()) return true;
+    }
+    return false;
+}
+
 void img::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
     if(message.find("美图 ") == 0 || (is_adding[user_id] == true && message.find("[CQ:image,")!=message.npos) || is_deling[user_id] == true){
         commands(message, message_type, user_id, group_id);
@@ -172,7 +179,7 @@ void img::process(std::string message, std::string message_type, int64_t user_id
             it2 = images.find(name);
         }
     } else {
-        if(belongs[group_id].isMember(name)){
+        if(is_member(belongs[group_id], name)){
             it2 = images.find(name);
         } else {
             it2 = images.end();
