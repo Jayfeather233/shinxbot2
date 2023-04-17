@@ -88,7 +88,7 @@ void img::commands(std::string message, std::string message_type, int64_t user_i
             cq_send("命令错误，使用 \"美图 帮助\" 获取帮助", message_type, user_id, group_id);
         } else if(wmessage.find(L"帮助")==0) {
             cq_send("美图 帮助 - 列出所有美图命令\n"
-                    "美图 列表 - 列出所有美图\n"
+                    "美图 列表 - 列出本群美图\n"
                     "美图 加入 xxx - 加入一张图片至xxx类\n"
                     "xxx - 发送美图（随机或指定一个数字）", message_type, user_id, group_id);
         } else if(wmessage.find(L"列表")==0) {
@@ -144,7 +144,7 @@ void img::commands(std::string message, std::string message_type, int64_t user_i
             }
         } else {
             cq_send("美图 帮助 - 列出所有美图命令\n"
-                    "美图 列表 - 列出所有美图\n"
+                    "美图 列表 - 列出本群美图\n"
                     "美图 加入 xxx - 加入一张图片至xxx类\n"
                     "xxx - 发送美图（随机或指定一个数字）", message_type, user_id, group_id);
         }
@@ -163,17 +163,31 @@ void img::process(std::string message, std::string message_type, int64_t user_id
     std::istringstream iss (message);
     std::string name, indexs;
     iss>>name>>indexs;
-    auto it = images.find(name);
-    if(it == images.end()) return;
+    auto it1 = belongs.find(group_id);
+    std::map<std::string, int64_t>::iterator it2;
+    if(it1 == belongs.end()){
+        if(default_img.find(name) == default_img.end()){
+            it2 = images.end();
+        } else {
+            it2 = images.find(name);
+        }
+    } else {
+        if(belongs[group_id].isMember(name)){
+            it2 = images.find(name);
+        } else {
+            it2 = images.end();
+        }
+    }
+    if(it2 == images.end()) return;
     int index;
     if(indexs.length() < 1){
-        index = get_random(it->second) + 1;
+        index = get_random(it2->second) + 1;
     } else {
         index = get_userid(indexs);
     }
     index --;
-    if(index < 0 || index >= it->second){
-        cq_send("索引越界！(1~" + std::to_string(it->second) + ")", message_type, user_id, group_id);
+    if(index < 0 || index >= it2->second){
+        cq_send("索引越界！(1~" + std::to_string(it2->second) + ")", message_type, user_id, group_id);
         return;
     }
     cq_send("[CQ:image,file=file://" + get_local_path() + "/resource/mt/"+name+"/"+std::to_string(index)+",id=40000]", message_type, user_id, group_id);
