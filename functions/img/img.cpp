@@ -7,10 +7,14 @@
 img::img(){
     Json::Value J = string_to_json(readfile("./config/img.json", "{}"));
     for(std::string u : J.getMemberNames()){
-        if(u != "op_list")
+        if(u != "op_list" && u != "belongs" && u != "default")
             images[u] = J[u].asInt64();
     }
     parse_json_to_map(J["op_list"], op_list, true);
+    for(std::string u : J["belongs"].getMemberNames()){
+        belongs[get_userid(u)] = J["belongs"][u];
+    }
+    parse_json_to_set(J["default"], default_img);
 }
 
 void img::save(){
@@ -19,16 +23,29 @@ void img::save(){
         if(it.second != 0) J[it.first] = it.second;
     }
     J["op_list"] = parse_map_to_json(op_list);
+    for(auto it : belongs){
+        J["belongs"][std::to_string(it.first)] = it.second;
+    }
+    J["default"] = parse_set_to_json(default_img);
     writefile("./config/img.json", J.toStyledString());
 }
 
-void img::add_image(std::string name, std::string image){
-    if(name == "op_list") return;
+void img::add_image(std::string name, std::string image, int64_t group_id){
+    if(name == "op_list" || name == "belongs" || name == "default") return;
     int index = image.find(",url=");
     index += 5;
     int index2 = index;
     while(image[index2]!=']'){
         ++index2;
+    }
+    auto it = images.find(name);
+    if(it==images.end()){
+        auto it2 = belongs.find(group_id);
+        if(it2 == belongs.end()){
+            for(std::string u : default_img)
+                belongs[group_id].append(u);
+        }
+        belongs[group_id].append(name);
     }
     download(image.substr(index, index2-index), "./resource/mt/" + name, std::to_string(images[name]));
     images[name] ++;
@@ -62,7 +79,7 @@ void img::commands(std::string message, std::string message_type, int64_t user_i
             is_deling[user_id] = false;
         }
     } else if(is_adding[user_id] == true && message.find("[CQ:image,")!=message.npos){
-        add_image(add_name[user_id], trim(message));
+        add_image(add_name[user_id], trim(message), group_id);
         is_adding[user_id] = false;
         cq_send("已加入" + add_name[user_id], message_type, user_id, group_id);
     } else {
@@ -76,8 +93,15 @@ void img::commands(std::string message, std::string message_type, int64_t user_i
                     "xxx - 发送美图（随机或指定一个数字）", message_type, user_id, group_id);
         } else if(wmessage.find(L"列表")==0) {
             std::ostringstream oss;
-            for(auto it : images){
-                if(it.second != 0) oss << it.first << '(' << it.second << ")\n";
+            auto it = belongs.find(group_id);
+            if(it == belongs.end()){
+                for(auto it2 : default_img){
+                    if(images[it2] != 0) oss << it2 << '(' << images[it2] << ")\n";
+                }
+            } else {
+                for(auto it2 : belongs[group_id].getMemberNames()){
+                    if(images[it2] != 0) oss << it2 << '(' << images[it2] << ")\n";
+                }
             }
             cq_send(oss.str(), message_type, user_id, group_id);
         } else if(wmessage.find(L"加入")==0){
@@ -98,7 +122,7 @@ void img::commands(std::string message, std::string message_type, int64_t user_i
                 cq_send("图来！", message_type, user_id, group_id);
             } else {
                 is_adding[user_id] = false;
-                add_image(wstring_to_string(name), wstring_to_string(wmessage));
+                add_image(wstring_to_string(name), wstring_to_string(wmessage), group_id);
                 cq_send("已加入" + wstring_to_string(name), message_type, user_id, group_id);
             }
         } else if(wmessage.find(L"删除")==0) {
