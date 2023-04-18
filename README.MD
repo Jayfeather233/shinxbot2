@@ -2,6 +2,8 @@
 
 一个基于[go-cqhttp](https://github.com/Mrs4s/go-cqhttp)的机器人。
 
+~~做着玩的~~
+
 是我原来项目[shinxBot](https://github.com/Jayfeather233/shinxBot)的C++重构版，
 
 ### 它能做什么？
@@ -16,7 +18,7 @@
 
 - 来点色图：随机色卡
 
-- 赛博养猫
+- 赛博养猫（与 gpt3.5 共同创作）
 
 - cat image for http code。来源[httpcats](https://httpcats.com/)
 
@@ -24,6 +26,13 @@
 
 - openai的 `gpt-3.5-turbo` API支持
 
+- 群友聊天截图保存功能（美图）
+
+- 龙王提醒
+
+- 群成员变动提醒
+
+- 人云亦云（复读）
 
 ### 关于源文件
 
@@ -54,7 +63,7 @@ maybe it will work
 
 需要先配置并启动[go-cqhttp](https://github.com/Mrs4s/go-cqhttp)。打开 "反向HTTP POST地址"，并设置你自己的接收端口。（一般在go-cqhttp目录下的config.yaml）
 
-linux: 运行build.sh，自动执行cmake和make编译并运行
+linux: 运行 build.sh ，自动执行cmake和make编译，使用 start.sh 无限循环运行
 
 windows：手动通过CMake编译，需要更改TCP连接的头文件（和可能的代码细微差别，包括不限于sleep,file:///）本人没有使用Windows编译过（
 
@@ -64,12 +73,12 @@ functions和events可以互换。
 
 functions传参仅为消息相关，events传入事件的JSON数据
 
-在收到聊天消息的时候调用functions里的方法，在其他提示性消息的时候用events的方法
+在收到聊天消息的时候调用 functions 里的方法，在其他提示性消息的时候用 events 的方法
 
-1. ./functions 下新建目录并把代码放入，写一个类继承./interfaces/processable.h中的类并实现virtual方法（可以参考我其他功能的写法）
+1. ./functions 下新建目录并把代码放入，写一个类继承 `./interfaces/processable.h` 中的类并实现virtual方法（可以参考我其他功能的写法，一个简单示例是 `functions/getJapaneseImage/Anime_Img.cpp`）
 
-2. 继承的virtual方法里只要check()成功了就会执行process()方法
+2. 继承的 virtual 方法里只要 check() 成功了就会执行 process() 方法
 
 3. ./functions/functions.h 中加入你的.h
 
-4. main.cpp中main函数里加入functions.push_back(new your_name());
+4. main.cpp中main函数里加入 `functions.push_back(new your_name());`
