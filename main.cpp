@@ -27,6 +27,7 @@ std::ofstream LOG_output[3];
 
 std::vector<processable*> functions;
 std::vector<eventprocess*> events;
+std::set<int64_t> op_list;
 
 void input_process(std::string *input){
     Json::Value J = string_to_json(*input);
@@ -42,7 +43,7 @@ void input_process(std::string *input){
     } else if(post_type == "message"){
         if(J.isMember("message_type") && J.isMember("message")){
             std::string message = J["message"].asString();
-            // int message_id = J["message_id"].asInt();
+            int64_t message_id = J["message_id"].asInt64();
             std::string message_type = J["message_type"].asString();
             if(message_type == "group" || message_type == "private"){
                 int64_t user_id = 0, group_id = -1;
@@ -52,6 +53,7 @@ void input_process(std::string *input){
                 if(J.isMember("user_id")){
                     user_id = J["user_id"].asInt64();
                 }
+                shinx_message s_msg = (shinx_message){message, message_type, user_id, group_id, message_id};
                 if (message == "bot.help") {
                     std::string help_message;
                     for (processable *func : functions) {
@@ -59,20 +61,25 @@ void input_process(std::string *input){
                             help_message += func->help() + '\n';
                     }
                     help_message += "本Bot项目地址：https://github.com/Jayfeather233/shinxbot2";
-                    cq_send(help_message, message_type, user_id, group_id);
+                    s_msg.message = help_message;
+                    cq_send(s_msg);
                 } else {
                     for (processable *func : functions) {
-                        if (func->check(message, message_type, user_id, group_id)) {
+                        if (func->check(s_msg)) {
                             try{
-                                func->process(message, message_type, user_id, group_id);
+                                func->process(s_msg);
                             } catch (char* e){
-                                cq_send((std::string)"Throw an char*: " + e, message_type, user_id, group_id);
+                                s_msg.message = (std::string)"Throw an char*: " + e;
+                                cq_send(s_msg);
                             }  catch (std::string e){
-                                cq_send("Throw an string: " + e, message_type, user_id, group_id);
+                                s_msg.message = "Throw an string: " + e;
+                                cq_send(s_msg);
                             } catch (std::exception& e){
-                                cq_send((std::string)"Throw an exception: " + e.what(), message_type, user_id, group_id);
+                                s_msg.message = (std::string)"Throw an exception: " + e.what();
+                                cq_send(s_msg);
                             } catch (...){
-                                cq_send((std::string)"Throw an unknown error", message_type, user_id, group_id);
+                                s_msg.message = (std::string)"Throw an unknown error";
+                                cq_send(s_msg);
                             }
                         }
                     }
@@ -186,6 +193,10 @@ void get_log(){
     LOG_output[2] = std::ofstream("./log/" + oss.str() + "/erro.log", std::ios_base::app);
 }
 
+bool is_op(const int64_t &a){
+    return op_list.find(a) != op_list.end();
+}
+
 void init(){
     std::ifstream iport("./config/port.txt");
     if(iport.is_open()){
@@ -216,6 +227,9 @@ void init(){
     std::cout<<"botqq:"<<botqq<<std::endl;
 
     get_log();
+
+    Json::Value J_op = string_to_json(readfile("./config/op_list.json", "[]"));
+    parse_json_to_set(J_op, op_list);
 }
 
 int main(){
@@ -255,12 +269,12 @@ int main(){
     return 0;
 }
 
-std::string cq_send(const std::string &message, const std::string &message_type, int64_t user_id, int64_t group_id){
+std::string cq_send(shinx_message msg){
     Json::Value input;
-    input["message"] = message;
-    input["message_type"] = message_type;
-    input["group_id"] = group_id;
-    input["user_id"] = user_id;
+    input["message"] = msg.message;
+    input["message_type"] = msg.message_type;
+    input["group_id"] = msg.group_id;
+    input["user_id"] = msg.user_id;
     return cq_send("send_msg", input);
 }
 

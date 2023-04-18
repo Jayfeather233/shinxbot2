@@ -55,20 +55,22 @@ std::string auto114::getans(int64_t input){
     }
 }
 
-void auto114::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
-    std::istringstream iss(message.substr(4));
+void auto114::process(shinx_message msg){
+    std::istringstream iss(msg.message.substr(4));
     int64_t input;
     iss >> input;
     
-    setlog(LOG::INFO, "auto114 at group " + std::to_string(group_id) + " by user " + std::to_string(user_id));
+    setlog(LOG::INFO, "auto114 at group " + std::to_string(msg.group_id) + " by user " + std::to_string(msg.user_id));
     if(input == 114514){
-        cq_send("这么臭的数字有必要论证吗（恼）", message_type, user_id, group_id);
+        msg.message = "这么臭的数字有必要论证吗（恼）";
+        cq_send(msg);
     } else {
-        cq_send(std::to_string(input) + "=" + getans(input), message_type, user_id, group_id);
+        msg.message = std::to_string(input) + "=" + getans(input);
+        cq_send(msg);
     }
 }
-bool auto114::check(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
-    return message.find("homo")==0;
+bool auto114::check(shinx_message msg){
+    return msg.message.find("homo")==0;
 }
 std::string auto114::help(){
     return "恶臭数字论证器： homo+数字";

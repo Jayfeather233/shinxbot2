@@ -5,21 +5,22 @@
 #include <map>
 std::map<int64_t, bool> in_queue;
 
-void ocr::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
-    size_t index = message.find("[CQ:image,file=");
+void ocr::process(shinx_message msg){
+    size_t index = msg.message.find("[CQ:image,file=");
     if(index == std::string::npos){
-        cq_send("图来！", message_type, user_id, group_id);
-        in_queue[user_id] = true;
+        msg.message = "图来！";
+        cq_send(msg);
+        in_queue[msg.user_id] = true;
         return;
     }
-    in_queue[user_id] = false;
+    in_queue[msg.user_id] = false;
     index += 15;
     size_t index2 = index;
-    while(message[index2]!=','){
+    while(msg.message[index2]!=','){
         ++index2;
     }
     Json::Value J;
-    J["image"] = message.substr(index, index2-index);
+    J["image"] = msg.message.substr(index, index2-index);
     J = string_to_json(
         cq_send("ocr_image", J)
     )["data"]["texts"];
@@ -28,11 +29,12 @@ void ocr::process(std::string message, std::string message_type, int64_t user_id
     for(Json::ArrayIndex i = 0; i < sz; i++){
         res+=J[i]["text"].asString() + " ";
     }
-    cq_send(res, message_type, user_id, group_id);
-    setlog(LOG::INFO,"OCR at group " + std::to_string(group_id) + " by " + std::to_string(user_id));
+    msg.message = res;
+    cq_send(msg);
+    setlog(LOG::INFO,"OCR at group " + std::to_string(msg.group_id) + " by " + std::to_string(msg.user_id));
 }
-bool ocr::check(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
-    return message.find(".ocr") == 0 || message.find(".OCR") == 0 || (in_queue.find(user_id)!=in_queue.end() && in_queue[user_id] == true);
+bool ocr::check(shinx_message msg){
+    return msg.message.find(".ocr") == 0 || msg.message.find(".OCR") == 0 || (in_queue.find(msg.user_id)!=in_queue.end() && in_queue[msg.user_id] == true);
 }
 std::string ocr::help(){
     return "图片ocr。 .ocr 图片";

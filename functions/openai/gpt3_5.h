@@ -15,7 +15,6 @@ private:
     std::map<int64_t, Json::Value> pre_prompt;
     std::map<int64_t, Json::Value> history;
     std::vector<std::string> modes;
-    std::set<int64_t> op_list;
     std::set<std::string> black_list;
     std::map<std::string, Json::Value> mode_prompt;
     std::vector<std::string> key;
@@ -26,7 +25,7 @@ public:
     void save_file();
     void save_history(int64_t id);
     std::string do_black(std::string u);
-    void process(std::string message, std::string message_type, int64_t user_id, int64_t group_id);
-    bool check(std::string message, std::string message_type, int64_t user_id, int64_t group_id);
+    void process(shinx_message msg);
+    bool check(shinx_message msg);
     std::string help();
 };

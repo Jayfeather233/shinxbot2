@@ -17,7 +17,6 @@ e621::e621(){
     authorkey = J["authorkey"].asString();
     parse_json_to_map(J["group"], group);
     parse_json_to_map(J["user"], user);
-    parse_json_to_map(J["admin"], admin);
     Json::ArrayIndex sz = J["n_search"].size();
     for(Json::ArrayIndex i = 0; i < sz; i++){
         n_search.insert(J["n_search"][i].asString());
@@ -56,30 +55,32 @@ std::string number_trans(int64_t u){
     else return std::to_string(u);
 }
 
-void e621::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
-    message = trim(message);
-    if(message.find("621.add") == 0) {
-        admin_set(trim(message.substr(7)), message_type, user_id, group_id, true);
+void e621::process(shinx_message msg){
+    msg.message = trim(msg.message);
+    if(msg.message.find("621.add") == 0) {
+        msg.message = trim(msg.message.substr(7));
+        admin_set(msg, true);
         return;
     }
-    if(message.find("621.del") == 0) {
-        admin_set(trim(message.substr(7)), message_type, user_id, group_id, false);
+    if(msg.message.find("621.del") == 0) {
+        msg.message = trim(msg.message.substr(7));
+        admin_set(msg, false);
         return;
     }
 
-    if(message_type == "group"){
-        if(!group[group_id]){
-            setlog(LOG::WARNING, "621 in group " + std::to_string(group_id) + " but no permission");
+    if(msg.message_type == "group"){
+        if(!group[msg.group_id]){
+            setlog(LOG::WARNING, "621 in group " + std::to_string(msg.group_id) + " but no permission");
             return;
         }
     } else {
-        if(!user[user_id]){
-            setlog(LOG::WARNING, "621 at user " + std::to_string(user_id) + " but no permission");
+        if(!user[msg.user_id]){
+            setlog(LOG::WARNING, "621 at user " + std::to_string(msg.user_id) + " but no permission");
             return;
         }
     }
 
-    if(message == "621.default") {
+    if(msg.message == "621.default") {
         std::string res =
 "如未指定任何内容，默认加上fav:jayfeather233 pokemon\n"
 "如未指定favcount或score，默认加上favcount:>400 score:>200\n"
@@ -87,14 +88,15 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
         for(std::string it : n_search){
             res += it + ",";
         }
-        cq_send(res, message_type, user_id, group_id);
+        msg.message = res;
+        cq_send(msg);
         return;
     }
-    if(message.find("621.autocomplete") == 0){
-        message = trim(message.substr(16));
+    if(msg.message.find("621.autocomplete") == 0){
+        msg.message = trim(msg.message.substr(16));
         try{
             Json::Value Ja = string_to_json(
-                do_get("https://e621.net/tags/autocomplete.json?search[name_matches]=" + message + "&expiry=7",
+                do_get("https://e621.net/tags/autocomplete.json?search[name_matches]=" + msg.message + "&expiry=7",
                     {{"user-agent", "AutoSearch/1.0 (by " + username + " on e621)"},
                     {"Authorization", "basic " + base64::to_base64(username + ":" + authorkey)}}, true));
             std::string res;
@@ -102,22 +104,25 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
             for(Json::ArrayIndex i = 0; i < sz; i++){
                 res += Ja[i]["name"].asString() + "    " + std::to_string(Ja[i]["post_count"].asInt64()) + "\n";
             }
-            cq_send(res, message_type, user_id, group_id);
+            msg.message = res;
+            cq_send(msg);
         } catch (...) {
-            cq_send("621 connect error. Try again.", message_type, user_id, group_id);
+            msg.message = "621 connect error. Try again.";
+            cq_send(msg);
         }
         return;
     }
 
-    bool is_pool = (message.find("pool:") != message.npos);
-    std::string input = message.substr(3);
+    bool is_pool = (msg.message.find("pool:") != msg.message.npos);
+    std::string input = msg.message.substr(3);
     bool get_tag = false;
     if(input.find(".tag") == 0){
         get_tag = true;
         input = trim(input.substr(4));
     }
     if(input.find(".input") == 0){
-        cq_send(deal_input(input.substr(6), is_pool), message_type, user_id, group_id);
+        msg.message = deal_input(input.substr(6), is_pool);
+        cq_send(msg);
         return;
     }
     input = deal_input(input, is_pool);
@@ -137,15 +142,17 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
         }
     }
     if(i == 3){
-        cq_send("Unable to connect to e621", message_type, user_id, group_id);
-        setlog(LOG::WARNING, "621 at group " + std::to_string(group_id) + " by " + std::to_string(user_id) + " but unable to connect.");
+        msg.message = "Unable to connect to e621";
+        cq_send(msg);
+        setlog(LOG::WARNING, "621 at group " + std::to_string(msg.group_id) + " by " + std::to_string(msg.user_id) + " but unable to connect.");
         return;
     }
     
     Json::ArrayIndex count = J["posts"].size();
     if(count == 0){
-        cq_send("No image found.", message_type, user_id, group_id);
-        setlog(LOG::WARNING, "621 at group " + std::to_string(group_id) + " by " + std::to_string(user_id) + " but no image found.");
+        msg.message = "No image found.";
+        cq_send(msg);
+        setlog(LOG::WARNING, "621 at group " + std::to_string(msg.group_id) + " by " + std::to_string(msg.user_id) + " but no image found.");
         return;
     }
 
@@ -155,19 +162,22 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
         int i;
         for(i=0;i<3;i++){
             if(get_tag){
-                J2 = string_to_json(cq_send(get_image_tags(J) + (i ? "\ntx原因无法发送原图" : ""), message_type,user_id, group_id));
+                msg.message = get_image_tags(J) + (i ? "\ntx原因无法发送原图" : "");
+                J2 = string_to_json(cq_send(msg));
             } else {
-                J2 = string_to_json(cq_send(get_image_info(J, count, is_pool, i, group_id) + (i ? "\ntx原因无法发送原图" : ""), message_type,user_id, group_id));
+                msg.message = get_image_info(J, count, is_pool, i, msg.group_id) + (i ? "\ntx原因无法发送原图" : "");
+                J2 = string_to_json(cq_send(msg));
             }
             if(J2["status"].asString() != "failed"){
                 break;
             }
         }
         if(i == 3){
-            cq_send("cannot send image due to Tencent", message_type, user_id, group_id);
-            setlog(LOG::WARNING, "621 at group " + std::to_string(group_id) + " by " + std::to_string(user_id) + " send failed.");
+            msg.message = "cannot send image due to Tencent";
+            cq_send(msg);
+            setlog(LOG::WARNING, "621 at group " + std::to_string(msg.group_id) + " by " + std::to_string(msg.user_id) + " send failed.");
         } else {
-            setlog(LOG::INFO, "621 at group " + std::to_string(group_id) + " by " + std::to_string(user_id));
+            setlog(LOG::INFO, "621 at group " + std::to_string(msg.group_id) + " by " + std::to_string(msg.user_id));
         }
     } else {
         int64_t pool_id = J["posts"][0]["pools"][0].asInt64();
@@ -189,7 +199,7 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
             for(Json::ArrayIndex j = 0; j < count; j++){
                 if(J3[i].asInt64() == J["posts"][j]["id"].asInt64()){
                     res_message += std::to_string(get_botqq()) + " 合并行\n";
-                    res_message += get_image_info(J["posts"][j], count, is_pool, 1, group_id);
+                    res_message += get_image_info(J["posts"][j], count, is_pool, 1, msg.group_id);
                     res_message += "\n结束合并\n";
                 }
             }
@@ -198,28 +208,25 @@ void e621::process(std::string message, std::string message_type, int64_t user_i
         Json::Value J_send;
         J_send["post_type"] = "message";
         J_send["message"] = res_message;
-        J_send["message_type"] = message_type;
+        J_send["message_type"] = msg.message_type;
         J_send["message_id"] = -1;
-        J_send["user_id"] = user_id;
-        J_send["group_id"] = group_id;
+        J_send["user_id"] = msg.user_id;
+        J_send["group_id"] = msg.group_id;
         input_process(new std::string(J_send.toStyledString()));
-        setlog(LOG::INFO, "621 pool at group " + std::to_string(group_id) + " by " + std::to_string(user_id));
+        setlog(LOG::INFO, "621 pool at group " + std::to_string(msg.group_id) + " by " + std::to_string(msg.user_id));
     }
 }
 
-void e621::admin_set(const std::string &input, const std::string message_type, int64_t user_id, int64_t group_id, bool flg){
-    std::istringstream iss(input);
-    auto it = admin.find(user_id);
-    if(it == admin.end() || it->second == false){
-        return;
-    }
+void e621::admin_set(shinx_message msg, bool flg){
+    std::istringstream iss(msg.message);
+    if(!is_op(msg.user_id)) return;
     std::string type;
     iss >> type;
     if(type == "this"){
-        if(message_type == "group"){
-            group[group_id] = flg;
+        if(msg.message_type == "group"){
+            group[msg.group_id] = flg;
         } else {
-            user[user_id] = flg;
+            user[msg.user_id] = flg;
         }
     } else {
         int64_t id;
@@ -229,11 +236,13 @@ void e621::admin_set(const std::string &input, const std::string message_type, i
         } else if(type == "user"){
             user[id] = flg;
         } else {
-            cq_send("621.set [this/group/user] [id (when not 'this')]", message_type, user_id, group_id);
+            msg.message = "621.set [this/group/user] [id (when not 'this')]";
+            cq_send(msg);
         }
     }
     save();
-    cq_send("set done.", message_type, user_id, group_id);
+    msg.message = "set done.";
+    cq_send(msg);
 }
 void e621::save(){
     Json::Value J;
@@ -241,7 +250,6 @@ void e621::save(){
     J["username"] = username;
     J["user"] = parse_map_to_json(user);
     J["group"] = parse_map_to_json(group);
-    J["admin"] = parse_map_to_json(admin);
     Json::Value J2;
     for(std::string u : n_search){
         J2.append(u);
@@ -371,15 +379,15 @@ std::string e621::get_image_info(const Json::Value &J, size_t count, bool poolFl
 }
 
 
-bool e621::check(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
-    if(!message.find("621") == 0) return false;
-    if(message_type == "group"){
-        auto it = group.find(group_id);
+bool e621::check(shinx_message msg){
+    if(!msg.message.find("621") == 0) return false;
+    if(msg.message_type == "group"){
+        auto it = group.find(msg.group_id);
         if(it == group.end() || it->second == false){
             return false;
         }
     } else {
-        auto it = user.find(user_id);
+        auto it = user.find(msg.user_id);
         if(it == user.end() || it->second == false){
             return false;
         }

@@ -12,3 +12,4 @@ config/621_level.json
 config/proxy.json
 config/cats/
 config/openai.json
+config/op_list.json

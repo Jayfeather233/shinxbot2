@@ -64,40 +64,40 @@ Json::Value forward::get_content(std::wistringstream &wiss, int64_t group_id){
     return Ja;
 }
 
-void forward::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
-    std::wstring w_mess = string_to_wstring(message).substr(2);
+void forward::process(shinx_message msg){
+    std::wstring w_mess = string_to_wstring(msg.message).substr(2);
     if(w_mess == L"帮助"){
-        cq_send("格式为：\n"
-        "转发\n"
-        "@某人或qq号 消息（一整行）\n"
-        "@某人或qq号 合并行\n"
-        "（多行消息）\n"
-        "结束合并\n"
-        "...\n"
-        "@某人或qq号 转发\n"
-        "（此处为转发内套转发）\n"
-        "结束转发\n"
-        "...\n"
-        "结束转发 ",
-            message_type,user_id,group_id);
+        msg.message =   "格式为：\n"
+                        "转发\n"
+                        "@某人或qq号 消息（一整行）\n"
+                        "@某人或qq号 合并行\n"
+                        "（多行消息）\n"
+                        "结束合并\n"
+                        "...\n"
+                        "@某人或qq号 转发\n"
+                        "（此处为转发内套转发）\n"
+                        "结束转发\n"
+                        "...\n"
+                        "结束转发 ";
+        cq_send(msg);
         return;
     }
     std::wistringstream wiss(w_mess);
     Json::Value J;
-    J["messages"] = get_content(wiss, group_id);
+    J["messages"] = get_content(wiss, msg.group_id);
 
-    if(message_type == "group"){
-        J["group_id"] = group_id;
+    if(msg.message_type == "group"){
+        J["group_id"] = msg.group_id;
         cq_send("send_group_forward_msg", J);
-        setlog(LOG::INFO, "forward at group " + std::to_string(group_id) + " by " + std::to_string(user_id));
+        setlog(LOG::INFO, "forward at group " + std::to_string(msg.group_id) + " by " + std::to_string(msg.user_id));
     } else {
-        J["user_id"] = user_id;
+        J["user_id"] = msg.user_id;
         cq_send("send_private_forward_msg", J);
-        setlog(LOG::INFO, "forward by " + std::to_string(user_id));
+        setlog(LOG::INFO, "forward by " + std::to_string(msg.user_id));
     }
 }
-bool forward::check(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
-    return string_to_wstring(message).find(L"转发") == 0;
+bool forward::check(shinx_message msg){
+    return string_to_wstring(msg.message).find(L"转发") == 0;
 }
 std::string forward::help(){
     return "自动生成转发信息： 详细资料请输入 转发帮助";

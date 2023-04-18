@@ -13,8 +13,8 @@ std::string get_code(int color){
     return res;
 }
 
-void r_color::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
-    std::wstring w_mess = trim(string_to_wstring(message).substr(4));
+void r_color::process(shinx_message msg){
+    std::wstring w_mess = trim(string_to_wstring(msg.message).substr(4));
     int color = 0;
     if(w_mess[0]==L'#'){
         for(int i=1;i<=6;i++){
@@ -77,13 +77,15 @@ void r_color::process(std::string message, std::string message_type, int64_t use
 
     const char* c_name = curl_easy_escape(nullptr, name.c_str(), name.length());
 
-    cq_send("[CQ:image,file=file://" + get_local_path() + "/resource/temp/" + c_name + ".png,id=40000]", message_type, user_id, group_id);
-    setlog(LOG::INFO, "r_color at group " + std::to_string(group_id) + " by " + std::to_string(user_id));
+    msg.message = "[CQ:image,file=file://" + get_local_path() + "/resource/temp/" + c_name + ".png,id=40000]";
+
+    cq_send(msg);
+    setlog(LOG::INFO, "r_color at group " + std::to_string(msg.group_id) + " by " + std::to_string(msg.user_id));
     
     delete font_size;
 }
-bool r_color::check(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
-    return string_to_wstring(message).find(L"来点色图") == 0;
+bool r_color::check(shinx_message msg){
+    return string_to_wstring(msg.message).find(L"来点色图") == 0;
 }
 std::string r_color::help(){
     return "来点色图：来点色图+#color_hex_code";

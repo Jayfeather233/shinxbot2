@@ -4,15 +4,16 @@
 #include <iostream>
 #include <jsoncpp/json/json.h>
 
-void hhsh::process(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
+void hhsh::process(shinx_message msg){
 
-    if(message.length()<=5){
-        cq_send("首字母缩写识别： hhsh + 缩写 ", message_type, user_id, group_id);
+    if(msg.message.length()<=5){
+        msg.message = "首字母缩写识别： hhsh + 缩写 ";
+        cq_send(msg);
         return;
     }
 
     Json::Value J;
-    J["text"] = my_replace(message.substr(4), ' ', ',');
+    J["text"] = my_replace(msg.message.substr(4), ' ', ',');
 
     Json::Value Ja;
 
@@ -20,7 +21,8 @@ void hhsh::process(std::string message, std::string message_type, int64_t user_i
         Ja = string_to_json(do_post("https://lab.magiconch.com/api/nbnhhsh/guess", J, {}, true));
     } catch (...) {
         setlog(LOG::WARNING, "failed to connect to hhsh");
-        cq_send("failed to connect to hhsh", message_type, user_id, group_id);
+        msg.message = "failed to connect to hhsh";
+        cq_send(msg);
         return;
     }
 
@@ -66,11 +68,12 @@ void hhsh::process(std::string message, std::string message_type, int64_t user_i
             res.append(J["name"].asString()).append("未收录");
         }
     }
-    setlog(LOG::INFO, "nbnhhsh at group " + std::to_string(group_id) + " by " + std::to_string(user_id));
-    cq_send(res, message_type, user_id, group_id);
+    setlog(LOG::INFO, "nbnhhsh at group " + std::to_string(msg.group_id) + " by " + std::to_string(msg.user_id));
+    msg.message = res;
+    cq_send(msg);
 }
-bool hhsh::check(std::string message, std::string message_type, int64_t user_id, int64_t group_id){
-    return message.find("hhsh")==0;
+bool hhsh::check(shinx_message msg){
+    return msg.message.find("hhsh")==0;
 }
 std::string hhsh::help(){
     return "首字母缩写识别： hhsh+缩写";

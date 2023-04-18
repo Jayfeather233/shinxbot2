@@ -14,14 +14,18 @@ void m_change::process(Json::Value J){
 
     if(J["notice_type"].asString() == "group_decrease"){
         if(J.isMember("operator_id") && J["operator_id"].asInt64() == J["user_id"].asInt64()){
-            cq_send(name1 + " 退群啦", "group", 0, J["group_id"].asInt64());
+            cq_send((shinx_message){name1 + " 退群啦", "group", 0, J["group_id"].asInt64(), 0});
         } else {
-            cq_send(name2 + " 被 " + get_username(J["operator_id"].asInt64(), J["group_id"].asInt64()) + " 送飞机票啦", "group", 0, J["group_id"].asInt64());
+            cq_send((shinx_message){name2 + " 被 " + get_username(J["operator_id"].asInt64(), J["group_id"].asInt64()) + " 送飞机票啦",
+                    "group", 0, J["group_id"].asInt64(), 0});
         }
+
         setlog(LOG::INFO, "member decrease in group " + std::to_string(J["group_id"].asInt64()) + " by "
             + std::to_string(J["user_id"].asInt64()) + " op " + std::to_string(J["operator_id"].asInt64()));
     } else if(J["notice_type"].asString() == "group_increase"){
-        cq_send((std::string)"欢迎" + name1 + "的加入", "group", 0, J["group_id"].asInt64());
+        cq_send((shinx_message){(std::string)"欢迎" + name1 + "的加入",
+                "group", 0, J["group_id"].asInt64(), 0});
+        
         setlog(LOG::INFO, "member increase in group " + std::to_string(J["group_id"].asInt64()) + " by "
             + std::to_string(J["user_id"].asInt64()));
     }

@@ -18,6 +18,21 @@ enum LOG{
     INFO, WARNING, ERROR
 };
 
+
+/**
+ * message: message that bot received.
+ * message_type: "group" or "private"
+ * user_id & group_id
+ * message_id
+*/
+struct shinx_message{
+    std::string message;
+    std::string message_type;
+    int64_t user_id;
+    int64_t group_id;
+    int64_t message_id;
+};
+
 /**
  * do a http post with a json body.
  * basic headers will automatically included,
@@ -48,10 +63,15 @@ std::string get_username(int64_t user_id, int64_t group_id);
 Json::Value string_to_json(std::string str);
 
 /**
+ * Check if someone is the operator of *bot*
+*/
+bool is_op(const int64_t &a);
+
+/**
  * send a message to go-cqhttp
  * message_type can be "group" or "private"
 */
-std::string cq_send(const std::string &message, const std::string &message_type, int64_t user_id, int64_t group_id);
+std::string cq_send(shinx_message msg);
 /**
  * send a message to go-cqhttp
  * end_point can be "send_msg", "set_friend_add_request"... that supported by go-cq
