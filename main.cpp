@@ -256,9 +256,7 @@ int main(){
     events.push_back(new poke());
     
     init();
-
-    start_server();
-
+    
     shinx_message msg;
     msg.message_type = "private";
     msg.message = "bot start.";
@@ -267,6 +265,8 @@ int main(){
         msg.user_id = ops;
         cq_send(msg);
     }
+
+    start_server();
 
     for(processable *u : functions){
         delete []u;
