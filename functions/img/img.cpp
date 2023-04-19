@@ -70,7 +70,6 @@ std::string img::commands(shinx_message msg){
     if(is_deling[msg.user_id]){
         if(msg.message == "y" || msg.message == "Y"){
             del_all(del_name[msg.user_id]);
-            cq_send(msg);
             is_deling[msg.user_id] = false;
             return "删除 *所有* "+del_name[msg.user_id];
         } else {
