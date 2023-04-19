@@ -328,7 +328,7 @@ void gpt3_5::process(shinx_message msg){
         J["role"] = "assistant";
         J["content"] = aimsg;
         if(is_debug) aimsg += usage;
-        msg.message = aimsg;
+        msg.message = "[CQ:reply,id=" + std::to_string(msg.message_id) + "] " + aimsg;
         cq_send(msg);
         history[id].append(user_input_J);
         history[id].append(J);

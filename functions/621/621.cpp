@@ -162,10 +162,10 @@ void e621::process(shinx_message msg){
         int i;
         for(i=0;i<3;i++){
             if(get_tag){
-                msg.message = get_image_tags(J) + (i ? "\ntx原因无法发送原图" : "");
+                msg.message = "[CQ:reply,id=" + std::to_string(msg.message_id) + "] " + get_image_tags(J) + (i ? "\ntx原因无法发送原图" : "");
                 J2 = string_to_json(cq_send(msg));
             } else {
-                msg.message = get_image_info(J, count, is_pool, i, msg.group_id) + (i ? "\ntx原因无法发送原图" : "");
+                msg.message = "[CQ:reply,id=" + std::to_string(msg.message_id) + "] " + get_image_info(J, count, is_pool, i, msg.group_id) + (i ? "\ntx原因无法发送原图" : "");
                 J2 = string_to_json(cq_send(msg));
             }
             if(J2["status"].asString() != "failed"){
@@ -173,7 +173,7 @@ void e621::process(shinx_message msg){
             }
         }
         if(i == 3){
-            msg.message = "cannot send image due to Tencent";
+            msg.message = "[CQ:reply,id=" + std::to_string(msg.message_id) + "] cannot send image due to Tencent";
             cq_send(msg);
             setlog(LOG::WARNING, "621 at group " + std::to_string(msg.group_id) + " by " + std::to_string(msg.user_id) + " send failed.");
         } else {
