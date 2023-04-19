@@ -80,7 +80,7 @@ std::string img::commands(shinx_message msg){
     } else if(is_adding[msg.user_id] == true && msg.message.find("[CQ:image,")!=msg.message.npos){
         add_image(add_name[msg.user_id], trim(msg.message), msg.group_id);
         is_adding[msg.user_id] = false;
-        return "已加入";
+        return "已加入" + add_name[msg.user_id];
     } else {
         std::wstring wmessage = trim(string_to_wstring(msg.message).substr(3));
         if(wmessage.length() <= 1){
@@ -92,14 +92,20 @@ std::string img::commands(shinx_message msg){
                     "xxx - 发送美图（随机或指定一个数字）";
         } else if(wmessage.find(L"列表")==0) {
             std::ostringstream oss;
-            auto it = belongs.find(msg.group_id);
-            if(it == belongs.end()){
-                for(auto it2 : default_img){
-                    if(images[it2] != 0) oss << it2 << '(' << images[it2] << ")\n";
+            if(wmessage.find(L"all") != wmessage.npos && is_op(msg.user_id)){
+                for(auto it : images){
+                    if(it.second != 0) oss << it.first << '(' << it.second << ")\n";
                 }
             } else {
-                for(auto it2 : belongs[msg.group_id]){
-                    if(images[it2.asString()] != 0) oss << it2.asString() << '(' << images[it2.asString()] << ")\n";
+                auto it = belongs.find(msg.group_id);
+                if(it == belongs.end()){
+                    for(auto it2 : default_img){
+                        if(images[it2] != 0) oss << it2 << '(' << images[it2] << ")\n";
+                    }
+                } else {
+                    for(auto it2 : belongs[msg.group_id]){
+                        if(images[it2.asString()] != 0) oss << it2.asString() << '(' << images[it2.asString()] << ")\n";
+                    }
                 }
             }
             return oss.str();
