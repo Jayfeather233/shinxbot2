@@ -259,6 +259,15 @@ int main(){
 
     start_server();
 
+    shinx_message msg;
+    msg.message_type = "private";
+    msg.message = "bot start.";
+
+    for(int64_t ops : op_list){
+        msg.user_id = ops;
+        cq_send(msg);
+    }
+
     for(processable *u : functions){
         delete []u;
     }
