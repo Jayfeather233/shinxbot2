@@ -52,9 +52,9 @@
 libcurl: sudo apt-get install libcurl4-openssl-dev
 openssl: sudo apt-get install openssl-dev
 jsoncpp: sudo apt-get install libjsoncpp-dev
-CImg: download and move CImg.h to include path
+CImg: already included
       and sudo apt-get install libjpeg-dev libpng-dev
-base64: download and include base64.hpp
+base64: already included
 libzip: sudo apt-get install libzip-dev
 maybe it will work
 ```
