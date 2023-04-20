@@ -10,7 +10,7 @@ include_directories("./utils")
 include_directories("./interfaces")
 include_directories("./functions")
 include_directories("./events")
-include_directories("./base64")
+include_directories("./base64/include")
 include_directories("./CImg")
 
 aux_source_directory(./utils UTIL_SOURCES)
