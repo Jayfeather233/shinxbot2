@@ -1,0 +1,6 @@
+[submodule "base64"]
+	path = base64
+	url = https://github.com/tobiaslocker/base64
+[submodule "CImg"]
+	path = CImg
+	url = https://github.com/GreycLab/CImg
