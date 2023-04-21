@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <mutex>
+#include <regex>
 
 /**
  * Overall API intro: https://platform.openai.com/docs/api-reference/chat/create
@@ -124,17 +125,23 @@ int64_t getlength(const Json::Value &J)
     return l;
 }
 
+// https://stackoverflow.com/a/48212993/17792535
+bool isASCII(const std::string &s)
+{
+    return !std::any_of(s.begin(), s.end(), [](char c) {
+        return static_cast<unsigned char>(c) > 127;
+    });
+}
+
 std::string gpt3_5::do_black(std::string msg)
 {
-    std::string p1, p2;
     for (std::string u : black_list) {
-        size_t pos = msg.find(u);
-        while (pos != std::string::npos) {
-            p1 = msg.substr(0, pos);
-            p2 = msg.substr(pos + u.length());
-            msg = p1 + "__" + p2;
-            pos = msg.find(u, pos);
-        }
+        std::regex black_regex;
+        if (isASCII(u))
+            black_regex = std::regex("\\b" + u + "\\b");
+        else
+            black_regex = std::regex(u);
+        msg = std::regex_replace(msg, black_regex, "__");
     }
     return msg;
 }
