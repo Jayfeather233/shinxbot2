@@ -1,9 +1,9 @@
 #include "processable.h"
 
+#include <jsoncpp/json/json.h>
 #include <map>
 #include <set>
 #include <vector>
-#include <jsoncpp/json/json.h>
 
 class gpt3_5 : public processable {
 private:
@@ -19,6 +19,7 @@ private:
     std::map<std::string, Json::Value> mode_prompt;
     std::vector<std::string> key;
     size_t key_cycle;
+
 public:
     gpt3_5();
     size_t get_avaliable_key();

@@ -1,0 +1,8 @@
+---
+BasedOnStyle: llvm
+IndentWidth: 4
+---
+Language: Cpp
+BreakBeforeBraces: Stroustrup
+AccessModifierOffset: -4
+

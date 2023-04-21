@@ -1,16 +1,21 @@
 #include "utils.h"
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <string>
 
-void download(const std::string& httpAddress, const std::string& filePath, const std::string& fileName, const bool proxy) {
+void download(const std::string &httpAddress, const std::string &filePath,
+              const std::string &fileName, const bool proxy)
+{
     try {
         std::string data = do_get(httpAddress, {}, proxy);
         std::fstream ofile;
-        try{
-            ofile = openfile(filePath + "/" + fileName, std::ios::out | std::ios::binary);
-        } catch (...){}
+        try {
+            ofile = openfile(filePath + "/" + fileName,
+                             std::ios::out | std::ios::binary);
+        }
+        catch (...) {
+        }
         ofile << data;
         ofile.flush();
         ofile.close();
@@ -18,18 +23,20 @@ void download(const std::string& httpAddress, const std::string& filePath, const
         // std::ofstream out(, std::ios::out | std::ios::binary);
         // out.write(data.c_str(), data.size());
         // out.close();
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception &e) {
         std::cerr << "Exception occurred: " << e.what() << std::endl;
     }
 }
 
-void addRandomNoise(const std::string& filePath) {
+void addRandomNoise(const std::string &filePath)
+{
     CImg<unsigned char> image(filePath.c_str());
     int w = image.width();
     int h = image.height();
-    if((int64_t)w * h > 4000000){
+    if ((int64_t)w * h > 4000000) {
         double resize_d = sqrt((double)w * h / 4000000.0);
-        image.resize((size_t)(w / resize_d),(size_t)(h / resize_d));
+        image.resize((size_t)(w / resize_d), (size_t)(h / resize_d));
         w = image.width();
         h = image.height();
     }
