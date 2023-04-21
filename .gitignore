@@ -1,5 +1,6 @@
 a.out
 .vscode/
+.cache/
 build/
 test/
 config/port.txt

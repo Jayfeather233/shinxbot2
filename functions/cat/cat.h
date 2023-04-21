@@ -1,20 +1,13 @@
 #pragma once
 
-#include "utils.h"
 #include "processable.h"
+#include "utils.h"
 
 #include <map>
 
-class Cat
-{
+class Cat {
 private:
-    enum Place
-    {
-        LIVING_ROOM,
-        KITCHEN,
-        BEDROOM,
-        BATHROOM
-    };
+    enum Place { LIVING_ROOM, KITCHEN, BEDROOM, BATHROOM };
     std::string generateRandomColor();
     std::string generateRandomPattern();
     std::string getLocationString(Place location);
@@ -53,6 +46,7 @@ private:
     static Json::Value cat_text;
     std::map<int64_t, Cat> cat_map;
     void save_map();
+
 public:
     catmain();
     static Json::Value get_text();

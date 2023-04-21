@@ -10,12 +10,13 @@ private:
     std::map<std::string, int64_t> images;
     std::map<int64_t, bool> is_adding;
     std::map<int64_t, std::string> add_name;
-    
+
     std::map<int64_t, bool> is_deling;
     std::map<int64_t, std::string> del_name;
 
     std::map<int64_t, Json::Value> belongs;
     std::set<std::string> default_img;
+
 public:
     img();
     void save();

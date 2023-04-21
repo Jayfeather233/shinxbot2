@@ -82,3 +82,5 @@ functions传参仅为消息相关，events传入事件的JSON数据
 3. ./functions/functions.h 中加入你的.h
 
 4. main.cpp中main函数里加入 `functions.push_back(new your_name());`
+
+> 开发提示：如果使用clang,根目录下`.clang-format`为你提供了自动格式化设置
