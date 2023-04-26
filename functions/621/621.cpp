@@ -1,3 +1,8 @@
+/**
+ * !! You should not read, test or modify this code
+ *    Unless you are over 18 years old !!
+ */
+
 #include "621.h"
 #include "processable.h"
 #include "utils.h"
