@@ -14,3 +14,4 @@ config/proxy.json
 config/cats/
 config/openai.json
 config/op_list.json
+compile_commands.json

@@ -1,21 +1,21 @@
-#include "utils.h"
-#include "functions.h"
 #include "events.h"
+#include "functions.h"
+#include "utils.h"
 
-#include <iostream>
-#include <filesystem>
-#include <vector>
-#include <fstream>
-#include <sstream>
 #include <algorithm>
+#include <arpa/inet.h>
+#include <csignal>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <mutex>
+#include <sstream>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <arpa/inet.h>
-#include <unistd.h>
 #include <thread>
-#include <mutex>
-#include <csignal>
+#include <unistd.h>
+#include <vector>
 
 int send_port;
 int receive_port;
@@ -25,60 +25,73 @@ int64_t botqq;
 std::string LOG_name[3] = {"INFO", "WARNING", "ERROR"};
 std::ofstream LOG_output[3];
 
-std::vector<processable*> functions;
-std::vector<eventprocess*> events;
+std::vector<processable *> functions;
+std::vector<eventprocess *> events;
 std::set<int64_t> op_list;
 
-void input_process(std::string *input){
+void input_process(std::string *input)
+{
     Json::Value J = string_to_json(*input);
     delete input;
     std::string post_type = J["post_type"].asString();
 
-    if(post_type == "request" || post_type == "notice"){
+    if (post_type == "request" || post_type == "notice") {
         for (eventprocess *even : events) {
             if (even->check(J)) {
                 even->process(J);
             }
         }
-    } else if(post_type == "message"){
-        if(J.isMember("message_type") && J.isMember("message")){
+    }
+    else if (post_type == "message") {
+        if (J.isMember("message_type") && J.isMember("message")) {
             std::string message = J["message"].asString();
             int64_t message_id = J["message_id"].asInt64();
             std::string message_type = J["message_type"].asString();
-            if(message_type == "group" || message_type == "private"){
+            if (message_type == "group" || message_type == "private") {
                 int64_t user_id = 0, group_id = -1;
-                if(J.isMember("group_id")){
+                if (J.isMember("group_id")) {
                     group_id = J["group_id"].asInt64();
                 }
-                if(J.isMember("user_id")){
+                if (J.isMember("user_id")) {
                     user_id = J["user_id"].asInt64();
                 }
-                shinx_message s_msg = (shinx_message){message, message_type, user_id, group_id, message_id};
+                shinx_message s_msg = (shinx_message){
+                    message, message_type, user_id, group_id, message_id};
                 if (message == "bot.help") {
                     std::string help_message;
                     for (processable *func : functions) {
                         if (func->help() != "")
                             help_message += func->help() + '\n';
                     }
-                    help_message += "本Bot项目地址：https://github.com/Jayfeather233/shinxbot2";
+                    help_message += "本Bot项目地址：https://github.com/"
+                                    "Jayfeather233/shinxbot2";
                     s_msg.message = help_message;
                     cq_send(s_msg);
-                } else {
+                }
+                else {
                     for (processable *func : functions) {
                         if (func->check(s_msg)) {
-                            try{
+                            try {
                                 func->process(s_msg);
-                            } catch (char* e){
-                                s_msg.message = (std::string)"Throw an char*: " + e;
+                            }
+                            catch (char *e) {
+                                s_msg.message =
+                                    (std::string) "Throw an char*: " + e;
                                 cq_send(s_msg);
-                            }  catch (std::string e){
+                            }
+                            catch (std::string e) {
                                 s_msg.message = "Throw an string: " + e;
                                 cq_send(s_msg);
-                            } catch (std::exception& e){
-                                s_msg.message = (std::string)"Throw an exception: " + e.what();
+                            }
+                            catch (std::exception &e) {
+                                s_msg.message =
+                                    (std::string) "Throw an exception: " +
+                                    e.what();
                                 cq_send(s_msg);
-                            } catch (...){
-                                s_msg.message = (std::string)"Throw an unknown error";
+                            }
+                            catch (...) {
+                                s_msg.message =
+                                    (std::string) "Throw an unknown error";
                                 cq_send(s_msg);
                             }
                         }
@@ -89,29 +102,30 @@ void input_process(std::string *input){
     }
 }
 
-void read_server_message(int new_socket){
+void read_server_message(int new_socket)
+{
     char buffer[4096];
-    try{
+    try {
         std::string s_buffer;
         int valread;
-        while(1){
+        while (1) {
             valread = read(new_socket, buffer, 4000);
-            if(valread < 0){
+            if (valread < 0) {
                 break;
             }
             s_buffer += buffer;
-            if(valread<4000){
+            if (valread < 4000) {
                 break;
             }
         }
-        if(valread == -1){
-            std::cerr<<"Error read message.\n";
+        if (valread == -1) {
+            std::cerr << "Error read message.\n";
         }
 
         std::istringstream iss(s_buffer);
         std::string line;
-        while(std::getline(iss, line)){
-            if(line[0]=='{'){
+        while (std::getline(iss, line)) {
+            if (line[0] == '{') {
                 // input_process(new std::string(line));
                 std::string *u = new std::string(line);
                 std::thread(input_process, u).detach();
@@ -119,17 +133,20 @@ void read_server_message(int new_socket){
         }
 
         std::stringstream response_body;
-        response_body << (std::string)"HTTP/1.1 200 OK\r\n"+
-                    "Content-Length: 0\r\n"+
-                    "Content-Type: application/json\r\n\r\n";
+        response_body << (std::string) "HTTP/1.1 200 OK\r\n" +
+                             "Content-Length: 0\r\n" +
+                             "Content-Type: application/json\r\n\r\n";
         std::string response = response_body.str();
-        const char* response_cstr = response.c_str();
+        const char *response_cstr = response.c_str();
         send(new_socket, response_cstr, strlen(response_cstr), 0);
-    } catch (...){}
+    }
+    catch (...) {
+    }
     close(new_socket);
 }
 
-int start_server(){
+int start_server()
+{
     int server_fd, new_socket;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
@@ -143,7 +160,8 @@ int start_server(){
 
     // Set socket options
     int opt = 1;
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
+                   sizeof(opt))) {
         std::cerr << "Error setting socket options\n";
         return 1;
     }
@@ -165,66 +183,73 @@ int start_server(){
 
     // Accept incoming connections and handle requests
     while (true) {
-        if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
+        if ((new_socket = accept(server_fd, (struct sockaddr *)&address,
+                                 (socklen_t *)&addrlen)) < 0) {
             std::cerr << "Error accepting connection\n";
             continue;
         }
-        //std::thread(read_server_message, new_socket).detach();
+        // std::thread(read_server_message, new_socket).detach();
         read_server_message(new_socket);
     }
     return 0;
 }
 
-void get_log(){
+void get_log()
+{
     std::ostringstream oss;
-    std::time_t nt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    std::time_t nt =
+        std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     tm tt = *localtime(&nt);
 
     oss << tt.tm_year + 1900 << '_' << tt.tm_mon + 1 << '_' << tt.tm_mday;
 
-    if(!std::filesystem::exists(("./log/" + oss.str()).c_str())){
-        if(!std::filesystem::exists("./log")){
+    if (!std::filesystem::exists(("./log/" + oss.str()).c_str())) {
+        if (!std::filesystem::exists("./log")) {
             std::filesystem::create_directory("./log");
         }
         std::filesystem::create_directory(("./log/" + oss.str()).c_str());
     }
-    LOG_output[0] = std::ofstream("./log/" + oss.str() + "/info.log", std::ios_base::app);
-    LOG_output[1] = std::ofstream("./log/" + oss.str() + "/warn.log", std::ios_base::app);
-    LOG_output[2] = std::ofstream("./log/" + oss.str() + "/erro.log", std::ios_base::app);
+    LOG_output[0] =
+        std::ofstream("./log/" + oss.str() + "/info.log", std::ios_base::app);
+    LOG_output[1] =
+        std::ofstream("./log/" + oss.str() + "/warn.log", std::ios_base::app);
+    LOG_output[2] =
+        std::ofstream("./log/" + oss.str() + "/erro.log", std::ios_base::app);
 }
 
-bool is_op(const int64_t &a){
-    return op_list.find(a) != op_list.end();
-}
+bool is_op(const int64_t &a) { return op_list.find(a) != op_list.end(); }
 
-void init(){
+void init()
+{
     std::ifstream iport("./config/port.txt");
-    if(iport.is_open()){
+    if (iport.is_open()) {
         iport >> send_port >> receive_port;
         iport.close();
-    } else {
-        std::cout<<"Please input the send_port: (receive port in go-cqhttp):";
-        std::cin>>send_port;
-        std::cout<<"Please input the receive_port: (send port in go-cqhttp):";
-        std::cin>>receive_port;
+    }
+    else {
+        std::cout << "Please input the send_port: (receive port in go-cqhttp):";
+        std::cin >> send_port;
+        std::cout << "Please input the receive_port: (send port in go-cqhttp):";
+        std::cin >> receive_port;
         std::ofstream oport("./config/port.txt");
-        if(oport){
+        if (oport) {
             oport << send_port << ' ' << receive_port;
-            oport.flush();oport.close();
+            oport.flush();
+            oport.close();
         }
     }
 
-    for(;;){
-        try{
+    for (;;) {
+        try {
             Json::Value J = string_to_json(cq_get("get_login_info"));
             botqq = J["data"]["user_id"].asInt64();
             break;
-        } catch (...) {
-
         }
-        sleep(10);//10 sec
+        catch (...) {
+        }
+        sleep(10); // 10 sec
     }
-    std::cout<<"botqq:"<<botqq<<std::endl;
+    std::cout << "botqq:" << botqq << std::endl;
 
     get_log();
 
@@ -232,7 +257,8 @@ void init(){
     parse_json_to_set(J_op, op_list);
 }
 
-int main(){
+int main()
+{
     curl_global_init(CURL_GLOBAL_ALL);
     signal(SIGPIPE, SIG_IGN);
 
@@ -254,32 +280,33 @@ int main(){
     events.push_back(new m_change());
     events.push_back(new friendadd());
     events.push_back(new poke());
-    
+
     init();
-    
+
     shinx_message msg;
     msg.message_type = "private";
     msg.message = "bot start.";
 
-    for(int64_t ops : op_list){
+    for (int64_t ops : op_list) {
         msg.user_id = ops;
         cq_send(msg);
     }
 
     start_server();
 
-    for(processable *u : functions){
-        delete []u;
+    for (processable *u : functions) {
+        delete u;
     }
-    for(eventprocess *u : events){
-        delete []u;
+    for (eventprocess *u : events) {
+        delete u;
     }
     curl_global_cleanup();
 
     return 0;
 }
 
-std::string cq_send(shinx_message msg){
+std::string cq_send(shinx_message msg)
+{
     Json::Value input;
     input["message"] = msg.message;
     input["message_type"] = msg.message_type;
@@ -288,10 +315,13 @@ std::string cq_send(shinx_message msg){
     return cq_send("send_msg", input);
 }
 
-std::string cq_send(const std::string &end_point, const Json::Value &J){
-    return do_post("127.0.0.1:" + std::to_string(send_port) + "/" + end_point, J);
+std::string cq_send(const std::string &end_point, const Json::Value &J)
+{
+    return do_post("127.0.0.1:" + std::to_string(send_port) + "/" + end_point,
+                   J);
 }
-std::string cq_get(const std::string &end_point){
+std::string cq_get(const std::string &end_point)
+{
     return do_get("127.0.0.1:" + std::to_string(send_port) + "/" + end_point);
 }
 
@@ -299,32 +329,30 @@ std::mutex mylock;
 
 tm last_getlog;
 
-void setlog(LOG type, std::string message){
+void setlog(LOG type, std::string message)
+{
     std::lock_guard<std::mutex> lock(mylock);
-    
-    std::time_t nt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
+    std::time_t nt =
+        std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     tm tt = *localtime(&nt);
 
-    if(!(tt.tm_year == last_getlog.tm_year &&
-        tt.tm_mon == last_getlog.tm_mon &&
-        tt.tm_mday == last_getlog.tm_mday)){
-            last_getlog = tt;
-            get_log();
+    if (!(tt.tm_year == last_getlog.tm_year &&
+          tt.tm_mon == last_getlog.tm_mon &&
+          tt.tm_mday == last_getlog.tm_mday)) {
+        last_getlog = tt;
+        get_log();
     }
 
     std::ostringstream oss;
-    oss << "[" << tt.tm_hour << ":" << tt.tm_min << ":"<< tt.tm_sec << "][" << LOG_name[type] << "] "
-    << message <<std::endl;
+    oss << "[" << tt.tm_hour << ":" << tt.tm_min << ":" << tt.tm_sec << "]["
+        << LOG_name[type] << "] " << message << std::endl;
 
-    std::cout<< oss.str();
+    std::cout << oss.str();
     LOG_output[type] << oss.str();
     LOG_output[type].flush();
 }
 
-int64_t get_botqq(){
-    return botqq;
-}
+int64_t get_botqq() { return botqq; }
 
-std::string get_local_path(){
-    return std::filesystem::current_path();
-}
+std::string get_local_path() { return std::filesystem::current_path(); }
