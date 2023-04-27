@@ -261,6 +261,7 @@ int main()
 {
     curl_global_init(CURL_GLOBAL_ALL);
     signal(SIGPIPE, SIG_IGN);
+    signal(SIGALRM, SIG_IGN);
 
     functions.push_back(new AnimeImg());
     functions.push_back(new auto114());

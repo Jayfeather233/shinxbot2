@@ -28,9 +28,9 @@ std::string do_post(const std::string &httpaddr,
     if (!curl_handle) {
         throw "Failed to initialize curl";
     }
-    // Do not throw when timeout, for 180 seconds
+    // Do not throw when connect timeout, for 20 seconds
     curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1L);
-    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 180);
+    curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, 20);
 
     // Set the URL to POST to
     curl_easy_setopt(curl_handle, CURLOPT_URL, httpaddr.c_str());
@@ -100,9 +100,9 @@ std::string do_get(const std::string &httpaddr,
     if (!curl_handle) {
         throw "Failed to initialize curl";
     }
-    // Do not throw when timeout, for 180 seconds
+    // Do not throw when connect timeout, for 20 seconds
     curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1L);
-    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 180);
+    curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, 20);
 
     // Set the GET URL
     curl_easy_setopt(curl_handle, CURLOPT_URL, httpaddr.c_str());
