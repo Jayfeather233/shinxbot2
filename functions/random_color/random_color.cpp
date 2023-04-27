@@ -14,9 +14,9 @@ std::string get_code(int color)
     return res;
 }
 
-void r_color::process(shinx_message msg)
+void r_color::process(std::string message, const msg_meta &conf)
 {
-    std::wstring w_mess = trim(string_to_wstring(msg.message).substr(4));
+    std::wstring w_mess = trim(string_to_wstring(message).substr(4));
     int color = 0;
     if (w_mess[0] == L'#') {
         for (int i = 1; i <= 6; i++) {
@@ -83,17 +83,17 @@ void r_color::process(shinx_message msg)
 
     const char *c_name = curl_easy_escape(nullptr, name.c_str(), name.length());
 
-    msg.message = "[CQ:image,file=file://" + get_local_path() +
-                  "/resource/temp/" + c_name + ".png,id=40000]";
+    message = "[CQ:image,file=file://" + get_local_path() + "/resource/temp/" +
+              c_name + ".png,id=40000]";
 
-    cq_send(msg);
-    setlog(LOG::INFO, "r_color at group " + std::to_string(msg.group_id) +
-                          " by " + std::to_string(msg.user_id));
+    cq_send(message, conf);
+    setlog(LOG::INFO, "r_color at group " + std::to_string(conf.group_id) +
+                          " by " + std::to_string(conf.user_id));
 
     delete font_size;
 }
-bool r_color::check(shinx_message msg)
+bool r_color::check(std::string message, const msg_meta &conf)
 {
-    return string_to_wstring(msg.message).find(L"来点色图") == 0;
+    return string_to_wstring(message).find(L"来点色图") == 0;
 }
 std::string r_color::help() { return "来点色图：来点色图+#color_hex_code"; }

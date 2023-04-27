@@ -12,7 +12,7 @@ private:
     std::set<std::string> n_search;
 
     std::string deal_input(const std::string &input, bool is_pool);
-    void admin_set(shinx_message msg, bool flg);
+    void admin_set(std::string message, const msg_meta &conf, bool flg);
     std::string get_image_tags(const Json::Value &J);
     std::string get_image_info(const Json::Value &J, size_t count,
                                bool poolFlag, int retry, int64_t group_id);
@@ -20,7 +20,7 @@ private:
 
 public:
     e621();
-    void process(shinx_message msg);
-    bool check(shinx_message msg);
+    void process(std::string message, const msg_meta &conf);
+    bool check(std::string message, const msg_meta &conf);
     std::string help();
 };

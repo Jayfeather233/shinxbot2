@@ -55,8 +55,8 @@ void input_process(std::string *input)
                 if (J.isMember("user_id")) {
                     user_id = J["user_id"].asInt64();
                 }
-                shinx_message s_msg = (shinx_message){
-                    message, message_type, user_id, group_id, message_id};
+                msg_meta conf =
+                    (msg_meta){message_type, user_id, group_id, message_id};
                 if (message == "bot.help") {
                     std::string help_message;
                     for (processable *func : functions) {
@@ -65,34 +65,28 @@ void input_process(std::string *input)
                     }
                     help_message += "本Bot项目地址：https://github.com/"
                                     "Jayfeather233/shinxbot2";
-                    s_msg.message = help_message;
-                    cq_send(s_msg);
+                    cq_send(help_message, conf);
                 }
                 else {
                     for (processable *func : functions) {
-                        if (func->check(s_msg)) {
+                        if (func->check(message, conf)) {
                             try {
-                                func->process(s_msg);
+                                func->process(message, conf);
                             }
                             catch (char *e) {
-                                s_msg.message =
-                                    (std::string) "Throw an char*: " + e;
-                                cq_send(s_msg);
+                                cq_send((std::string) "Throw an char*: " + e,
+                                        conf);
                             }
                             catch (std::string e) {
-                                s_msg.message = "Throw an string: " + e;
-                                cq_send(s_msg);
+                                cq_send("Throw an string: " + e, conf);
                             }
                             catch (std::exception &e) {
-                                s_msg.message =
-                                    (std::string) "Throw an exception: " +
-                                    e.what();
-                                cq_send(s_msg);
+                                cq_send((std::string) "Throw an exception: " +
+                                            e.what(),
+                                        conf);
                             }
                             catch (...) {
-                                s_msg.message =
-                                    (std::string) "Throw an unknown error";
-                                cq_send(s_msg);
+                                cq_send("Throw an unknown error", conf);
                             }
                         }
                     }
@@ -284,13 +278,12 @@ int main()
 
     init();
 
-    shinx_message msg;
-    msg.message_type = "private";
-    msg.message = "bot start.";
+    msg_meta start_msg_conf;
+    start_msg_conf.message_type = "private";
 
     for (int64_t ops : op_list) {
-        msg.user_id = ops;
-        cq_send(msg);
+        start_msg_conf.user_id = ops;
+        cq_send("bot start.", start_msg_conf);
     }
 
     start_server();
@@ -306,13 +299,13 @@ int main()
     return 0;
 }
 
-std::string cq_send(shinx_message msg)
+std::string cq_send(const std::string &message, const msg_meta &conf)
 {
     Json::Value input;
-    input["message"] = msg.message;
-    input["message_type"] = msg.message_type;
-    input["group_id"] = msg.group_id;
-    input["user_id"] = msg.user_id;
+    input["message"] = message;
+    input["message_type"] = conf.message_type;
+    input["group_id"] = conf.group_id;
+    input["user_id"] = conf.user_id;
     return cq_send("send_msg", input);
 }
 

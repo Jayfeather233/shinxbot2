@@ -23,8 +23,8 @@ public:
     void del_all(std::string name);
     void del_single(std::string name, int index);
     void add_image(std::string name, std::string image, int64_t group_id);
-    std::string commands(shinx_message msg);
-    void process(shinx_message msg);
-    bool check(shinx_message msg);
+    std::string commands(std::string message, const msg_meta &conf);
+    void process(std::string message, const msg_meta &conf);
+    bool check(std::string message, const msg_meta &conf);
     std::string help();
 };

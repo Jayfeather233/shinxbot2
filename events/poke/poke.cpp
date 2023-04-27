@@ -3,12 +3,11 @@
 
 void poke::process(Json::Value J)
 {
-    cq_send((shinx_message){
-        "[CQ:poke,qq=" + std::to_string(J["user_id"].asInt64()) + "]", "group",
-        0, J["group_id"].asInt64(), 0});
+    cq_send("[CQ:poke,qq=" + std::to_string(J["user_id"].asInt64()) + "]",
+            (msg_meta){"group", 0, J["group_id"].asInt64(), 0});
     if (get_random(3) == 0)
-        cq_send((shinx_message){"别戳我TAT", "group", 0,
-                                J["group_id"].asInt64(), 0});
+        cq_send("别戳我TAT",
+                (msg_meta){"group", 0, J["group_id"].asInt64(), 0});
 }
 bool poke::check(Json::Value J)
 {

@@ -94,13 +94,13 @@ void upload_file(const std::filesystem::path &file, const int64_t &group_id,
         J = string_to_json(cq_send("upload_group_file", J));
         if (J.isMember("msg")) {
             cq_send(
-                (shinx_message){J.toStyledString(), "group", -1, group_id, 0});
+                J.toStyledString(), (msg_meta){"group", -1, group_id, 0});
         }
     }
     catch (...) {
         setlog(LOG::WARNING, "File upload failed.");
         cq_send(
-            (shinx_message){"File upload failed.", "group", -1, group_id, 0});
+            "File upload failed.", (msg_meta){"group", -1, group_id, 0});
     }
 }
 

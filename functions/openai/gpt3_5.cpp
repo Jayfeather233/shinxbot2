@@ -133,7 +133,7 @@ bool isASCII(const std::string &s)
     });
 }
 
-std::string gpt3_5::do_black(std::string msg)
+std::string gpt3_5::do_black(std::string message)
 {
     for (std::string u : black_list) {
         std::regex black_regex;
@@ -141,9 +141,9 @@ std::string gpt3_5::do_black(std::string msg)
             black_regex = std::regex("\\b" + u + "\\b");
         else
             black_regex = std::regex(u);
-        msg = std::regex_replace(msg, black_regex, "__");
+        message = std::regex_replace(message, black_regex, "__");
     }
-    return msg;
+    return message;
 }
 
 size_t gpt3_5::get_avaliable_key()
@@ -167,116 +167,116 @@ void gpt3_5::save_history(int64_t id)
               J.toStyledString());
 }
 
-void gpt3_5::process(shinx_message msg)
+void gpt3_5::process(std::string message, const msg_meta &conf)
 {
-    msg.message = do_black(trim(msg.message.substr(3)));
-    if (msg.message.find(".test") == 0) {
-        cq_send(msg);
+    message = do_black(trim(message.substr(3)));
+    if (message.find(".test") == 0) {
+        cq_send(message, conf);
         return;
     }
-    int64_t id = msg.message_type == "group" ? (msg.group_id << 1)
-                                             : ((msg.user_id << 1) | 1);
-    if (msg.message.find(".reset") == 0 || msg.message.find("reset") == 0) {
+    int64_t id = conf.message_type == "group" ? (conf.group_id << 1)
+                                              : ((conf.user_id << 1) | 1);
+    if (message.find(".reset") == 0 || message.find("reset") == 0) {
         auto it = history.find(id);
         if (it != history.end()) {
             it->second.clear();
         }
-        msg.message = "reset done.";
-        cq_send(msg);
+        message = "reset done.";
+        cq_send(message, conf);
         save_history(id);
         return;
     }
-    if (msg.message.find(".change") == 0) {
-        if (is_op(msg.user_id) || (id & 1)) {
-            msg.message = trim(msg.message.substr(7));
+    if (message.find(".change") == 0) {
+        if (is_op(conf.user_id) || (id & 1)) {
+            message = trim(message.substr(7));
             bool flg = 0;
             std::string res = "avaliable modes:";
             for (std::string u : modes) {
                 res += " " + u;
-                if (u == msg.message) {
+                if (u == message) {
                     flg = true;
                     history[id].clear();
-                    pre_default[id] = msg.message;
-                    msg.message = "change done.";
-                    cq_send(msg);
+                    pre_default[id] = message;
+                    message = "change done.";
+                    cq_send(message, conf);
                     break;
                 }
             }
             if (!flg) {
-                msg.message = res;
-                cq_send(msg);
+                message = res;
+                cq_send(message, conf);
             }
         }
         else {
-            msg.message = "Not on op list.";
-            cq_send(msg);
+            message = "Not on op list.";
+            cq_send(message, conf);
         }
         save_history(id);
         return;
     }
-    if (msg.message.find(".sw") == 0) {
-        if (is_op(msg.user_id)) {
+    if (message.find(".sw") == 0) {
+        if (is_op(conf.user_id)) {
             is_open = !is_open;
-            close_message = trim(msg.message.substr(3));
-            msg.message = "is_open: " + std::to_string(is_open);
-            cq_send(msg);
+            close_message = trim(message.substr(3));
+            message = "is_open: " + std::to_string(is_open);
+            cq_send(message, conf);
         }
         else {
-            msg.message = "Not on op list.";
-            cq_send(msg);
+            message = "Not on op list.";
+            cq_send(message, conf);
         }
         return;
     }
-    if (msg.message.find(".debug") == 0) {
-        if (is_op(msg.user_id)) {
+    if (message.find(".debug") == 0) {
+        if (is_op(conf.user_id)) {
             is_debug = !is_debug;
-            msg.message = "is_debug: " + std::to_string(is_debug);
-            cq_send(msg);
+            message = "is_debug: " + std::to_string(is_debug);
+            cq_send(message, conf);
         }
         else {
-            msg.message = "Not on op list.";
-            cq_send(msg);
+            message = "Not on op list.";
+            cq_send(message, conf);
         }
         return;
     }
-    if (msg.message.find(".set") == 0) {
-        if (is_op(msg.user_id)) {
+    if (message.find(".set") == 0) {
+        if (is_op(conf.user_id)) {
             std::string type;
             int64_t num;
-            std::istringstream iss(msg.message.substr(4));
+            std::istringstream iss(message.substr(4));
             iss >> type >> num;
             if (type == "reply") {
                 MAX_REPLY = num;
-                msg.message = "set MAX_REPLY to " + std::to_string(num);
+                message = "set MAX_REPLY to " + std::to_string(num);
             }
             else if (type == "token") {
                 MAX_TOKEN = num;
-                msg.message = "set MAX_TOKEN to " + std::to_string(num);
+                message = "set MAX_TOKEN to " + std::to_string(num);
             }
             else if (type == "red") {
                 RED_LINE = num;
-                msg.message = "set RED_LINE to " + std::to_string(num);
+                message = "set RED_LINE to " + std::to_string(num);
             }
             else {
-                msg.message = "Unknown type";
+                message = "Unknown type";
             }
         }
         else {
-            msg.message = "Not on op list.";
+            message = "Not on op list.";
         }
-        cq_send(msg);
+        cq_send(message, conf);
         save_file();
         return;
     }
     size_t keyid = get_avaliable_key();
     if (is_lock[keyid]) {
-        msg.message = "请等待上次输入的回复。";
-        cq_send(msg);
+        message = "请等待上次输入的回复。";
+        cq_send(message, conf);
         return;
     }
     if (!is_open) {
-        msg.message = "已关闭。" + close_message;
-        cq_send(msg);
+        message = "已关闭。" + close_message;
+        cq_send(message, conf);
         return;
     }
     if (history.find(id) == history.end()) {
@@ -286,7 +286,7 @@ void gpt3_5::process(shinx_message msg)
     is_lock[keyid] = true;
     Json::Value J, user_input_J, ign;
     user_input_J["role"] = "user";
-    user_input_J["content"] = msg.message;
+    user_input_J["content"] = message;
     // J = history[id];
     // while(getlength(J) > MAX_TOKEN - MAX_REPLY){
     //     J.removeIndex(0, &ign);
@@ -323,21 +323,21 @@ void gpt3_5::process(shinx_message msg)
         J.clear();
         J["error"]["message"] = "http connection failed.";
     }
-    setlog(LOG::INFO, "openai: user " + std::to_string(msg.user_id));
+    setlog(LOG::INFO, "openai: user " + std::to_string(conf.user_id));
     is_lock[keyid] = false;
     if (J.isMember("error")) {
         if (J["error"]["message"].asString().find(
                 "This model's maximum context length is") == 0) {
-            msg.message = "Openai ERROR: history message is too long. Please "
-                          "try again or try .ai.reset";
-            cq_send(msg);
+            message = "Openai ERROR: history message is too long. Please "
+                      "try again or try .ai.reset";
+            cq_send(message, conf);
             history[id].removeIndex(0, &ign);
             history[id].removeIndex(0, &ign);
             save_history(id);
         }
         else {
-            msg.message = "Openai ERROR: " + J["error"]["message"].asString();
-            cq_send(msg);
+            message = "Openai ERROR: " + J["error"]["message"].asString();
+            cq_send(message, conf);
         }
     }
     else {
@@ -367,13 +367,16 @@ void gpt3_5::process(shinx_message msg)
         J["content"] = aimsg;
         if (is_debug)
             aimsg += usage;
-        msg.message =
-            "[CQ:reply,id=" + std::to_string(msg.message_id) + "] " + aimsg;
-        cq_send(msg);
+        message =
+            "[CQ:reply,id=" + std::to_string(conf.message_id) + "] " + aimsg;
+        cq_send(message, conf);
         history[id].append(user_input_J);
         history[id].append(J);
     }
     save_history(id);
 }
-bool gpt3_5::check(shinx_message msg) { return msg.message.find(".ai") == 0; }
+bool gpt3_5::check(std::string message, const msg_meta &conf)
+{
+    return message.find(".ai") == 0;
+}
 std::string gpt3_5::help() { return "Openai gpt3.5: start with .ai"; }

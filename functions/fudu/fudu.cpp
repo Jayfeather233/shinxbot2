@@ -3,29 +3,29 @@
 
 #include <map>
 
-void fudu::process(shinx_message msg)
+void fudu::process(std::string message, const msg_meta &conf)
 {
-    auto it = gmsg.find(msg.group_id);
+    auto it = gmsg.find(conf.group_id);
     if (it != gmsg.end()) {
-        if (msg.message == it->second) {
-            times[msg.group_id]++;
-            if (times[msg.group_id] == 5) {
-                times[msg.group_id] = 0;
-                cq_send(msg);
+        if (message == it->second) {
+            times[conf.group_id]++;
+            if (times[conf.group_id] == 5) {
+                times[conf.group_id] = 0;
+                cq_send(message, conf);
             }
         }
         else {
-            gmsg[msg.group_id] = msg.message;
-            times[msg.group_id] = 1;
+            gmsg[conf.group_id] = message;
+            times[conf.group_id] = 1;
         }
     }
     else {
-        gmsg[msg.group_id] = msg.message;
-        times[msg.group_id] = 1;
+        gmsg[conf.group_id] = message;
+        times[conf.group_id] = 1;
     }
 }
-bool fudu::check(shinx_message msg)
+bool fudu::check(std::string message, const msg_meta &conf)
 {
-    return msg.message_type == "group" && msg.user_id != get_botqq();
+    return conf.message_type == "group" && conf.user_id != get_botqq();
 }
 std::string fudu::help() { return ""; }

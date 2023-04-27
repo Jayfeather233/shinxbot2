@@ -4,17 +4,17 @@
 #include <iostream>
 #include <jsoncpp/json/json.h>
 
-void hhsh::process(shinx_message msg)
+void hhsh::process(std::string message, const msg_meta &conf)
 {
 
-    if (msg.message.length() <= 5) {
-        msg.message = "首字母缩写识别： hhsh + 缩写 ";
-        cq_send(msg);
+    if (message.length() <= 5) {
+        message = "首字母缩写识别： hhsh + 缩写 ";
+        cq_send(message, conf);
         return;
     }
 
     Json::Value J;
-    J["text"] = my_replace(msg.message.substr(4), ' ', ',');
+    J["text"] = my_replace(message.substr(4), ' ', ',');
 
     Json::Value Ja;
 
@@ -24,8 +24,8 @@ void hhsh::process(shinx_message msg)
     }
     catch (...) {
         setlog(LOG::WARNING, "failed to connect to hhsh");
-        msg.message = "failed to connect to hhsh";
-        cq_send(msg);
+        message = "failed to connect to hhsh";
+        cq_send(message, conf);
         return;
     }
 
@@ -76,10 +76,13 @@ void hhsh::process(shinx_message msg)
             res.append(J["name"].asString()).append("未收录");
         }
     }
-    setlog(LOG::INFO, "nbnhhsh at group " + std::to_string(msg.group_id) +
-                          " by " + std::to_string(msg.user_id));
-    msg.message = res;
-    cq_send(msg);
+    setlog(LOG::INFO, "nbnhhsh at group " + std::to_string(conf.group_id) +
+                          " by " + std::to_string(conf.user_id));
+    message = res;
+    cq_send(message, conf);
 }
-bool hhsh::check(shinx_message msg) { return msg.message.find("hhsh") == 0; }
+bool hhsh::check(std::string message, const msg_meta &conf)
+{
+    return message.find("hhsh") == 0;
+}
 std::string hhsh::help() { return "首字母缩写识别： hhsh+缩写"; }

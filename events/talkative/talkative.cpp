@@ -5,10 +5,9 @@ void talkative::process(Json::Value J)
 {
     setlog(LOG::INFO,
            "talkative at group " + std::to_string(J["group_id"].asInt64()));
-    cq_send(
-        (shinx_message){"[CQ:at,qq=" + std::to_string(J["user_id"].asInt64()) +
-                            "] 获得了龙王标识！",
-                        "group", 0, J["group_id"].asInt64(), 0});
+    cq_send("[CQ:at,qq=" + std::to_string(J["user_id"].asInt64()) +
+                "] 获得了龙王标识！",
+            (msg_meta){"group", 0, J["group_id"].asInt64(), 0});
 }
 bool talkative::check(Json::Value J)
 {

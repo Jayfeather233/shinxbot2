@@ -36,75 +36,75 @@ void catmain::save_map()
 
 Json::Value catmain::get_text() { return cat_text; }
 
-void catmain::process(shinx_message msg)
+void catmain::process(std::string message, const msg_meta &conf)
 {
-    if (msg.message == "&#91;cat&#93;.help") {
-        msg.message = "An interactive cat!\n"
-                      "First use adopt to have one.\n"
-                      "Then you can play, feed and so on!(start with[cat])";
-        cq_send(msg);
+    if (message == "&#91;cat&#93;.help") {
+        message = "An interactive cat!\n"
+                  "First use adopt to have one.\n"
+                  "Then you can play, feed and so on!(start with[cat])";
+        cq_send(message, conf);
         return;
     }
-    if (msg.message.find(".adopt") == 13) {
-        auto it = cat_map.find(msg.user_id);
+    if (message.find(".adopt") == 13) {
+        auto it = cat_map.find(conf.user_id);
         if (it != cat_map.end()) {
-            msg.message = "You already have one!";
-            cq_send(msg);
+            message = "You already have one!";
+            cq_send(message, conf);
             return;
         }
         else {
-            std::string name = trim(msg.message.substr(19));
+            std::string name = trim(message.substr(19));
             if (name.length() <= 0) {
-                msg.message = "Please give it a name";
-                cq_send(msg);
+                message = "Please give it a name";
+                cq_send(message, conf);
                 return;
             }
             else {
-                Cat newcat(name, msg.user_id);
-                cat_map[msg.user_id] = newcat;
-                msg.message = newcat.adopt();
-                cq_send(msg);
+                Cat newcat(name, conf.user_id);
+                cat_map[conf.user_id] = newcat;
+                message = newcat.adopt();
+                cq_send(message, conf);
                 save_map();
             }
         }
     }
-    else if (msg.message.find(".rename") == 13) {
-        auto it = cat_map.find(msg.user_id);
+    else if (message.find(".rename") == 13) {
+        auto it = cat_map.find(conf.user_id);
         if (it == cat_map.end()) {
-            msg.message = "You don't have one!";
-            cq_send(msg);
+            message = "You don't have one!";
+            cq_send(message, conf);
             return;
         }
         else {
-            std::string name = trim(msg.message.substr(20));
+            std::string name = trim(message.substr(20));
             if (name.length() <= 0) {
-                msg.message = "Please give it a name";
-                cq_send(msg);
+                message = "Please give it a name";
+                cq_send(message, conf);
                 return;
             }
             else {
-                msg.message = it->second.rename(name);
-                cq_send(msg);
+                message = it->second.rename(name);
+                cq_send(message, conf);
                 save_map();
             }
         }
     }
     else {
-        auto it = cat_map.find(msg.user_id);
+        auto it = cat_map.find(conf.user_id);
         if (it == cat_map.end()) {
-            msg.message =
+            message =
                 "You don't have one!\nUse [cat].adopt name to get a cute cat!";
-            cq_send(msg);
+            cq_send(message, conf);
             return;
         }
         else {
-            msg.message = it->second.process(msg.message);
-            cq_send(msg);
+            message = it->second.process(message);
+            cq_send(message, conf);
         }
     }
 }
-bool catmain::check(shinx_message msg)
+bool catmain::check(std::string message, const msg_meta &conf)
 {
-    return msg.message.find("&#91;cat&#93;") == 0;
+    return message.find("&#91;cat&#93;") == 0;
 }
 std::string catmain::help() { return "online cat. [cat].help"; }

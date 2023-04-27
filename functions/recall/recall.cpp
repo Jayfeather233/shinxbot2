@@ -1,27 +1,27 @@
 #include "recall.h"
 #include "utils.h"
 
-void recall::process(shinx_message msg)
+void recall::process(std::string message, const msg_meta &conf)
 {
-    size_t pos = msg.message.find("[CQ:reply,id=");
+    size_t pos = message.find("[CQ:reply,id=");
     pos += 13;
     int64_t fn = 1, cnt = 0;
-    while (msg.message[pos] < '0' || '9' < msg.message[pos]) {
-        if (msg.message[pos] == '-')
+    while (message[pos] < '0' || '9' < message[pos]) {
+        if (message[pos] == '-')
             fn = -1;
         pos++;
     }
-    while ('0' <= msg.message[pos] && msg.message[pos] <= '9') {
-        cnt = (cnt << 3) + (cnt << 1) + msg.message[pos] - '0';
+    while ('0' <= message[pos] && message[pos] <= '9') {
+        cnt = (cnt << 3) + (cnt << 1) + message[pos] - '0';
         pos++;
     }
     Json::Value J;
     J["message_id"] = fn * cnt;
     cq_send("delete_msg", J);
 }
-bool recall::check(shinx_message msg)
+bool recall::check(std::string message, const msg_meta &conf)
 {
-    return (msg.message.find("[CQ:reply,id=") != msg.message.npos &&
-            msg.message.find("recall") != msg.message.npos);
+    return (message.find("[CQ:reply,id=") != message.npos &&
+            message.find("recall") != message.npos);
 }
 std::string recall::help() { return "撤回消息：回复某句话输入recall"; }

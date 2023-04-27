@@ -67,37 +67,37 @@ std::string number_trans(int64_t u)
         return std::to_string(u);
 }
 
-void e621::process(shinx_message msg)
+void e621::process(std::string message, const msg_meta &conf)
 {
-    msg.message = trim(msg.message);
-    if (msg.message.find("621.add") == 0) {
-        msg.message = trim(msg.message.substr(7));
-        admin_set(msg, true);
+    message = trim(message);
+    if (message.find("621.add") == 0) {
+        message = trim(message.substr(7));
+        admin_set(message, conf, true);
         return;
     }
-    if (msg.message.find("621.del") == 0) {
-        msg.message = trim(msg.message.substr(7));
-        admin_set(msg, false);
+    if (message.find("621.del") == 0) {
+        message = trim(message.substr(7));
+        admin_set(message, conf, false);
         return;
     }
 
-    if (msg.message_type == "group") {
-        if (!group[msg.group_id]) {
+    if (conf.message_type == "group") {
+        if (!group[conf.group_id]) {
             setlog(LOG::WARNING, "621 in group " +
-                                     std::to_string(msg.group_id) +
+                                     std::to_string(conf.group_id) +
                                      " but no permission");
             return;
         }
     }
     else {
-        if (!user[msg.user_id]) {
-            setlog(LOG::WARNING, "621 at user " + std::to_string(msg.user_id) +
+        if (!user[conf.user_id]) {
+            setlog(LOG::WARNING, "621 at user " + std::to_string(conf.user_id) +
                                      " but no permission");
             return;
         }
     }
 
-    if (msg.message == "621.default") {
+    if (message == "621.default") {
         std::string res =
             "如未指定任何内容，默认加上fav:jayfeather233 pokemon\n"
             "如未指定favcount或score，默认加上favcount:>400 score:>200\n"
@@ -105,17 +105,17 @@ void e621::process(shinx_message msg)
         for (std::string it : n_search) {
             res += it + ",";
         }
-        msg.message = res;
-        cq_send(msg);
+        message = res;
+        cq_send(message, conf);
         return;
     }
-    if (msg.message.find("621.autocomplete") == 0) {
-        msg.message = trim(msg.message.substr(16));
+    if (message.find("621.autocomplete") == 0) {
+        message = trim(message.substr(16));
         try {
             Json::Value Ja = string_to_json(do_get(
                 "https://e621.net/tags/"
                 "autocomplete.json?search[name_matches]=" +
-                    msg.message + "&expiry=7",
+                    message + "&expiry=7",
                 {{"user-agent", "AutoSearch/1.0 (by " + username + " on e621)"},
                  {"Authorization",
                   "basic " + base64::to_base64(username + ":" + authorkey)}},
@@ -126,26 +126,26 @@ void e621::process(shinx_message msg)
                 res += Ja[i]["name"].asString() + "    " +
                        std::to_string(Ja[i]["post_count"].asInt64()) + "\n";
             }
-            msg.message = res;
-            cq_send(msg);
+            message = res;
+            cq_send(message, conf);
         }
         catch (...) {
-            msg.message = "621 connect error. Try again.";
-            cq_send(msg);
+            message = "621 connect error. Try again.";
+            cq_send(message, conf);
         }
         return;
     }
 
-    bool is_pool = (msg.message.find("pool:") != msg.message.npos);
-    std::string input = msg.message.substr(3);
+    bool is_pool = (message.find("pool:") != message.npos);
+    std::string input = message.substr(3);
     bool get_tag = false;
     if (input.find(".tag") == 0) {
         get_tag = true;
         input = trim(input.substr(4));
     }
     if (input.find(".input") == 0) {
-        msg.message = deal_input(input.substr(6), is_pool);
-        cq_send(msg);
+        message = deal_input(input.substr(6), is_pool);
+        cq_send(message, conf);
         return;
     }
     input = deal_input(input, is_pool);
@@ -166,20 +166,20 @@ void e621::process(shinx_message msg)
         }
     }
     if (i == 3) {
-        msg.message = "Unable to connect to e621";
-        cq_send(msg);
-        setlog(LOG::WARNING, "621 at group " + std::to_string(msg.group_id) +
-                                 " by " + std::to_string(msg.user_id) +
+        message = "Unable to connect to e621";
+        cq_send(message, conf);
+        setlog(LOG::WARNING, "621 at group " + std::to_string(conf.group_id) +
+                                 " by " + std::to_string(conf.user_id) +
                                  " but unable to connect.");
         return;
     }
 
     Json::ArrayIndex count = J["posts"].size();
     if (count == 0) {
-        msg.message = "No image found.";
-        cq_send(msg);
-        setlog(LOG::WARNING, "621 at group " + std::to_string(msg.group_id) +
-                                 " by " + std::to_string(msg.user_id) +
+        message = "No image found.";
+        cq_send(message, conf);
+        setlog(LOG::WARNING, "621 at group " + std::to_string(conf.group_id) +
+                                 " by " + std::to_string(conf.user_id) +
                                  " but no image found.");
         return;
     }
@@ -190,33 +190,33 @@ void e621::process(shinx_message msg)
         int i;
         for (i = 0; i < 3; i++) {
             if (get_tag) {
-                msg.message = "[CQ:reply,id=" + std::to_string(msg.message_id) +
-                              "] " + get_image_tags(J) +
-                              (i ? "\ntx原因无法发送原图" : "");
-                J2 = string_to_json(cq_send(msg));
+                message = "[CQ:reply,id=" + std::to_string(conf.message_id) +
+                          "] " + get_image_tags(J) +
+                          (i ? "\ntx原因无法发送原图" : "");
+                J2 = string_to_json(cq_send(message, conf));
             }
             else {
-                msg.message =
-                    "[CQ:reply,id=" + std::to_string(msg.message_id) + "] " +
-                    get_image_info(J, count, is_pool, i, msg.group_id) +
-                    (i ? "\ntx原因无法发送原图" : "");
-                J2 = string_to_json(cq_send(msg));
+                message = "[CQ:reply,id=" + std::to_string(conf.message_id) +
+                          "] " +
+                          get_image_info(J, count, is_pool, i, conf.group_id) +
+                          (i ? "\ntx原因无法发送原图" : "");
+                J2 = string_to_json(cq_send(message, conf));
             }
             if (J2["status"].asString() != "failed") {
                 break;
             }
         }
         if (i == 3) {
-            msg.message = "[CQ:reply,id=" + std::to_string(msg.message_id) +
-                          "] cannot send image due to Tencent";
-            cq_send(msg);
+            message = "[CQ:reply,id=" + std::to_string(conf.message_id) +
+                      "] cannot send image due to Tencent";
+            cq_send(message, conf);
             setlog(LOG::WARNING,
-                   "621 at group " + std::to_string(msg.group_id) + " by " +
-                       std::to_string(msg.user_id) + " send failed.");
+                   "621 at group " + std::to_string(conf.group_id) + " by " +
+                       std::to_string(conf.user_id) + " send failed.");
         }
         else {
-            setlog(LOG::INFO, "621 at group " + std::to_string(msg.group_id) +
-                                  " by " + std::to_string(msg.user_id));
+            setlog(LOG::INFO, "621 at group " + std::to_string(conf.group_id) +
+                                  " by " + std::to_string(conf.user_id));
         }
     }
     else {
@@ -245,7 +245,7 @@ void e621::process(shinx_message msg)
                 if (J3[i].asInt64() == J["posts"][j]["id"].asInt64()) {
                     res_message += std::to_string(get_botqq()) + " 合并行\n";
                     res_message += get_image_info(J["posts"][j], count, is_pool,
-                                                  1, msg.group_id);
+                                                  1, conf.group_id);
                     res_message += "\n结束合并\n";
                 }
             }
@@ -254,29 +254,29 @@ void e621::process(shinx_message msg)
         Json::Value J_send;
         J_send["post_type"] = "message";
         J_send["message"] = res_message;
-        J_send["message_type"] = msg.message_type;
+        J_send["message_type"] = conf.message_type;
         J_send["message_id"] = -1;
-        J_send["user_id"] = msg.user_id;
-        J_send["group_id"] = msg.group_id;
+        J_send["user_id"] = conf.user_id;
+        J_send["group_id"] = conf.group_id;
         input_process(new std::string(J_send.toStyledString()));
-        setlog(LOG::INFO, "621 pool at group " + std::to_string(msg.group_id) +
-                              " by " + std::to_string(msg.user_id));
+        setlog(LOG::INFO, "621 pool at group " + std::to_string(conf.group_id) +
+                              " by " + std::to_string(conf.user_id));
     }
 }
 
-void e621::admin_set(shinx_message msg, bool flg)
+void e621::admin_set(std::string message, const msg_meta &conf, bool flg)
 {
-    std::istringstream iss(msg.message);
-    if (!is_op(msg.user_id))
+    std::istringstream iss(message);
+    if (!is_op(conf.user_id))
         return;
     std::string type;
     iss >> type;
     if (type == "this") {
-        if (msg.message_type == "group") {
-            group[msg.group_id] = flg;
+        if (conf.message_type == "group") {
+            group[conf.group_id] = flg;
         }
         else {
-            user[msg.user_id] = flg;
+            user[conf.user_id] = flg;
         }
     }
     else {
@@ -289,13 +289,13 @@ void e621::admin_set(shinx_message msg, bool flg)
             user[id] = flg;
         }
         else {
-            msg.message = "621.set [this/group/user] [id (when not 'this')]";
-            cq_send(msg);
+            message = "621.set [this/group/user] [id (when not 'this')]";
+            cq_send(message, conf);
         }
     }
     save();
-    msg.message = "set done.";
-    cq_send(msg);
+    message = "set done.";
+    cq_send(message, conf);
 }
 void e621::save()
 {
@@ -429,11 +429,10 @@ std::string e621::get_image_info(const Json::Value &J, size_t count,
             upload_file(zip_name, group_id, "e621");
         }
 
-        std::cout << 1 << std::endl;
         int ret = system(
             ("ffmpeg -y -i " + file_name + " -vframes 1 " + file_name + ".png")
                 .c_str());
-        std::cout << 1 << std::endl;
+
         if (ret != 0) {
             quest << "获取视频封面出错" << std::endl;
         }
@@ -461,18 +460,18 @@ std::string e621::get_image_info(const Json::Value &J, size_t count,
     return quest.str();
 }
 
-bool e621::check(shinx_message msg)
+bool e621::check(std::string message, const msg_meta &conf)
 {
-    if ((!msg.message.find("621")) == 0)
+    if ((!message.find("621")) == 0)
         return false;
-    if (msg.message_type == "group") {
-        auto it = group.find(msg.group_id);
+    if (conf.message_type == "group") {
+        auto it = group.find(conf.group_id);
         if (it == group.end() || it->second == false) {
             return false;
         }
     }
     else {
-        auto it = user.find(msg.user_id);
+        auto it = user.find(conf.user_id);
         if (it == user.end() || it->second == false) {
             return false;
         }

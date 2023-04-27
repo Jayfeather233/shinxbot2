@@ -17,13 +17,11 @@ using namespace cimg_library;
 enum LOG { INFO, WARNING, ERROR };
 
 /**
- * message: message that bot received.
  * message_type: "group" or "private"
  * user_id & group_id
  * message_id
  */
-struct shinx_message {
-    std::string message;
+struct msg_meta {
     std::string message_type;
     int64_t user_id;
     int64_t group_id;
@@ -74,7 +72,7 @@ bool is_op(const int64_t &a);
  * send a message to go-cqhttp
  * message_type can be "group" or "private"
  */
-std::string cq_send(shinx_message msg);
+std::string cq_send(const std::string &message, const msg_meta &conf);
 /**
  * send a message to go-cqhttp
  * end_point can be "send_msg", "set_friend_add_request"... that supported by
