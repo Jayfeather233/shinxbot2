@@ -113,7 +113,7 @@ void read_server_message(int new_socket)
             }
         }
         if (valread == -1) {
-            std::cerr << "Error read message.\n";
+            setlog(LOG::ERROR, "Error read message.");
         }
 
         std::istringstream iss(s_buffer);
@@ -150,7 +150,7 @@ int start_server()
 
     // Create server socket
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-        std::cerr << "Error creating socket\n";
+        setlog(LOG::ERROR, "Error creating socket");
         return 1;
     }
 
@@ -158,7 +158,7 @@ int start_server()
     int opt = 1;
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
                    sizeof(opt))) {
-        std::cerr << "Error setting socket options\n";
+        setlog(LOG::ERROR, "Error setting socket options");
         return 1;
     }
 
@@ -167,13 +167,13 @@ int start_server()
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(receive_port);
     if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
-        std::cerr << "Error binding to socket\n";
+        setlog(LOG::ERROR, "Error binding to socket");
         return 1;
     }
 
     // Listen for incoming connections
     if (listen(server_fd, 3) < 0) {
-        std::cerr << "Error listening for connections\n";
+        setlog(LOG::ERROR, "Error listening for connections");
         return 1;
     }
 
@@ -181,10 +181,9 @@ int start_server()
     while (true) {
         if ((new_socket = accept(server_fd, (struct sockaddr *)&address,
                                  (socklen_t *)&addrlen)) < 0) {
-            std::cerr << "Error accepting connection\n";
+            setlog(LOG::ERROR, "Error accepting connection");
             continue;
         }
-        // std::thread(read_server_message, new_socket).detach();
         read_server_message(new_socket);
     }
     return 0;
@@ -344,7 +343,10 @@ void setlog(LOG type, std::string message)
     oss << "[" << tt.tm_hour << ":" << tt.tm_min << ":" << tt.tm_sec << "]["
         << LOG_name[type] << "] " << message << std::endl;
 
-    std::cout << oss.str();
+    if (type == LOG::ERROR)
+        std::cerr << oss.str();
+    else
+        std::cout << oss.str();
     LOG_output[type] << oss.str();
     LOG_output[type].flush();
 }

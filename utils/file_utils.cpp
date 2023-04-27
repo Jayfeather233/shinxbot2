@@ -17,7 +17,7 @@ std::fstream openfile(const std::string file_path,
         return file;
     }
     else {
-        std::cerr << " Cannot open file: " << file_path << std::endl;
+        setlog(LOG::ERROR, "Cannot open file: " + file_path);
         throw(file_path + ": open file failed").c_str();
     }
 }

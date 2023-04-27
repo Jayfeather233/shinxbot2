@@ -21,7 +21,7 @@ auto114::auto114()
         afile.close();
     }
     else {
-        std::cerr << "Missing file: ./data/homodata.txt" << std::endl;
+        setlog(LOG::ERROR, "Missing file: ./data/homodata.txt");
     }
 }
 

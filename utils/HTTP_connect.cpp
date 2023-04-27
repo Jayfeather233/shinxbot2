@@ -72,8 +72,6 @@ std::string do_post(const std::string &httpaddr,
     if (curl_result != CURLE_OK || response.length() <= 1) {
         curl_slist_free_all(header_list);
         curl_easy_cleanup(curl_handle);
-        std::cerr << "Connect failed. " << curl_easy_strerror(curl_result)
-                  << std::endl;
         setlog(LOG::ERROR, "Connect to " + httpaddr + " failed with code " +
                                curl_easy_strerror(curl_result));
         throw(std::string) "HTTP Connect failed." +
@@ -138,8 +136,6 @@ std::string do_get(const std::string &httpaddr,
     if (curl_result != CURLE_OK || response.length() <= 1) {
         curl_slist_free_all(header_list);
         curl_easy_cleanup(curl_handle);
-        std::cerr << "Connect failed. " << curl_easy_strerror(curl_result)
-                  << std::endl;
         setlog(LOG::ERROR, "Connect to " + httpaddr + " failed with code " +
                                curl_easy_strerror(curl_result));
         throw(std::string) "HTTP Connect failed." +

@@ -25,7 +25,7 @@ void download(const std::string &httpAddress, const std::string &filePath,
         // out.close();
     }
     catch (const std::exception &e) {
-        std::cerr << "Exception occurred: " << e.what() << std::endl;
+        setlog(LOG::ERROR, "At download from" + httpAddress + " to " + filePath + "." + fileName + ", Exception occurred: " + e.what());
     }
 }
 
