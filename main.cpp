@@ -123,7 +123,7 @@ void read_server_message(int new_socket)
             if (line[0] == '{') {
                 flg = true;
             }
-            msg += line;
+            if(flg) msg += line;
         }
         std::string *u = new std::string(msg);
         std::thread(input_process, u).detach();
