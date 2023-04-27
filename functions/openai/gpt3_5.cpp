@@ -149,7 +149,7 @@ std::string gpt3_5::do_black(std::string message)
 size_t gpt3_5::get_avaliable_key()
 {
     size_t u;
-    for (int i = 0; i < key.size(); i++) {
+    for (size_t i = 0; i < key.size(); i++) {
         if (!is_lock[u = (key_cycle + i) % key.size()]) {
             key_cycle = u;
             return u;

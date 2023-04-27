@@ -7,6 +7,7 @@
 #include <csignal>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <mutex>
 #include <sstream>
@@ -16,8 +17,6 @@
 #include <thread>
 #include <unistd.h>
 #include <vector>
-#include <iomanip>
-#include <iostream>
 
 int send_port;
 int receive_port;
@@ -109,6 +108,7 @@ void read_server_message(int new_socket)
             if (valread < 0) {
                 break;
             }
+            buffer[valread] = 0;
             s_buffer += buffer;
             if (valread < 4000) {
                 break;
@@ -125,7 +125,8 @@ void read_server_message(int new_socket)
             if (line[0] == '{') {
                 flg = true;
             }
-            if(flg) msg += line;
+            if (flg)
+                msg += line;
         }
         std::string *u = new std::string(msg);
         std::thread(input_process, u).detach();
@@ -148,7 +149,6 @@ int start_server()
     int server_fd, new_socket;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
-    // char buffer[4096] = {0};
 
     // Create server socket
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
@@ -198,7 +198,9 @@ void get_log()
         std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     tm tt = *localtime(&nt);
 
-    oss << tt.tm_year + 1900 << '_' << std::setw(2) << std::setfill('0') << tt.tm_mon + 1 << '_' << std::setw(2) << std::setfill('0') << tt.tm_mday;
+    oss << tt.tm_year + 1900 << '_' << std::setw(2) << std::setfill('0')
+        << tt.tm_mon + 1 << '_' << std::setw(2) << std::setfill('0')
+        << tt.tm_mday;
 
     if (!std::filesystem::exists(("./log/" + oss.str()).c_str())) {
         if (!std::filesystem::exists("./log")) {
@@ -342,8 +344,10 @@ void setlog(LOG type, std::string message)
     }
 
     std::ostringstream oss;
-    oss << "[" << tt.tm_hour << ":" << tt.tm_min << ":" << tt.tm_sec << "]["
-        << LOG_name[type] << "] " << message << std::endl;
+    oss << "[" << std::setw(2) << std::setfill('0') << tt.tm_hour << ":"
+        << std::setw(2) << std::setfill('0') << tt.tm_min << ":" << std::setw(2)
+        << std::setfill('0') << tt.tm_sec << "][" << LOG_name[type] << "] "
+        << message << std::endl;
 
     if (type == LOG::ERROR)
         std::cerr << oss.str();

@@ -41,7 +41,7 @@ Json::Value forward::get_data(std::wstring s1, std::wistringstream &wiss,
             if (pos == std::wstring::npos) {
                 break;
             }
-            int po1 = pos + 10;
+            size_t po1 = pos + 10;
             while (s2[pos] != L']')
                 pos++;
             s2.insert(
@@ -77,12 +77,12 @@ void forward::process(std::string message, const msg_meta &conf)
     if (w_mess == L"帮助") {
         cq_send("格式为：\n"
                 "转发\n"
-                "@某人或qq号 消息（一整行）\n"
-                "@某人或qq号 合并行\n"
+                "@某人 或 一个qq号 消息（一整行）\n"
+                "@某人 或 一个qq号 合并行\n"
                 "（多行消息）\n"
                 "结束合并\n"
                 "...\n"
-                "@某人或qq号 转发\n"
+                "@某人 或 一个qq号 转发\n"
                 "（此处为转发内套转发）\n"
                 "结束转发\n"
                 "...\n"
