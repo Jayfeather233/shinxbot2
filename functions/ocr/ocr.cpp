@@ -9,8 +9,7 @@ void ocr::process(std::string message, const msg_meta &conf)
 {
     size_t index = message.find("[CQ:image,file=");
     if (index == std::string::npos) {
-        message = "图来！";
-        cq_send(message, conf);
+        cq_send("图来！", conf);
         in_queue[conf.user_id] = true;
         return;
     }
@@ -28,8 +27,7 @@ void ocr::process(std::string message, const msg_meta &conf)
     for (Json::ArrayIndex i = 0; i < sz; i++) {
         res += J[i]["text"].asString() + " ";
     }
-    message = res;
-    cq_send(message, conf);
+    cq_send(res, conf);
     setlog(LOG::INFO, "OCR at group " + std::to_string(conf.group_id) + " by " +
                           std::to_string(conf.user_id));
 }

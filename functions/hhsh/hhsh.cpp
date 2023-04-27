@@ -8,8 +8,7 @@ void hhsh::process(std::string message, const msg_meta &conf)
 {
 
     if (message.length() <= 5) {
-        message = "首字母缩写识别： hhsh + 缩写 ";
-        cq_send(message, conf);
+        cq_send("首字母缩写识别： hhsh + 缩写 ", conf);
         return;
     }
 
@@ -24,8 +23,7 @@ void hhsh::process(std::string message, const msg_meta &conf)
     }
     catch (...) {
         setlog(LOG::WARNING, "failed to connect to hhsh");
-        message = "failed to connect to hhsh";
-        cq_send(message, conf);
+        cq_send("failed to connect to hhsh", conf);
         return;
     }
 
@@ -78,8 +76,7 @@ void hhsh::process(std::string message, const msg_meta &conf)
     }
     setlog(LOG::INFO, "nbnhhsh at group " + std::to_string(conf.group_id) +
                           " by " + std::to_string(conf.user_id));
-    message = res;
-    cq_send(message, conf);
+    cq_send(res, conf);
 }
 bool hhsh::check(std::string message, const msg_meta &conf)
 {

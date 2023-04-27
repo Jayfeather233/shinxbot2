@@ -8,9 +8,9 @@ void httpcats::process(std::string message, const msg_meta &conf)
     int64_t code = get_userid(message);
     setlog(LOG::INFO, "httpcats at group " + std::to_string(conf.group_id) +
                           " by " + std::to_string(conf.user_id));
-    message = "[CQ:image,file=https://httpcats.com/" + std::to_string(code) +
-              ".jpg,id=40000]";
-    cq_send(message, conf);
+    cq_send("[CQ:image,file=https://httpcats.com/" + std::to_string(code) +
+                ".jpg,id=40000]",
+            conf);
 }
 bool httpcats::check(std::string message, const msg_meta &conf)
 {

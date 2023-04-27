@@ -105,8 +105,7 @@ void e621::process(std::string message, const msg_meta &conf)
         for (std::string it : n_search) {
             res += it + ",";
         }
-        message = res;
-        cq_send(message, conf);
+        cq_send(res, conf);
         return;
     }
     if (message.find("621.autocomplete") == 0) {
@@ -126,12 +125,10 @@ void e621::process(std::string message, const msg_meta &conf)
                 res += Ja[i]["name"].asString() + "    " +
                        std::to_string(Ja[i]["post_count"].asInt64()) + "\n";
             }
-            message = res;
-            cq_send(message, conf);
+            cq_send(res, conf);
         }
         catch (...) {
-            message = "621 connect error. Try again.";
-            cq_send(message, conf);
+            cq_send("621 connect error. Try again.", conf);
         }
         return;
     }
@@ -144,8 +141,7 @@ void e621::process(std::string message, const msg_meta &conf)
         input = trim(input.substr(4));
     }
     if (input.find(".input") == 0) {
-        message = deal_input(input.substr(6), is_pool);
-        cq_send(message, conf);
+        cq_send(deal_input(input.substr(6), is_pool), conf);
         return;
     }
     input = deal_input(input, is_pool);
@@ -166,8 +162,7 @@ void e621::process(std::string message, const msg_meta &conf)
         }
     }
     if (i == 3) {
-        message = "Unable to connect to e621";
-        cq_send(message, conf);
+        cq_send("Unable to connect to e621", conf);
         setlog(LOG::WARNING, "621 at group " + std::to_string(conf.group_id) +
                                  " by " + std::to_string(conf.user_id) +
                                  " but unable to connect.");
@@ -176,8 +171,7 @@ void e621::process(std::string message, const msg_meta &conf)
 
     Json::ArrayIndex count = J["posts"].size();
     if (count == 0) {
-        message = "No image found.";
-        cq_send(message, conf);
+        cq_send("No image found.", conf);
         setlog(LOG::WARNING, "621 at group " + std::to_string(conf.group_id) +
                                  " by " + std::to_string(conf.user_id) +
                                  " but no image found.");
@@ -190,26 +184,26 @@ void e621::process(std::string message, const msg_meta &conf)
         int i;
         for (i = 0; i < 3; i++) {
             if (get_tag) {
-                message = "[CQ:reply,id=" + std::to_string(conf.message_id) +
-                          "] " + get_image_tags(J) +
-                          (i ? "\ntx原因无法发送原图" : "");
-                J2 = string_to_json(cq_send(message, conf));
+                J2 = string_to_json(cq_send(
+                    "[CQ:reply,id=" + std::to_string(conf.message_id) + "] " +
+                        get_image_tags(J) + (i ? "\ntx原因无法发送原图" : ""),
+                    conf));
             }
             else {
-                message = "[CQ:reply,id=" + std::to_string(conf.message_id) +
-                          "] " +
-                          get_image_info(J, count, is_pool, i, conf.group_id) +
-                          (i ? "\ntx原因无法发送原图" : "");
-                J2 = string_to_json(cq_send(message, conf));
+                J2 = string_to_json(cq_send(
+                    "[CQ:reply,id=" + std::to_string(conf.message_id) + "] " +
+                        get_image_info(J, count, is_pool, i, conf.group_id) +
+                        (i ? "\ntx原因无法发送原图" : ""),
+                    conf));
             }
             if (J2["status"].asString() != "failed") {
                 break;
             }
         }
         if (i == 3) {
-            message = "[CQ:reply,id=" + std::to_string(conf.message_id) +
-                      "] cannot send image due to Tencent";
-            cq_send(message, conf);
+            cq_send("[CQ:reply,id=" + std::to_string(conf.message_id) +
+                        "] cannot send image due to Tencent",
+                    conf);
             setlog(LOG::WARNING,
                    "621 at group " + std::to_string(conf.group_id) + " by " +
                        std::to_string(conf.user_id) + " send failed.");
@@ -289,13 +283,11 @@ void e621::admin_set(std::string message, const msg_meta &conf, bool flg)
             user[id] = flg;
         }
         else {
-            message = "621.set [this/group/user] [id (when not 'this')]";
-            cq_send(message, conf);
+            cq_send("621.set [this/group/user] [id (when not 'this')]", conf);
         }
     }
     save();
-    message = "set done.";
-    cq_send(message, conf);
+    cq_send("set done.", conf);
 }
 void e621::save()
 {

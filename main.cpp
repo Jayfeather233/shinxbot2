@@ -117,19 +117,21 @@ void read_server_message(int new_socket)
         }
 
         std::istringstream iss(s_buffer);
-        std::string line;
+        std::string msg, line;
+        bool flg = false;
         while (std::getline(iss, line)) {
             if (line[0] == '{') {
-                // input_process(new std::string(line));
-                std::string *u = new std::string(line);
-                std::thread(input_process, u).detach();
+                flg = true;
             }
+            msg += line;
         }
+        std::string *u = new std::string(msg);
+        std::thread(input_process, u).detach();
 
         std::stringstream response_body;
-        response_body << (std::string) "HTTP/1.1 200 OK\r\n" +
-                             "Content-Length: 0\r\n" +
-                             "Content-Type: application/json\r\n\r\n";
+        response_body << "HTTP/1.1 200 OK\r\n"
+                         "Content-Length: 0\r\n"
+                         "Content-Type: application/json\r\n\r\n";
         std::string response = response_body.str();
         const char *response_cstr = response.c_str();
         send(new_socket, response_cstr, strlen(response_cstr), 0);

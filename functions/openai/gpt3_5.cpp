@@ -181,8 +181,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
         if (it != history.end()) {
             it->second.clear();
         }
-        message = "reset done.";
-        cq_send(message, conf);
+        cq_send("reset done.", conf);
         save_history(id);
         return;
     }
@@ -197,19 +196,16 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
                     flg = true;
                     history[id].clear();
                     pre_default[id] = message;
-                    message = "change done.";
-                    cq_send(message, conf);
+                    cq_send("change done.", conf);
                     break;
                 }
             }
             if (!flg) {
-                message = res;
-                cq_send(message, conf);
+                cq_send(res, conf);
             }
         }
         else {
-            message = "Not on op list.";
-            cq_send(message, conf);
+            cq_send("Not on op list.", conf);
         }
         save_history(id);
         return;
@@ -218,24 +214,20 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
         if (is_op(conf.user_id)) {
             is_open = !is_open;
             close_message = trim(message.substr(3));
-            message = "is_open: " + std::to_string(is_open);
-            cq_send(message, conf);
+            cq_send("is_open: " + std::to_string(is_open), conf);
         }
         else {
-            message = "Not on op list.";
-            cq_send(message, conf);
+            cq_send("Not on op list.", conf);
         }
         return;
     }
     if (message.find(".debug") == 0) {
         if (is_op(conf.user_id)) {
             is_debug = !is_debug;
-            message = "is_debug: " + std::to_string(is_debug);
-            cq_send(message, conf);
+            cq_send("is_debug: " + std::to_string(is_debug), conf);
         }
         else {
-            message = "Not on op list.";
-            cq_send(message, conf);
+            cq_send("Not on op list.", conf);
         }
         return;
     }
@@ -270,13 +262,11 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     }
     size_t keyid = get_avaliable_key();
     if (is_lock[keyid]) {
-        message = "请等待上次输入的回复。";
-        cq_send(message, conf);
+        cq_send("请等待上次输入的回复。", conf);
         return;
     }
     if (!is_open) {
-        message = "已关闭。" + close_message;
-        cq_send(message, conf);
+        cq_send("已关闭。" + close_message, conf);
         return;
     }
     if (history.find(id) == history.end()) {
@@ -328,16 +318,15 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     if (J.isMember("error")) {
         if (J["error"]["message"].asString().find(
                 "This model's maximum context length is") == 0) {
-            message = "Openai ERROR: history message is too long. Please "
-                      "try again or try .ai.reset";
-            cq_send(message, conf);
+            cq_send("Openai ERROR: history message is too long. Please "
+                    "try again or try .ai.reset",
+                    conf);
             history[id].removeIndex(0, &ign);
             history[id].removeIndex(0, &ign);
             save_history(id);
         }
         else {
-            message = "Openai ERROR: " + J["error"]["message"].asString();
-            cq_send(message, conf);
+            cq_send("Openai ERROR: " + J["error"]["message"].asString(), conf);
         }
     }
     else {
@@ -367,9 +356,9 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
         J["content"] = aimsg;
         if (is_debug)
             aimsg += usage;
-        message =
-            "[CQ:reply,id=" + std::to_string(conf.message_id) + "] " + aimsg;
-        cq_send(message, conf);
+        cq_send("[CQ:reply,id=" + std::to_string(conf.message_id) + "] " +
+                    aimsg,
+                conf);
         history[id].append(user_input_J);
         history[id].append(J);
     }

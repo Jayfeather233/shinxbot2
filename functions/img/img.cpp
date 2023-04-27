@@ -197,8 +197,7 @@ void img::process(std::string message, const msg_meta &conf)
         (is_adding[conf.user_id] == true &&
          message.find("[CQ:image,") != message.npos) ||
         is_deling[conf.user_id] == true) {
-        message = commands(message, conf);
-        cq_send(message, conf);
+        cq_send(commands(message, conf), conf);
         return;
     }
     is_adding[conf.user_id] = false;
@@ -240,14 +239,13 @@ void img::process(std::string message, const msg_meta &conf)
     }
     index--;
     if (index < 0 || index >= it2->second) {
-        message = "索引越界！(1~" + std::to_string(it2->second) + ")";
-        cq_send(message, conf);
+        cq_send("索引越界！(1~" + std::to_string(it2->second) + ")", conf);
         return;
     }
-    message = "[CQ:image,file=file://" + get_local_path() + "/resource/mt/" +
-              name + "/" + std::to_string(index) + ",id=40000]";
     setlog(LOG::INFO, "img at group " + std::to_string(conf.group_id));
-    cq_send(message, conf);
+    cq_send("[CQ:image,file=file://" + get_local_path() + "/resource/mt/" +
+                name + "/" + std::to_string(index) + ",id=40000]",
+            conf);
 }
 bool img::check(std::string message, const msg_meta &conf) { return true; }
 std::string img::help() { return "美图： 美图 帮助 - 列出所有美图命令"; }

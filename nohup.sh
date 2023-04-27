@@ -1,4 +1,4 @@
 while true
 do
-    ./build/cq_bot 1>>1.tmp 2>>2.tmp
+    ./build/shinxbot 1>>"./log/1.tmp" 2>>"./log/2.tmp"
 done

@@ -9,7 +9,7 @@ auto114::auto114()
     len = 0;
 
     std::ifstream afile;
-    afile.open("./config/homodata.txt", std::ios::in);
+    afile.open("./data/homodata.txt", std::ios::in);
 
     if (afile.is_open()) {
         while (!afile.eof()) {
@@ -21,7 +21,7 @@ auto114::auto114()
         afile.close();
     }
     else {
-        std::cerr << "Missing file: homodata.txt" << std::endl;
+        std::cerr << "Missing file: ./data/homodata.txt" << std::endl;
     }
 }
 
@@ -72,12 +72,10 @@ void auto114::process(std::string message, const msg_meta &conf)
     setlog(LOG::INFO, "auto114 at group " + std::to_string(conf.group_id) +
                           " by user " + std::to_string(conf.user_id));
     if (input == 114514) {
-        message = "这么臭的数字有必要论证吗（恼）";
-        cq_send(message, conf);
+        cq_send("这么臭的数字有必要论证吗（恼）", conf);
     }
     else {
-        message = std::to_string(input) + "=" + getans(input);
-        cq_send(message, conf);
+        cq_send(std::to_string(input) + "=" + getans(input), conf);
     }
 }
 bool auto114::check(std::string message, const msg_meta &conf)

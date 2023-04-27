@@ -1,1 +1,1 @@
-nohup ./nohup.sh &
+nohup ./nohup.sh > ./log/nohup.out 2>&1 &

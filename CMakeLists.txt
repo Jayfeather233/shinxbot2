@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.11)
 
-project(cq_bot)
+project(shinxbot)
 
 add_definitions(-DUSE_OPENSSL)
 

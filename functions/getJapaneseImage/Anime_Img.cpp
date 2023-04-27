@@ -12,12 +12,11 @@ void AnimeImg::process(std::string message, const msg_meta &conf)
         setlog(LOG::INFO, "Auto2DAnimateImg at group " +
                               std::to_string(conf.group_id) + " by " +
                               std::to_string(conf.user_id));
-        message = "[CQ:image,file=" + J["imgurl"].asString() + ",id=40000]";
-        cq_send(message, conf);
+        cq_send("[CQ:image,file=" + J["imgurl"].asString() + ",id=40000]",
+                conf);
     }
     catch (...) {
-        message = "dmoe网站链接有问题";
-        cq_send(message, conf);
+        cq_send("dmoe网站链接有问题", conf);
         setlog(LOG::WARNING, "Auto2DAnimateImg at group " +
                                  std::to_string(conf.group_id) +
                                  " Connect error");
