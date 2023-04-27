@@ -16,6 +16,8 @@
 #include <thread>
 #include <unistd.h>
 #include <vector>
+#include <iomanip>
+#include <iostream>
 
 int send_port;
 int receive_port;
@@ -196,7 +198,7 @@ void get_log()
         std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     tm tt = *localtime(&nt);
 
-    oss << tt.tm_year + 1900 << '_' << tt.tm_mon + 1 << '_' << tt.tm_mday;
+    oss << tt.tm_year + 1900 << '_' << std::setw(2) << std::setfill('0') << tt.tm_mon + 1 << '_' << std::setw(2) << std::setfill('0') << tt.tm_mday;
 
     if (!std::filesystem::exists(("./log/" + oss.str()).c_str())) {
         if (!std::filesystem::exists("./log")) {
