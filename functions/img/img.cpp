@@ -37,6 +37,15 @@ void img::save()
     writefile("./config/img.json", J.toStyledString());
 }
 
+void img::belong_to(std::string name, int64_t group_id){
+    auto it2 = belongs.find(group_id);
+    if (it2 == belongs.end()) {
+        for (std::string u : default_img)
+            belongs[group_id].append(u);
+    }
+    belongs[group_id].append(name);
+}
+
 int img::add_image(std::string name, std::string image, int64_t group_id)
 {
     int cnt = 0;
@@ -50,15 +59,9 @@ int img::add_image(std::string name, std::string image, int64_t group_id)
         while (image[index2] != ']') {
             ++index2;
         }
-        auto it = images.find(name);
-        if (it == images.end()) {
-            auto it2 = belongs.find(group_id);
-            if (it2 == belongs.end()) {
-                for (std::string u : default_img)
-                    belongs[group_id].append(u);
-            }
-            belongs[group_id].append(name);
-        }
+
+        belong_to(name, group_id);
+
         download(image.substr(index, index2 - index), "./resource/mt/" + name,
                  std::to_string(images[name]));
         images[name]++;
@@ -187,7 +190,8 @@ std::string img::commands(std::string message, const msg_meta &conf)
         }
         else if (wmessage.find(L"属于") == 0) {
             std::string name = wstring_to_string(trim(wmessage.substr(2)));
-            belongs[conf.group_id].append(name);
+            belong_to(name, conf.group_id);
+            save();
             return "已属于 " + name;
         }
         else {
