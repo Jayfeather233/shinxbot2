@@ -112,7 +112,8 @@ std::string img::commands(std::string message, const msg_meta &conf)
         int cnt =
             add_image(add_name[conf.user_id], trim(message), conf.group_id);
         is_adding[conf.user_id] = false;
-        return "已加入" + add_name[conf.user_id] + "x" + std::to_string(cnt);
+        return "已加入" + add_name[conf.user_id] +
+               (cnt >= 1 ? " x" + std::to_string(cnt) : "");
     }
     else {
         std::wstring wmessage = trim(string_to_wstring(message).substr(3));
@@ -172,8 +173,8 @@ std::string img::commands(std::string message, const msg_meta &conf)
                 is_adding[conf.user_id] = false;
                 int cnt = add_image(wstring_to_string(name),
                                     wstring_to_string(wmessage), conf.group_id);
-                return "已加入" + wstring_to_string(name) + "x" +
-                       std::to_string(cnt);
+                return "已加入" + wstring_to_string(name) +
+                       (cnt >= 1 ? " x" + std::to_string(cnt) : "");
             }
         }
         else if (wmessage.find(L"删除") == 0) {
