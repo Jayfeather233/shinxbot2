@@ -185,6 +185,7 @@ std::string img::commands(std::string message, const msg_meta &conf)
             else {
                 std::string name = wstring_to_string(trim(wmessage.substr(2)));
                 belongs[conf.group_id].append(name);
+                return "已加入 " + name;
             }
         }
         else {
