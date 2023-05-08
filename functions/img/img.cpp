@@ -37,10 +37,12 @@ void img::save()
     writefile("./config/img.json", J.toStyledString());
 }
 
-void img::add_image(std::string name, std::string image, int64_t group_id)
+int img::add_image(std::string name, std::string image, int64_t group_id)
 {
+    int cnt = 0;
+    int index = -1;
     while (true) {
-        int index = image.find(",url=");
+        index = image.find(",url=", index + 1);
         if (index == image.npos)
             break;
         index += 5;
@@ -60,8 +62,10 @@ void img::add_image(std::string name, std::string image, int64_t group_id)
         download(image.substr(index, index2 - index), "./resource/mt/" + name,
                  std::to_string(images[name]));
         images[name]++;
+        cnt ++;
     }
     save();
+    return cnt;
 }
 
 void img::del_all(std::string name)
@@ -97,9 +101,9 @@ std::string img::commands(std::string message, const msg_meta &conf)
     }
     else if (is_adding[conf.user_id] == true &&
              message.find("[CQ:image,") != message.npos) {
-        add_image(add_name[conf.user_id], trim(message), conf.group_id);
+        int cnt = add_image(add_name[conf.user_id], trim(message), conf.group_id);
         is_adding[conf.user_id] = false;
-        return "已加入" + add_name[conf.user_id];
+        return "已加入" + add_name[conf.user_id] + std::to_string(cnt);
     }
     else {
         std::wstring wmessage = trim(string_to_wstring(message).substr(3));
@@ -157,9 +161,9 @@ std::string img::commands(std::string message, const msg_meta &conf)
             }
             else {
                 is_adding[conf.user_id] = false;
-                add_image(wstring_to_string(name), wstring_to_string(wmessage),
+                int cnt = add_image(wstring_to_string(name), wstring_to_string(wmessage),
                           conf.group_id);
-                return "已加入" + wstring_to_string(name);
+                return "已加入" + wstring_to_string(name) + std::to_string(cnt);
             }
         }
         else if (wmessage.find(L"删除") == 0) {
