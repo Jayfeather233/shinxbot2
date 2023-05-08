@@ -4,11 +4,11 @@
 #include <filesystem>
 #include <iostream>
 
-std::string help_message =  "美图 帮助 - 列出所有美图命令\n"
-                            "美图 列表 - 列出本群美图\n"
-                            "美图 加入 xxx - 加入一张图片至xxx类\n"
-                            "美图 属于 xxx - 加入图集至本群"
-                            "xxx - 发送美图（随机或指定一个数字）";
+std::string help_message = "美图 帮助 - 列出所有美图命令\n"
+                           "美图 列表 - 列出本群美图\n"
+                           "美图 加入 xxx - 加入一张图片至xxx类\n"
+                           "美图 属于 xxx - 加入图集至本群"
+                           "xxx - 发送美图（随机或指定一个数字）";
 
 img::img()
 {
@@ -39,26 +39,28 @@ void img::save()
 
 void img::add_image(std::string name, std::string image, int64_t group_id)
 {
-    if (name == "belongs" || name == "default")
-        return;
-    int index = image.find(",url=");
-    index += 5;
-    int index2 = index;
-    while (image[index2] != ']') {
-        ++index2;
-    }
-    auto it = images.find(name);
-    if (it == images.end()) {
-        auto it2 = belongs.find(group_id);
-        if (it2 == belongs.end()) {
-            for (std::string u : default_img)
-                belongs[group_id].append(u);
+    while (true) {
+        int index = image.find(",url=");
+        if (index == image.npos)
+            break;
+        index += 5;
+        int index2 = index;
+        while (image[index2] != ']') {
+            ++index2;
         }
-        belongs[group_id].append(name);
+        auto it = images.find(name);
+        if (it == images.end()) {
+            auto it2 = belongs.find(group_id);
+            if (it2 == belongs.end()) {
+                for (std::string u : default_img)
+                    belongs[group_id].append(u);
+            }
+            belongs[group_id].append(name);
+        }
+        download(image.substr(index, index2 - index), "./resource/mt/" + name,
+                 std::to_string(images[name]));
+        images[name]++;
     }
-    download(image.substr(index, index2 - index), "./resource/mt/" + name,
-             std::to_string(images[name]));
-    images[name]++;
     save();
 }
 
@@ -144,7 +146,7 @@ std::string img::commands(std::string message, const msg_meta &conf)
                 name += wmessage[i];
             }
             name = trim(name);
-            if(name.length() <= 0){
+            if (name.length() <= 0) {
                 return "美图 加入 xxx - 加入一张图片至xxx类";
             }
             wmessage = trim(wmessage.substr(i));
@@ -178,7 +180,8 @@ std::string img::commands(std::string message, const msg_meta &conf)
                     return "已删除";
                 }
             }
-        } else if (wmessage.find(L"属于")) {
+        }
+        else if (wmessage.find(L"属于")) {
             if (!is_op(conf.user_id)) {
                 return "Not on op_list.";
             }
