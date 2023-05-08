@@ -185,15 +185,10 @@ std::string img::commands(std::string message, const msg_meta &conf)
                 }
             }
         }
-        else if (wmessage.find(L"属于")) {
-            if (!is_op(conf.user_id)) {
-                return "Not on op_list.";
-            }
-            else {
-                std::string name = wstring_to_string(trim(wmessage.substr(2)));
-                belongs[conf.group_id].append(name);
-                return "已加入 " + name;
-            }
+        else if (wmessage.find(L"属于") == 0) {
+            std::string name = wstring_to_string(trim(wmessage.substr(2)));
+            belongs[conf.group_id].append(name);
+            return "已属于 " + name;
         }
         else {
             return help_message;
