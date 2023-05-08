@@ -61,7 +61,20 @@ std::string get_username(int64_t user_id, int64_t group_id);
 /**
  * convert a string into json
  */
-Json::Value string_to_json(std::string str);
+Json::Value string_to_json(const std::string &str);
+
+/**
+ * Determine if an element is in the Json Array.
+*/
+template<typename T>
+bool find_in_array(const Json::Value &Ja, const T &data){
+    for(Json::Value J : Ja){
+        if(data == J.as<T>()){
+            return true;
+        }
+    }
+    return false;
+}
 
 /**
  * Check if someone is the operator of *bot*

@@ -46,7 +46,7 @@ void img::belong_to(std::string name, int64_t group_id)
         belongs[group_id].append(name);
     }
     else {
-        if (!belongs[group_id].isMember(name))
+        if (!find_in_array(belongs[group_id], name))
             belongs[group_id].append(name);
     }
 }
