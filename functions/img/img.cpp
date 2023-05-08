@@ -4,6 +4,12 @@
 #include <filesystem>
 #include <iostream>
 
+std::string help_message =  "美图 帮助 - 列出所有美图命令\n"
+                            "美图 列表 - 列出本群美图\n"
+                            "美图 加入 xxx - 加入一张图片至xxx类\n"
+                            "美图 属于 xxx - 加入图集至本群"
+                            "xxx - 发送美图（随机或指定一个数字）";
+
 img::img()
 {
     Json::Value J = string_to_json(readfile("./config/img.json", "{}"));
@@ -99,10 +105,7 @@ std::string img::commands(std::string message, const msg_meta &conf)
             return "命令错误，使用 \"美图 帮助\" 获取帮助";
         }
         else if (wmessage.find(L"帮助") == 0) {
-            return "美图 帮助 - 列出所有美图命令\n"
-                   "美图 列表 - 列出本群美图\n"
-                   "美图 加入 xxx - 加入一张图片至xxx类\n"
-                   "xxx - 发送美图（随机或指定一个数字）";
+            return help_message;
         }
         else if (wmessage.find(L"列表") == 0) {
             std::ostringstream oss;
@@ -175,12 +178,17 @@ std::string img::commands(std::string message, const msg_meta &conf)
                     return "已删除";
                 }
             }
+        } else if (wmessage.find(L"属于")) {
+            if (!is_op(conf.user_id)) {
+                return "Not on op_list.";
+            }
+            else {
+                std::string name = wstring_to_string(trim(wmessage.substr(2)));
+                belongs[conf.group_id].append(name);
+            }
         }
         else {
-            return "美图 帮助 - 列出所有美图命令\n"
-                   "美图 列表 - 列出本群美图\n"
-                   "美图 加入 xxx - 加入一张图片至xxx类\n"
-                   "xxx - 发送美图（随机或指定一个数字）";
+            return help_message;
         }
     }
 }
