@@ -7,14 +7,14 @@
 img::img()
 {
     Json::Value J = string_to_json(readfile("./config/img.json", "{}"));
-    for (std::string u : J.getMemberNames()) {
-        if (u != "belongs" && u != "default")
-            images[u] = J[u].asInt64();
-    }
     for (std::string u : J["belongs"].getMemberNames()) {
         belongs[get_userid(u)] = J["belongs"][u];
     }
     parse_json_to_set(J["default"], default_img);
+    J = J["data"];
+    for (std::string u : J.getMemberNames()) {
+        images[u] = J[u].asInt64();
+    }
 }
 
 void img::save()
@@ -22,7 +22,7 @@ void img::save()
     Json::Value J;
     for (auto it : images) {
         if (it.second != 0)
-            J[it.first] = it.second;
+            J["data"][it.first] = it.second;
     }
     for (auto it : belongs) {
         J["belongs"][std::to_string(it.first)] = it.second;
@@ -141,6 +141,9 @@ std::string img::commands(std::string message, const msg_meta &conf)
                 name += wmessage[i];
             }
             name = trim(name);
+            if(name.length() <= 0){
+                return "美图 加入 xxx - 加入一张图片至xxx类";
+            }
             wmessage = trim(wmessage.substr(i));
             if (wmessage.length() <= 1) {
                 is_adding[conf.user_id] = true;
