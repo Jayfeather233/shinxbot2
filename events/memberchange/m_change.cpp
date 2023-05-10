@@ -11,7 +11,7 @@ void m_change::process(Json::Value J)
     oss << name << " (***" << std::setw(3) << std::setfill('0')
         << J["user_id"].asInt64() % 1000 << ")";
     std::string name1 = oss.str();
-    oss.clear();
+    oss = std::ostringstream();
     oss << name << " (" << J["user_id"].asInt64() << ")";
     std::string name2 = oss.str();
 
