@@ -34,6 +34,8 @@
 
 - 人云亦云（复读）
 
+- 不同群聊，私聊的消息互相转发
+
 ### 关于源文件
 
 ./functions 所有功能的代码
@@ -84,3 +86,9 @@ functions传参仅为消息相关，events传入事件的JSON数据
 4. main.cpp中main函数里加入 `functions.push_back(new your_name());`
 
 > 开发提示：如果使用clang,根目录下`.clang-format`为你提供了自动格式化设置
+
+### TODO
+
+[ ] 把所有的功能编译成动态库，方便更换和加载
+
+[ ] 把整个`main.cpp`转换成`class bot{}`，更c++
