@@ -11,3 +11,4 @@
 #include "./openai/gpt3_5.h"
 #include "./img/img.h"
 #include "./recall/recall.h"
+#include "./msg_forwarder/forwarder.h"

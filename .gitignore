@@ -16,3 +16,4 @@ config/openai.json
 config/op_list.json
 compile_commands.json
 config/img.json
+config/forwarder.json

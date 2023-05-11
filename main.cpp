@@ -275,6 +275,7 @@ int main()
     functions.push_back(new gpt3_5());
     functions.push_back(new img());
     functions.push_back(new recall());
+    functions.push_back(new forwarder());
 
     events.push_back(new talkative());
     events.push_back(new m_change());
