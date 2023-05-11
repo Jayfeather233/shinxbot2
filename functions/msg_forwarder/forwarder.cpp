@@ -49,7 +49,7 @@ size_t forwarder::configure(std::string message)
         point_t from, to;
         iss >> from.first >> from.second >> to.first >> to.second;
         t = forward_set.erase(std::make_pair(from, to));
-    }
+    } else t = -1;
     save();
     return t;
 }
@@ -69,11 +69,11 @@ void forwarder::process(std::string message, const msg_meta &conf)
             if(!flg && it.first.first != -1){
                 Json::Value qst;
                 qst["group_id"] = it.first.first;
-                group_name = string_to_json(cq_send("get_group_info", qst))["group_name"].asString();
+                group_name = string_to_json(cq_send("get_group_info", qst))["data"]["group_name"].asString();
                 flg = true;
             }
             user_name = get_username(it.first.second, conf.group_id) + "(" + std::to_string(it.first.second) + "): ";
-            all_msg = it.first.first == -1 ? user_name : group_name + " " + user_name;
+            all_msg = it.first.first == -1 ? user_name : (group_name + " " + user_name);
             if(it.second.first == -1){
                 cq_send(all_msg + message, (msg_meta){"private", it.second.second, it.second.first, 0});
             } else {
