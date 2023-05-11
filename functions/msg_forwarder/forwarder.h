@@ -11,7 +11,7 @@ private:
 
 public:
     forwarder();
-    void configure(std::string messsage);
+    size_t configure(std::string messsage);
     void save();
     void process(std::string message, const msg_meta &conf);
     bool check(std::string message, const msg_meta &conf);
