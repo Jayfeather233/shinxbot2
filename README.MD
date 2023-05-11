@@ -89,6 +89,6 @@ functions传参仅为消息相关，events传入事件的JSON数据
 
 ### TODO
 
-[ ] 把所有的功能编译成动态库，方便更换和加载
+- [ ] 把所有的功能编译成动态库，方便更换和加载
 
-[ ] 把整个`main.cpp`转换成`class bot{}`，更c++
+- [ ] 把整个`main.cpp`转换成`class bot{}`，更c++
