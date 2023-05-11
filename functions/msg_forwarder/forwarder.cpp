@@ -72,10 +72,10 @@ void forwarder::process(std::string message, const msg_meta &conf)
                 group_name = string_to_json(cq_send("get_group_info", qst))["data"]["group_name"].asString();
                 flg = true;
             }
-            user_name = get_username(it.first.second, conf.group_id) + "(" + std::to_string(it.first.second) + "): ";
+            user_name = get_username(conf.user_id, conf.group_id) + "(" + std::to_string(conf.user_id) + "): ";
             all_msg = it.first.first == -1 ? user_name : (group_name + " " + user_name);
             if(it.second.first == -1){
-                cq_send(all_msg + message, (msg_meta){"private", it.second.second, it.second.first, 0});
+                cq_send(all_msg + message, (msg_meta){"private", it.second.second, -1, 0});
             } else {
                 cq_send(all_msg + message, (msg_meta){"group", -1, it.second.first, 0});
             }
