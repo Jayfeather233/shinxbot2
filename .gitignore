@@ -17,3 +17,4 @@ config/op_list.json
 compile_commands.json
 config/img.json
 config/forwarder.json
+dev_tools/inspector
