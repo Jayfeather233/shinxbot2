@@ -85,7 +85,13 @@ functions传参仅为消息相关，events传入事件的JSON数据
 
 4. main.cpp中main函数里加入 `functions.push_back(new your_name());`
 
-> 开发提示：如果使用clang,根目录下`.clang-format`为你提供了自动格式化设置
+#### 开发提示
+1. 如果使用clang,根目录下`.clang-format`为你提供了自动格式化设置
+2. `dev_tools`下的`sender.sh`可用于向shinxbot发送信息，`inspector`则截获shinxbot向go-cqhttp发送的数据。`inspector`不能与go-cqhttp同时运行。这两者在功能上等同于go-cqhttp，为无法运行go-cqhttp的开发者提供了便利。（你可能需要更改`inspector.cpp`与`sender.sh`中的相关路径指向`config`文件）
+例如：
+```bash
+bash sender.sh “.ai reset”
+```
 
 ### TODO
 
