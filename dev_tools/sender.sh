@@ -40,14 +40,14 @@ send_msg() {
   printf -v curl_post "$CURL_TEMPLATE" \
     "$(date +%s)"\
     "message"\
-    $1
+    "$1"
   curl localhost:"$PORT" -X POST -H "Content-Type:application/json\r\nX-Self-ID: 23333" -d "$curl_post"
 }
 
 main() {
   get_port
-  send_msg $1
-  echo "Send:" $1
+  send_msg "$1"
+  echo "Send:" "$1"
 }
 
-main $1
+main "$1"
