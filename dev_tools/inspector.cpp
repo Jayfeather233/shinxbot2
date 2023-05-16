@@ -1,3 +1,4 @@
+#include <arpa/inet.h>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
