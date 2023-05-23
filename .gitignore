@@ -7,11 +7,13 @@ config/port.txt
 resource/temp
 resource/download
 resource/generate
+resource/mt
 log/
 test.cpp
 config/621_level.json
 config/proxy.json
 config/cats/
+config/gpt3_5
 config/openai.json
 config/op_list.json
 compile_commands.json
