@@ -53,7 +53,7 @@ void gray_list::process(std::string message, const msg_meta &conf){
     save();
 }
 bool gray_list::check(std::string message, const msg_meta &conf){
-    return message.find("添加灰名单") == 0 && conf.message_type == "group" && is_group_op(conf.group_id, conf.user_id);
+    return (message.find("添加灰名单") == 0 || message.find("加入灰名单") == 0) && conf.message_type == "group" && is_group_op(conf.group_id, conf.user_id);
 }
 std::string gray_list::help(){
     return "群灰名单：使用 加入灰名单 @xxx 使用";
