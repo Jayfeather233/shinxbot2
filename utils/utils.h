@@ -225,6 +225,23 @@ Json::Value parse_set_to_json(const std::set<des_type> &mp)
 }
 
 /**
+ * Check if an element is in Json Array
+*/
+template <typename T>
+bool json_array_contain(const Json::Value &J, const T &data){
+    for(Json::Value u : J){
+        try{
+            if(u.as<T>() == data){
+                return true;
+            }
+        } catch (...){ // Json::LogicError
+            continue;
+        }
+    }
+    return false;
+}
+
+/**
  * upload a file to group/folder.
  * file: reletive path
  */

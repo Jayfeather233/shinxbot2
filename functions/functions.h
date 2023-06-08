@@ -12,3 +12,4 @@
 #include "./img/img.h"
 #include "./recall/recall.h"
 #include "./msg_forwarder/forwarder.h"
+#include "./op_gray/gray_list.h"

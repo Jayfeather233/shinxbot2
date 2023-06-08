@@ -4,7 +4,7 @@
 #include <iostream>
 #include <jsoncpp/json/json.h>
 #include <map>
-std::string get_stranger_info(int64_t user_id)
+std::string get_stranger_name(int64_t user_id)
 {
     Json::Value input;
     input["user_id"] = user_id;
@@ -14,7 +14,7 @@ std::string get_stranger_info(int64_t user_id)
     return input["data"]["nickname"].asString();
 }
 
-std::string get_group_member_info(int64_t user_id, int64_t group_id)
+std::string get_group_member_name(int64_t user_id, int64_t group_id)
 {
     Json::Value input;
     input["user_id"] = user_id;
@@ -23,7 +23,7 @@ std::string get_group_member_info(int64_t user_id, int64_t group_id)
     input.clear();
     input = string_to_json(res);
     if (input["data"].isNull())
-        return get_stranger_info(user_id);
+        return get_stranger_name(user_id);
     else
         return input["data"]["card"].asString().size() != 0
                    ? input["data"]["card"].asString()
@@ -33,10 +33,10 @@ std::string get_group_member_info(int64_t user_id, int64_t group_id)
 std::string get_username(int64_t user_id, int64_t group_id)
 {
     if (group_id == -1) {
-        return get_stranger_info(user_id);
+        return get_stranger_name(user_id);
     }
     else {
-        return get_group_member_info(user_id, group_id);
+        return get_group_member_name(user_id, group_id);
     }
 }
 
@@ -106,6 +106,7 @@ void upload_file(const std::filesystem::path &file, const int64_t &group_id,
 
 bool is_group_op(const int64_t &group_id, const int64_t &user_id)
 {
+    if(group_id == -1) return false;
     Json::Value J;
     J["group_id"] = group_id;
     J["user_id"] = user_id;
