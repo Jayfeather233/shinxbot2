@@ -65,11 +65,11 @@ Json::Value string_to_json(const std::string &str);
 
 /**
  * Determine if an element is in the Json Array.
-*/
-template<typename T>
-bool find_in_array(const Json::Value &Ja, const T &data){
-    for(Json::Value J : Ja){
-        if(data == J.as<T>()){
+ */
+template <typename T> bool find_in_array(const Json::Value &Ja, const T &data)
+{
+    for (Json::Value J : Ja) {
+        if (data == J.as<T>()) {
             return true;
         }
     }
@@ -225,20 +225,24 @@ Json::Value parse_set_to_json(const std::set<des_type> &mp)
 }
 
 /**
- * Check if an element is in Json Array
-*/
+ * Check if an element is in Json Array. True then return the inedx, false
+ * return -1
+ */
 template <typename T>
-bool json_array_contain(const Json::Value &J, const T &data){
-    for(Json::Value u : J){
-        try{
-            if(u.as<T>() == data){
-                return true;
+Json::ArrayIndex json_array_find(const Json::Value &J, const T &data)
+{
+    Json::ArrayIndex sz = J.size();
+    for (Json::ArrayIndex i = 0; i < sz; i++) {
+        try {
+            if (J[i].as<T>() == data) {
+                return i;
             }
-        } catch (...){ // Json::LogicError
+        }
+        catch (...) { // Json::LogicError
             continue;
         }
     }
-    return false;
+    return -1;
 }
 
 /**

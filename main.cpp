@@ -256,7 +256,7 @@ void init()
     parse_json_to_set(J_op, op_list);
 }
 
-int main()
+int nmain()
 {
     curl_global_init(CURL_GLOBAL_ALL);
     signal(SIGPIPE, SIG_IGN);
