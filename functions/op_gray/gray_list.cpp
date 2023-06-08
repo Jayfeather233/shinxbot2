@@ -20,7 +20,7 @@ void gray_list::process(std::string message, const msg_meta &conf){
         Jdata["group_id"] = conf.group_id;
         Jdata["user_id"] = user_id;
         Json::Value res = string_to_json(cq_send("set_group_kick", Jdata));
-        if(res["status"].asString() != "OK"){
+        if(res["status"].asString() == "failed"){
             msg_meta s_conf;
             s_conf.group_id = -1;
             s_conf.message_type == "private";
@@ -31,7 +31,7 @@ void gray_list::process(std::string message, const msg_meta &conf){
         }
     } else {
         Json::Value res = string_to_json(cq_send("将 " + user_name + " 添加进灰名单", conf));
-        if(res["status"].asString() != "OK"){
+        if(res["status"].asString() == "failed"){
             msg_meta s_conf;
             s_conf.group_id = -1;
             s_conf.message_type == "private";
