@@ -44,7 +44,7 @@ size_t forwarder::configure(std::string message, const msg_meta &conf)
         point_t from, to;
         iss >> from.first >> from.second >> to.first >> to.second;
         if (is_op(conf.user_id) ||
-            (from.first != -1 && is_group_op(from.first, conf.user_id) &&
+            ((from.first == -1 || is_group_op(from.first, conf.user_id)) &&
              ((to.first == -1 && to.second == conf.user_id) ||
               (to.first == conf.group_id &&
                is_group_op(conf.group_id, conf.user_id))))) {
@@ -59,7 +59,7 @@ size_t forwarder::configure(std::string message, const msg_meta &conf)
         point_t from, to;
         iss >> from.first >> from.second >> to.first >> to.second;
         if (is_op(conf.user_id) ||
-            (from.first != -1 && is_group_op(from.first, conf.user_id) &&
+            ((from.first == -1 || is_group_op(from.first, conf.user_id)) &&
              ((to.first == -1 && to.second == conf.user_id) ||
               (to.first == conf.group_id &&
                is_group_op(conf.group_id, conf.user_id))))) {
@@ -77,19 +77,22 @@ size_t forwarder::configure(std::string message, const msg_meta &conf)
 
 void forwarder::process(std::string message, const msg_meta &conf)
 {
+    if (trim(message) == "forward.help") {
+        cq_send(
+            "forwarder.[set/del] src_group_id src_user_id dst_group_id "
+            "dst_user_id\n"
+            "If src_group_id == -1, that means all the message by that user\n"
+            "If src_user_id == -1, that means all the message in that group\n"
+            "If dst_group_id == -1, that means forward to private chat\n"
+            "Else then forward to group chat.\n"
+            "You can only forward msg from the group you manage to yourself or "
+            "another group you manage.",
+            conf);
+        return;
+    }
     if (message.find("forward.") == 0) {
         int t = configure(message, conf);
         cq_send("done with code: " + std::to_string(t), conf);
-        return;
-    }
-    if (trim(message) == "forward.help") {
-        cq_send("forwarder.[set/del] src_group_id src_user_id dst_group_id "
-                "dst_user_id\n"
-                "If src_group_id == -1, that means all the message by that user\n"
-                "If src_user_id == -1, that means all the message in that group\n"
-                "If dst_group_id == -1, that means forward to private chat\n"
-                "Else then forward to group chat.",
-                conf);
         return;
     }
     point_t fr = std::make_pair(conf.group_id, conf.user_id);
