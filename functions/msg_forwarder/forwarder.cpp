@@ -75,6 +75,15 @@ size_t forwarder::configure(std::string message, const msg_meta &conf)
     return t;
 }
 
+bool is_full_msg(const std::string &message)
+{
+    return message.find("[CQ:vedio") == 0 || message.find("[CQ:record") == 0 ||
+           message.find("[CQ:share") == 0 || message.find("[CQ:contact") == 0 ||
+           message.find("[CQ:location") == 0 ||
+           message.find("[CQ:forward") == 0 || message.find("[CQ:xml") == 0 ||
+           message.find("[CQ:json") == 0;
+}
+
 void forwarder::process(std::string message, const msg_meta &conf)
 {
     if (trim(message) == "forward.help") {
@@ -112,13 +121,38 @@ void forwarder::process(std::string message, const msg_meta &conf)
                         std::to_string(conf.user_id) + "): ";
             all_msg = it.first.first == -1 ? user_name
                                            : (group_name + " " + user_name);
-            if (it.second.first == -1) {
-                cq_send(all_msg + message,
-                        (msg_meta){"private", it.second.second, -1, 0});
-            }
-            else {
-                cq_send(all_msg + message,
-                        (msg_meta){"group", -1, it.second.first, 0});
+
+            if (is_full_msg(message)) {
+                Json::Value Ja;
+                Json::Value J2;
+                J2["type"] = "node";
+                J2["data"]["id"] = conf.message_id;
+                Ja.append(J2);
+                if (it.second.first == -1) {
+                    cq_send(all_msg,
+                            (msg_meta){"private", it.second.second, -1, 0});
+                    Json::Value J;
+                    J["user_id"] = it.second.second;
+                    J["messages"] = Ja;
+                    cq_send("send_private_forward_msg", J);
+                }
+                else {
+                    cq_send(all_msg,
+                            (msg_meta){"group", -1, it.second.first, 0});
+                    Json::Value J;
+                    J["group_id"] = it.second.first;
+                    J["messages"] = Ja;
+                    cq_send("send_group_forward_msg", J);
+                }
+            } else {
+                if (it.second.first == -1) {
+                    cq_send(all_msg + message,
+                            (msg_meta){"private", it.second.second, -1, 0});
+                }
+                else {
+                    cq_send(all_msg + message,
+                            (msg_meta){"group", -1, it.second.first, 0});
+                }
             }
         }
     }
