@@ -260,6 +260,11 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
         save_file();
         return;
     }
+    if (key.size() == 0) {
+        cq_send("No avaliable key!", conf);
+        return;
+    }
+
     size_t keyid = get_avaliable_key();
     if (is_lock[keyid]) {
         cq_send("请等待上次输入的回复。", conf);
