@@ -18,10 +18,9 @@ void m_change::process(Json::Value J)
     if (J["notice_type"].asString() == "group_decrease") {
         if (J.isMember("operator_id") &&
             J["operator_id"].asInt64() == J["user_id"].asInt64()) {
-            cq_send(name1 + " 退群啦",
-                    (msg_meta){"group", 0, J["group_id"].asInt64(), 0});
+            ; // Hey, they have their own reason to quit.
         }
-        else {
+        else if (J.isMember("operator_id")) {
             cq_send(name2 + " 被 " +
                         get_username(J["operator_id"].asInt64(),
                                      J["group_id"].asInt64()) +
