@@ -290,7 +290,7 @@ int main()
 
     for (int64_t ops : op_list) {
         start_msg_conf.user_id = ops;
-        cq_send("bot start.", start_msg_conf);
+        cq_send("Love you!", start_msg_conf);
     }
 
     start_server();
