@@ -30,6 +30,8 @@ std::vector<processable *> functions;
 std::vector<eventprocess *> events;
 std::set<int64_t> op_list;
 
+bool bot_isopen = true;
+
 void input_process(std::string *input)
 {
     Json::Value J = string_to_json(*input);
@@ -68,7 +70,15 @@ void input_process(std::string *input)
                                     "Jayfeather233/shinxbot2";
                     cq_send(help_message, conf);
                 }
-                else {
+                else if (message == "bot.off" && is_op(user_id)) {
+                    bot_isopen = false;
+                    cq_send("bot_isopen=" + std::to_string(bot_isopen), conf);
+                }
+                else if (message == "bot.on" && is_op(user_id)) {
+                    bot_isopen = true;
+                    cq_send("bot_isopen=" + std::to_string(bot_isopen), conf);
+                }
+                else if (bot_isopen) {
                     for (processable *func : functions) {
                         if (func->check(message, conf)) {
                             try {
