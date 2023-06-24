@@ -38,7 +38,7 @@ void input_process(std::string *input)
     delete input;
     std::string post_type = J["post_type"].asString();
 
-    if (post_type == "request" || post_type == "notice") {
+    if ((post_type == "request" || post_type == "notice") && bot_isopen) {
         for (eventprocess *even : events) {
             if (even->check(J)) {
                 even->process(J);
