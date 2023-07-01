@@ -6,7 +6,7 @@
 class processable {
 public:
     /**
-     * shinx_message: see at 'utils.h'
+     * msg_meta: see at 'utils.h'
      * process the message
      */
     virtual void process(std::string message, const msg_meta &conf) = 0;
