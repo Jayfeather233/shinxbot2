@@ -53,6 +53,7 @@
 需要几个支持库：[libcurl](https://curl.se/libcurl/) + openssl-dev / [jsoncpp](https://github.com/open-source-parsers/jsoncpp) / [CImg](https://www.cimg.eu/) / [base64](https://github.com/tobiaslocker/base64) / [libzip](https://github.com/nih-at/libzip)
 
 ```
+CImg & base64: please git clone them into ./lib
 libcurl: sudo apt-get install libcurl4-openssl-dev
 openssl: sudo apt-get install openssl-dev
 jsoncpp: sudo apt-get install libjsoncpp-dev
