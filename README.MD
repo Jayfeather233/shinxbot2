@@ -55,7 +55,7 @@
 ```
 CImg & base64: please git clone them into ./lib
 libcurl: sudo apt-get install libcurl4-openssl-dev
-openssl: sudo apt-get install openssl-dev
+openssl: sudo apt-get install openssl-dev (or libssl-dev)
 jsoncpp: sudo apt-get install libjsoncpp-dev
 CImg: already included
       and sudo apt-get install libjpeg-dev libpng-dev
