@@ -14,6 +14,8 @@
 #include <jsoncpp/json/json.h>
 #include <zip.h>
 
+const int retry_times = 4;
+
 e621::e621()
 {
     std::string ans = readfile("./config/621_level.json", "{}");
@@ -182,7 +184,7 @@ void e621::process(std::string message, const msg_meta &conf)
         Json::Value J2;
         J = J["posts"][0];
         int i;
-        for (i = 0; i < 3; i++) {
+        for (i = 0; i < retry_times; i++) {
             if (get_tag) {
                 J2 = string_to_json(cq_send(
                     "[CQ:reply,id=" + std::to_string(conf.message_id) + "] " +
@@ -200,7 +202,7 @@ void e621::process(std::string message, const msg_meta &conf)
                 break;
             }
         }
-        if (i == 3) {
+        if (i == retry_times) {
             cq_send("[CQ:reply,id=" + std::to_string(conf.message_id) +
                         "] cannot send image due to Tencent",
                     conf);
@@ -239,7 +241,7 @@ void e621::process(std::string message, const msg_meta &conf)
                 if (J3[i].asInt64() == J["posts"][j]["id"].asInt64()) {
                     res_message += std::to_string(get_botqq()) + " 合并行\n";
                     res_message += get_image_info(J["posts"][j], count, is_pool,
-                                                  1, conf.group_id);
+                                                  2, conf.group_id);
                     res_message += "\n结束合并\n";
                 }
             }
@@ -332,10 +334,10 @@ std::string e621::get_image_info(const Json::Value &J, size_t count,
                                  bool poolFlag, int retry, int64_t group_id)
 {
     std::string imageUrl;
-    if (J.isMember("file") && retry <= 0) {
+    if (J.isMember("file") && retry <= 1) {
         imageUrl = J["file"]["url"].asString();
     }
-    else if (J.isMember("sample") && retry <= 1) {
+    else if (J.isMember("sample") && retry <= 2) {
         imageUrl = J["sample"]["url"].asString();
     }
     else if (J.isMember("preview")) {
@@ -384,7 +386,7 @@ std::string e621::get_image_info(const Json::Value &J, size_t count,
         fileExt != "mp4")
         addRandomNoise("./resource/download/e621/" + imageLocalPath);
 
-    if (is_downloaded && fileExt != "webm" && fileExt != "mp4") {
+    if (is_downloaded && fileExt != "webm" && fileExt != "mp4" && retry == 0) {
         quest << (fileExt == "gif" ? "Get gif:\n" : "")
               << "[CQ:image,file=file://" << get_local_path()
               << "/resource/download/e621/" << imageLocalPath << ",id=40000]\n";
