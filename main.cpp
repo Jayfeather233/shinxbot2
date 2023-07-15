@@ -285,7 +285,7 @@ int main()
     functions.push_back(new gpt3_5());
     functions.push_back(new img());
     functions.push_back(new recall());
-    functions.push_back(new forwarder());
+    // functions.push_back(new forwarder()); // Easy to get your account frozen.
     functions.push_back(new gray_list());
 
     events.push_back(new talkative());
