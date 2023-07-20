@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <iostream>
 #include <map>
-std::map<int64_t, bool> in_queue;
+static std::map<int64_t, bool> in_queue;
 
 void original::process(std::string message, const msg_meta &conf)
 {
@@ -36,4 +36,4 @@ bool original::check(std::string message, const msg_meta &conf)
            (in_queue.find(conf.user_id) != in_queue.end() &&
             in_queue[conf.user_id] == true);
 }
-std::string original::help() { return "return the original text."; }
+std::string original::help() { return "return the original text. send .original to begin."; }

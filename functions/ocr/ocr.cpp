@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <map>
-std::map<int64_t, bool> in_queue;
+static std::map<int64_t, bool> in_queue;
 
 void ocr::process(std::string message, const msg_meta &conf)
 {

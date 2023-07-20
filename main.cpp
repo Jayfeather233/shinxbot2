@@ -287,6 +287,7 @@ int main()
     functions.push_back(new recall());
     // functions.push_back(new forwarder()); // Easy to get your account frozen.
     functions.push_back(new gray_list());
+    functions.push_back(new original());
 
     events.push_back(new talkative());
     events.push_back(new m_change());
