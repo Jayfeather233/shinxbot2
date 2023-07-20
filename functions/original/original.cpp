@@ -17,6 +17,7 @@ void original::process(std::string message, const msg_meta &conf)
         return;
     }
     else {
+        in_queue[conf.user_id] = false;
         std::string response;
         for (const char &ch : message) {
             if (ch == '[')
