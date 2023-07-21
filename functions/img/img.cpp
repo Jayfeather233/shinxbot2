@@ -3,6 +3,7 @@
 #include "utils.h"
 #include <filesystem>
 #include <iostream>
+#include <mutex>
 
 std::string help_message = "美图 帮助 - 列出所有美图命令\n"
                            "美图 列表 - 列出本群美图\n"
@@ -39,6 +40,7 @@ void img::save()
 
 void img::belong_to(std::string name, int64_t group_id)
 {
+    if(group_id == -1) return;
     auto it2 = belongs.find(group_id);
     if (it2 == belongs.end()) {
         for (std::string u : default_img)
@@ -94,8 +96,11 @@ void img::del_single(std::string name, int index)
     save();
 }
 
+static std::mutex img_cmd;
+
 std::string img::commands(std::string message, const msg_meta &conf)
 {
+    std::lock_guard<std::mutex> guard(img_cmd);
     if (is_deling[conf.user_id]) {
         if (message == "y" || message == "Y") {
             del_all(del_name[conf.user_id]);
