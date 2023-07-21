@@ -42,14 +42,11 @@ void hhsh::process(std::string message, const msg_meta &conf)
             }
             else {
                 res.append(J["name"].asString()).append("有可能是：\n");
-                int t = 0;
                 Json::Value maybe_value = J["inputting"];
                 Json::ArrayIndex msz = maybe_value.size();
                 for (Json::ArrayIndex i = 0; i < msz; i++) {
                     res.append(maybe_value[i].asString());
                     res += ' ';
-                    t++;
-                    // if(t >= 10) break;
                 }
             }
         }
@@ -59,13 +56,13 @@ void hhsh::process(std::string message, const msg_meta &conf)
             }
             else {
                 res.append(J["name"].asString()).append("是：\n");
-                int t = 0;
+                // int t = 0;
                 Json::Value maybe_value = J["trans"];
                 Json::ArrayIndex msz = maybe_value.size();
                 for (Json::ArrayIndex i = 0; i < msz; i++) {
                     res.append(maybe_value[i].asString());
                     res += ' ';
-                    t++;
+                    // t++;
                     // if(t >= 10) break;
                 }
             }
