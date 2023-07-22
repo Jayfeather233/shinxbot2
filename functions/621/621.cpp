@@ -386,7 +386,7 @@ std::string e621::get_image_info(const Json::Value &J, size_t count,
         fileExt != "mp4")
         addRandomNoise("./resource/download/e621/" + imageLocalPath);
 
-    if (is_downloaded && fileExt != "webm" && fileExt != "mp4" && retry == 0) {
+    if (is_downloaded && fileExt != "webm" && fileExt != "mp4") {
         quest << (fileExt == "gif" ? "Get gif:\n" : "")
               << "[CQ:image,file=file://" << get_local_path()
               << "/resource/download/e621/" << imageLocalPath << ",id=40000]\n";
