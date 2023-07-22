@@ -31,7 +31,7 @@ void gray_list::process(std::string message, const msg_meta &conf){
         if(res["status"].asString() == "failed"){
             msg_meta s_conf;
             s_conf.group_id = -1;
-            s_conf.message_type == "private";
+            s_conf.message_type = "private";
             s_conf.user_id = conf.user_id;
             cq_send("无法踢出\nmsg: " + res["wording"].asString(), s_conf);
         } else {
@@ -44,7 +44,7 @@ void gray_list::process(std::string message, const msg_meta &conf){
         if(res["status"].asString() == "failed"){
             msg_meta s_conf;
             s_conf.group_id = -1;
-            s_conf.message_type == "private";
+            s_conf.message_type = "private";
             s_conf.user_id = conf.user_id;
             cq_send("将 " + user_name + " 添加进灰名单\nmsg: " + res["wording"].asString(), s_conf);
         }

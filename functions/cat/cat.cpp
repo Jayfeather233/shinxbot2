@@ -22,12 +22,7 @@ std::string Cat::generateRandomPattern() { return patterns[get_random(5)]; }
 
 std::string Cat::getLocationString(Place location)
 {
-    if (location >= 4) {
-        return "";
-    }
-    else {
-        return place_to_string[location];
-    }
+    return place_to_string[location];
 }
 
 std::string Cat::get_random_text(const Json::Value &J)
