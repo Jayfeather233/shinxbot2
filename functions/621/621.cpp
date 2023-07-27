@@ -413,7 +413,7 @@ std::string e621::get_image_info(const Json::Value &J, size_t count,
             ret = zip_file_add(archive, "密码就是文件名", source2,
                                ZIP_FL_ENC_GUESS);
             if (ret < 0) {
-                zip_source_free(source1);
+                zip_source_free(source2);
             }
             zip_stat_t st;
             zip_stat(archive, imageLocalPath.c_str(), 0, &st);
