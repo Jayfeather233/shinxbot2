@@ -286,6 +286,7 @@ void e621::admin_set(std::string message, const msg_meta &conf, bool flg)
         }
         else {
             cq_send("621.set [this/group/user] [id (when not 'this')]", conf);
+            return;
         }
     }
     save();

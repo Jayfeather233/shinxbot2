@@ -206,7 +206,9 @@ void get_log()
     std::ostringstream oss;
     std::time_t nt =
         std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    tm tt = *localtime(&nt);
+    tm tt = *std::localtime(&nt); // No need to delete according to
+                                  // [stackoverflow](https://stackoverflow.com/questions/64854691/do-i-need-to-delete-the-pointer-returned-by-stdlocaltime)
+                                  // (?)
 
     oss << tt.tm_year + 1900 << '_' << std::setw(2) << std::setfill('0')
         << tt.tm_mon + 1 << '_' << std::setw(2) << std::setfill('0')
@@ -217,6 +219,11 @@ void get_log()
             std::filesystem::create_directory("./log");
         }
         std::filesystem::create_directory(("./log/" + oss.str()).c_str());
+    }
+    for(int i=0;i<3;i++){
+        if(LOG_output[i].is_open()){
+            LOG_output[i].close();
+        }
     }
     LOG_output[0] =
         std::ofstream("./log/" + oss.str() + "/info.log", std::ios_base::app);
