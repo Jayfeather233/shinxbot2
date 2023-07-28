@@ -18,8 +18,8 @@
 #include <unistd.h>
 #include <vector>
 
-int send_port;
-int receive_port;
+int send_port = 5750;
+int receive_port = 5701;
 
 int64_t botqq;
 

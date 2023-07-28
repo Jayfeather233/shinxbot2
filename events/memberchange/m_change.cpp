@@ -16,17 +16,18 @@ void m_change::process(Json::Value J)
     std::string name2 = oss.str();
 
     if (J["notice_type"].asString() == "group_decrease") {
-        if (J.isMember("operator_id") &&
-            J["operator_id"].asInt64() == J["user_id"].asInt64()) {
-            ; // Hey, they have their own reason to quit.
-        }
-        else if (J.isMember("operator_id")) {
-            cq_send(name2 + " 被 " +
-                        get_username(J["operator_id"].asInt64(),
-                                     J["group_id"].asInt64()) +
-                        " 送飞机票啦",
-                    (msg_meta){"group", 0, J["group_id"].asInt64(), 0});
-        }
+        // if (J.isMember("operator_id") &&
+        //     J["operator_id"].asInt64() == J["user_id"].asInt64()) {
+        //     ;
+        // }
+        // else if (J.isMember("operator_id")) {
+        //     cq_send(name2 + " 被 " +
+        //                 get_username(J["operator_id"].asInt64(),
+        //                              J["group_id"].asInt64()) +
+        //                 " 送飞机票啦",
+        //             (msg_meta){"group", 0, J["group_id"].asInt64(), 0});
+        // }
+        // Just ignore this ...
 
         setlog(LOG::INFO, "member decrease in group " +
                               std::to_string(J["group_id"].asInt64()) + " by " +

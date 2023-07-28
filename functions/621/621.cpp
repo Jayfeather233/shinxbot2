@@ -49,13 +49,13 @@ std::string e621::deal_input(const std::string &input, bool is_pool)
     if (res.find("order:") == res.npos && !is_pool) {
         res += "+order:random";
     }
-    // res += "+-animated";
     if (!is_pool && !is_id)
         for (std::string it : n_search) {
             if (res.find(it) == res.npos) {
                 res += "+-" + it;
             }
         }
+    res += "+-type:swf";
     return res;
 }
 
@@ -367,7 +367,7 @@ std::string e621::get_image_info(const Json::Value &J, size_t count,
     std::string imageLocalPath = std::to_string(id) + '.' + fileExt;
 
     bool is_downloaded = false;
-    if (!std::ifstream("./resource/download/e621/" + imageLocalPath)) {
+    if (!std::filesystem::exists("./resource/download/e621/" + imageLocalPath)) {
         for (int i = 0; i < 3; i++) {
             try {
                 download(imageUrl, "./resource/download/e621", imageLocalPath,
