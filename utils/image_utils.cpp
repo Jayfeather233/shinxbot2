@@ -28,7 +28,7 @@ void download(const std::string &httpAddress, const std::string &filePath,
     //     setlog(LOG::ERROR, "At download from" + httpAddress + " to " + filePath + "." + fileName + ", Exception occurred: " + e.what());
     // }
     std::filesystem::path p(filePath);
-    p += fileName;
+    p /= fileName;
     // std::cout<<p.string()<<std::endl;
     std::string command = "curl -o " + p.string() + " ";
     if(!proxy) command += "--noproxy '*' ";
