@@ -7,26 +7,33 @@
 void download(const std::string &httpAddress, const std::string &filePath,
               const std::string &fileName, const bool proxy)
 {
-    try {
-        std::string data = do_get(httpAddress, {}, proxy);
-        std::fstream ofile;
-        try {
-            ofile = openfile(filePath + "/" + fileName,
-                             std::ios::out | std::ios::binary);
-        }
-        catch (...) {
-        }
-        ofile << data;
-        ofile.flush();
-        ofile.close();
-        // writefile(filePath + "/" + fileName, data);
-        // std::ofstream out(, std::ios::out | std::ios::binary);
-        // out.write(data.c_str(), data.size());
-        // out.close();
-    }
-    catch (const std::exception &e) {
-        setlog(LOG::ERROR, "At download from" + httpAddress + " to " + filePath + "." + fileName + ", Exception occurred: " + e.what());
-    }
+    // try {
+    //     std::string data = do_get(httpAddress, {}, proxy);
+    //     std::fstream ofile;
+    //     try {
+    //         ofile = openfile(filePath + "/" + fileName,
+    //                          std::ios::out | std::ios::binary);
+    //     }
+    //     catch (...) {
+    //     }
+    //     ofile << data;
+    //     ofile.flush();
+    //     ofile.close();
+    //     // writefile(filePath + "/" + fileName, data);
+    //     // std::ofstream out(, std::ios::out | std::ios::binary);
+    //     // out.write(data.c_str(), data.size());
+    //     // out.close();
+    // }
+    // catch (const std::exception &e) {
+    //     setlog(LOG::ERROR, "At download from" + httpAddress + " to " + filePath + "." + fileName + ", Exception occurred: " + e.what());
+    // }
+    std::filesystem::path p(filePath);
+    p += fileName;
+    // std::cout<<p.string()<<std::endl;
+    std::string command = "curl -o " + p.string() + " ";
+    if(!proxy) command += "--noproxy '*' ";
+    command += httpAddress;
+    system(command.c_str());
 }
 
 void addRandomNoise(const std::string &filePath)
