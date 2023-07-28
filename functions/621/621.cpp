@@ -425,7 +425,7 @@ std::string e621::get_image_info(const Json::Value &J, size_t count,
         }
 
         int ret = system(
-            ("ffmpeg -y -i " + file_name + " -vframes 1 " + file_name + ".png")
+            ("ffmpeg -y -i " + file_name + " -vframes 1 " + file_name + ".png > /dev/null 2>&1")
                 .c_str());
 
         if (ret != 0) {
