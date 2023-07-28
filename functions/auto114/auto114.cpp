@@ -39,7 +39,7 @@ int auto114::find_min(int64_t input)
 
 std::string auto114::getans(int64_t input)
 {
-    if (1ll << 62 < input || input < -1ull << 62) {
+    if (input == 1ll<<63) {
         return "No bigInt";
     }
     if (input < 0) {

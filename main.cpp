@@ -324,8 +324,11 @@ int main()
     return 0;
 }
 
+static std::mutex send_lock;
+
 std::string cq_send(const std::string &message, const msg_meta &conf)
 {
+    std::lock_guard lock(send_lock);
     Json::Value input;
     input["message"] = message;
     input["message_type"] = conf.message_type;
@@ -344,13 +347,13 @@ std::string cq_get(const std::string &end_point)
     return do_get("127.0.0.1:" + std::to_string(send_port) + "/" + end_point);
 }
 
-std::mutex mylock;
+static std::mutex log_lock;
 
 tm last_getlog;
 
 void setlog(LOG type, std::string message)
 {
-    std::lock_guard<std::mutex> lock(mylock);
+    std::lock_guard<std::mutex> lock(log_lock);
 
     std::time_t nt =
         std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
