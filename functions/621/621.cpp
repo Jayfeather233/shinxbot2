@@ -12,6 +12,7 @@
 #include <fstream>
 #include <iostream>
 #include <jsoncpp/json/json.h>
+#include <sys/wait.h>
 #include <zip.h>
 
 const int retry_times = 4;
@@ -180,83 +181,101 @@ void e621::process(std::string message, const msg_meta &conf)
         return;
     }
 
-    if (!is_pool) {
-        Json::Value J2;
-        J = J["posts"][0];
-        int i;
-        for (i = 0; i < retry_times; i++) {
-            if (get_tag) {
-                J2 = string_to_json(cq_send(
-                    "[CQ:reply,id=" + std::to_string(conf.message_id) + "] " +
-                        get_image_tags(J) + (i ? "\ntx原因无法发送原图" : ""),
-                    conf));
-            }
-            else {
-                J2 = string_to_json(cq_send(
-                    "[CQ:reply,id=" + std::to_string(conf.message_id) + "] " +
-                        get_image_info(J, count, is_pool, i, conf.group_id) +
-                        (i ? "\ntx原因无法发送原图" : ""),
-                    conf));
-            }
-            if (J2["status"].asString() != "failed") {
-                break;
-            }
-        }
-        if (i == retry_times) {
-            cq_send("[CQ:reply,id=" + std::to_string(conf.message_id) +
-                        "] cannot send image due to Tencent",
-                    conf);
-            setlog(LOG::WARNING,
-                   "621 at group " + std::to_string(conf.group_id) + " by " +
-                       std::to_string(conf.user_id) + " send failed.");
-        }
-        else {
-            setlog(LOG::INFO, "621 at group " + std::to_string(conf.group_id) +
-                                  " by " + std::to_string(conf.user_id));
-        }
+    pid_t id = fork();
+    if (id == -1) {
+        throw "thread error.";
     }
-    else {
-        int64_t pool_id = J["posts"][0]["pools"][0].asInt64();
-
-        Json::Value J3 = string_to_json(do_get(
-            "https://e621.net/pools.json?search[id]=" + std::to_string(pool_id),
-            {{"user-agent", "AutoSearch/1.0 (by " + username + " on e621)"},
-             {"Authorization",
-              "basic " + base64::to_base64(username + ":" + authorkey)}},
-            true))[0];
-
-        std::string res_message;
-        res_message = "转发\n";
-        res_message += std::to_string(get_botqq()) + " " +
-                       J3["category"].asString() + ": " +
-                       J3["name"].asString() + "\n";
-        res_message += std::to_string(get_botqq()) + " 合并行\n简介：" +
-                       J3["description"].asString() + "\n结束合并\n";
-        res_message += std::to_string(get_botqq()) + " 共有 " +
-                       std::to_string(J3["post_count"].asInt64()) + "张\n";
-        J3 = J3["post_ids"];
-        Json::ArrayIndex sz = J3.size();
-        for (Json::ArrayIndex i = 0; i < sz; i++) {
-            for (Json::ArrayIndex j = 0; j < count; j++) {
-                if (J3[i].asInt64() == J["posts"][j]["id"].asInt64()) {
-                    res_message += std::to_string(get_botqq()) + " 合并行\n";
-                    res_message += get_image_info(J["posts"][j], count, is_pool,
-                                                  2, conf.group_id);
-                    res_message += "\n结束合并\n";
+    else if (id == 0) {
+        if (!is_pool) {
+            Json::Value J2;
+            J = J["posts"][0];
+            int i;
+            for (i = 0; i < retry_times; i++) {
+                if (get_tag) {
+                    J2 = string_to_json(cq_send(
+                        "[CQ:reply,id=" + std::to_string(conf.message_id) +
+                            "] " + get_image_tags(J) +
+                            (i ? "\ntx原因无法发送原图" : ""),
+                        conf));
+                }
+                else {
+                    J2 = string_to_json(cq_send(
+                        "[CQ:reply,id=" + std::to_string(conf.message_id) +
+                            "] " +
+                            get_image_info(J, count, is_pool, i,
+                                           conf.group_id) +
+                            (i ? "\ntx原因无法发送原图" : ""),
+                        conf));
+                }
+                if (J2["status"].asString() != "failed") {
+                    break;
                 }
             }
+            if (i == retry_times) {
+                cq_send("[CQ:reply,id=" + std::to_string(conf.message_id) +
+                            "] cannot send image due to Tencent",
+                        conf);
+                setlog(LOG::WARNING, "621 at group " +
+                                         std::to_string(conf.group_id) +
+                                         " by " + std::to_string(conf.user_id) +
+                                         " send failed.");
+            }
+            else {
+                setlog(LOG::INFO, "621 at group " +
+                                      std::to_string(conf.group_id) + " by " +
+                                      std::to_string(conf.user_id));
+            }
         }
+        else {
+            int64_t pool_id = J["posts"][0]["pools"][0].asInt64();
 
-        Json::Value J_send;
-        J_send["post_type"] = "message";
-        J_send["message"] = res_message;
-        J_send["message_type"] = conf.message_type;
-        J_send["message_id"] = -1;
-        J_send["user_id"] = conf.user_id;
-        J_send["group_id"] = conf.group_id;
-        input_process(new std::string(J_send.toStyledString()));
-        setlog(LOG::INFO, "621 pool at group " + std::to_string(conf.group_id) +
-                              " by " + std::to_string(conf.user_id));
+            Json::Value J3 = string_to_json(do_get(
+                "https://e621.net/pools.json?search[id]=" +
+                    std::to_string(pool_id),
+                {{"user-agent", "AutoSearch/1.0 (by " + username + " on e621)"},
+                 {"Authorization",
+                  "basic " + base64::to_base64(username + ":" + authorkey)}},
+                true))[0];
+
+            std::string res_message;
+            res_message = "转发\n";
+            res_message += std::to_string(get_botqq()) + " " +
+                           J3["category"].asString() + ": " +
+                           J3["name"].asString() + "\n";
+            res_message += std::to_string(get_botqq()) + " 合并行\n简介：" +
+                           J3["description"].asString() + "\n结束合并\n";
+            res_message += std::to_string(get_botqq()) + " 共有 " +
+                           std::to_string(J3["post_count"].asInt64()) + "张\n";
+            J3 = J3["post_ids"];
+            Json::ArrayIndex sz = J3.size();
+            for (Json::ArrayIndex i = 0; i < sz; i++) {
+                for (Json::ArrayIndex j = 0; j < count; j++) {
+                    if (J3[i].asInt64() == J["posts"][j]["id"].asInt64()) {
+                        res_message +=
+                            std::to_string(get_botqq()) + " 合并行\n";
+                        res_message += get_image_info(
+                            J["posts"][j], count, is_pool, 2, conf.group_id);
+                        res_message += "\n结束合并\n";
+                    }
+                }
+            }
+
+            Json::Value J_send;
+            J_send["post_type"] = "message";
+            J_send["message"] = res_message;
+            J_send["message_type"] = conf.message_type;
+            J_send["message_id"] = -1;
+            J_send["user_id"] = conf.user_id;
+            J_send["group_id"] = conf.group_id;
+            input_process(new std::string(J_send.toStyledString()));
+            setlog(LOG::INFO, "621 pool at group " +
+                                  std::to_string(conf.group_id) + " by " +
+                                  std::to_string(conf.user_id));
+        }
+        exit(0);
+    }
+    else {
+        waitpid(id, NULL, NULL);
     }
 }
 
@@ -368,7 +387,8 @@ std::string e621::get_image_info(const Json::Value &J, size_t count,
     std::string imageLocalPath = std::to_string(id) + '.' + fileExt;
 
     bool is_downloaded = false;
-    if (!std::filesystem::exists("./resource/download/e621/" + imageLocalPath)) {
+    if (!std::filesystem::exists("./resource/download/e621/" +
+                                 imageLocalPath)) {
         for (int i = 0; i < 3; i++) {
             try {
                 download(imageUrl, "./resource/download/e621", imageLocalPath,
@@ -424,9 +444,9 @@ std::string e621::get_image_info(const Json::Value &J, size_t count,
             upload_file(zip_name, group_id, "e621");
         }
 
-        int ret = system(
-            ("ffmpeg -y -i " + file_name + " -vframes 1 " + file_name + ".png > /dev/null 2>&1")
-                .c_str());
+        int ret = system(("ffmpeg -y -i " + file_name + " -vframes 1 " +
+                          file_name + ".png > /dev/null 2>&1")
+                             .c_str());
 
         if (ret != 0) {
             quest << "获取视频封面出错" << std::endl;

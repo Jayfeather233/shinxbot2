@@ -324,11 +324,8 @@ int main()
     return 0;
 }
 
-static std::mutex send_lock;
-
 std::string cq_send(const std::string &message, const msg_meta &conf)
 {
-    std::lock_guard lock(send_lock);
     Json::Value input;
     input["message"] = message;
     input["message_type"] = conf.message_type;
