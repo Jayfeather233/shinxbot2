@@ -31,6 +31,9 @@ void download(const std::string &httpAddress, const std::string &filePath,
     //                            ", Exception occurred: " + e.what());
     // }
     std::filesystem::path p(filePath);
+    if (!std::filesystem::exists(p)) {
+        std::filesystem::create_directories(p);
+    }
     p /= fileName;
     // std::cout<<p.string()<<std::endl;
     std::string command = "curl -o " + p.string() + " ";

@@ -275,7 +275,7 @@ void e621::process(std::string message, const msg_meta &conf)
         exit(0);
     }
     else {
-        waitpid(id, NULL, NULL);
+        waitpid(id, NULL, 0);
     }
 }
 
