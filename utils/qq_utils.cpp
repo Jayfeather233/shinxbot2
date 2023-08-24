@@ -108,7 +108,7 @@ void upload_file(const std::filesystem::path &file, const int64_t &group_id,
             J["group_id"] = group_id;
             J["name"] = path;
             J = string_to_json(cq_send("create_group_file_folder", J));
-        } // Cannot use?
+        } // Need group op to do
         std::string id = get_folder_id(group_id, path);
         Json::Value J;
         J["group_id"] = group_id;

@@ -22,6 +22,7 @@ void recall::process(std::string message, const msg_meta &conf)
 bool recall::check(std::string message, const msg_meta &conf)
 {
     return (message.find("[CQ:reply,id=") != message.npos &&
-            message.find("recall") != message.npos);
+            message.find("recall") != message.npos &&
+            (is_op(conf.user_id) || is_group_op(conf.group_id, conf.user_id)));
 }
 std::string recall::help() { return "撤回消息：回复某句话输入recall"; }
