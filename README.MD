@@ -100,4 +100,4 @@ bash sender.sh “.ai reset”
 
 - [ ] 把所有的功能编译成动态库，方便更换和加载
 
-- [ ] 把整个`main.cpp`转换成`class bot{}`，更c++
+- [x] 把整个`main.cpp`转换成`class bot{}`，更c++
