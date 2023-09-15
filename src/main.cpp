@@ -21,7 +21,6 @@ void set_global_log(LOG type, std::string message){
 }
 
 std::vector<int> send_port, receive_port;
-std::vector<std::thread*> thread_list;
 
 std::atomic<int> counter(0);
 
@@ -76,7 +75,6 @@ int main()
         mybot t = mybot(receive_port[i], send_port[i]);
         std::thread u = std::thread(bot_run, &t);
         u.detach();
-        thread_list.push_back(&u);
         counter ++;
     }
     while(counter != 0) sleep(10);
