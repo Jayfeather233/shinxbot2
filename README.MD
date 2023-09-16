@@ -64,7 +64,7 @@ libzip: sudo apt-get install libzip-dev
 maybe it will work
 ```
 
-这些库怎么装？问chatGPT。
+CImg 与 base64 作为子模块在 ./lib 下，请也一并 clone 它们。
 
 需要先配置并启动[go-cqhttp](https://github.com/Mrs4s/go-cqhttp)。打开 "反向HTTP POST地址"，并设置你自己的接收端口。（一般在go-cqhttp目录下的config.yaml）
 
