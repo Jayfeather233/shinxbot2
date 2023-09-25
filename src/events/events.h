@@ -1,3 +1,5 @@
+#pragma once
+
 #include "./talkative/talkative.h"
 #include "./memberchange/m_change.h"
 #include "./poke/poke.h"

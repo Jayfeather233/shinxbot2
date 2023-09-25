@@ -279,17 +279,17 @@ public:
         events.push_back(new friendadd());
         events.push_back(new poke());
 
-        init();
+        this->init();
 
         msg_meta start_msg_conf;
         start_msg_conf.message_type = "private";
 
         for (int64_t ops : op_list) {
             start_msg_conf.user_id = ops;
-            cq_send("Love you!", start_msg_conf);
+            this->cq_send("Love you!", start_msg_conf);
         }
 
-        start_server();
+        this->start_server();
 
         for (processable *u : functions) {
             delete u;
@@ -306,7 +306,7 @@ public:
         input["message_type"] = conf.message_type;
         input["group_id"] = conf.group_id;
         input["user_id"] = conf.user_id;
-        return cq_send("send_msg", input);
+        return this->cq_send("send_msg", input);
     }
 
     std::string cq_send(const std::string &end_point, const Json::Value &J) const
@@ -331,7 +331,7 @@ public:
             tt.tm_mon == last_getlog.tm_mon &&
             tt.tm_mday == last_getlog.tm_mday)) {
             last_getlog = tt;
-            get_log();
+            this->get_log();
         }
 
         std::ostringstream oss;

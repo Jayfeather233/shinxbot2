@@ -22,16 +22,13 @@ void set_global_log(LOG type, std::string message){
 
 std::vector<int> send_port, receive_port;
 
-std::atomic<int> counter(0);
-
-void bot_run(mybot *u){
+void bot_run(bot *u){
     while(1){
         int k = fork();
         if(k==-1){
             std::cerr<< "Process Error!"<<std::endl;
         } else if(k==0){
             u->run();
-            counter --;
             exit(0);
         } else {
             waitpid(k, NULL, 0);
@@ -72,12 +69,15 @@ int main()
     int len = send_port.size();
 
     for (int i=0;i<len;i++){
-        mybot t = mybot(receive_port[i], send_port[i]);
-        std::thread u = std::thread(bot_run, &t);
-        u.detach();
-        counter ++;
+        try{
+            bot *t = new mybot(receive_port[i], send_port[i]);
+            std::thread u = std::thread(bot_run, t);
+            u.detach();
+        }catch(...){
+            exit(0);
+        }
     }
-    while(counter != 0) sleep(10);
+    while(true) sleep(10);
 
     curl_global_cleanup();
 

@@ -3,7 +3,7 @@
 #include <iostream>
 #include <jsoncpp/json/json.h>
 
-enum LOG { INFO, WARNING, ERROR };
+enum LOG { INFO=0, WARNING=1, ERROR=2 };
 extern std::string LOG_name[];
 
 class bot;
