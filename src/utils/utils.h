@@ -256,3 +256,10 @@ bool is_folder_exist(const bot* p, const int64_t &group_id, const std::string &p
  * Determine if someone is operator
  */
 bool is_group_op(const bot* p, const int64_t &group_id, const int64_t &user_id);
+
+inline bool is_digit(const char &s){
+    return '0'<=s && s<='9';
+}
+inline bool is_word(const char &s){
+    return ('a'<=s && s<='z')||('A'<=s && s<='Z');
+}

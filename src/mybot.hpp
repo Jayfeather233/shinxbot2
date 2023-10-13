@@ -21,6 +21,7 @@
 
 class mybot : public bot{
 private:
+    bool bot_is_on = true;
     int64_t botqq;
 
     std::ofstream LOG_output[3];
@@ -117,7 +118,7 @@ private:
         }
 
         // Accept incoming connections and handle requests
-        while (true) {
+        while (bot_is_on) {
             if ((new_socket = accept(server_fd, (struct sockaddr *)&address,
                                     (socklen_t *)&addrlen)) < 0) {
                 setlog(LOG::ERROR, "Error accepting connection");
@@ -273,6 +274,7 @@ public:
         // functions.push_back(new forwarder()); // Easy to get your account frozen.
         functions.push_back(new gray_list());
         functions.push_back(new original());
+        functions.push_back(new bili_decode());
 
         events.push_back(new talkative());
         events.push_back(new m_change());
@@ -349,4 +351,8 @@ public:
     }
 
     int64_t get_botqq() const { return botqq; }
+
+    ~mybot() {
+        bot_is_on = false;
+    }
 };
