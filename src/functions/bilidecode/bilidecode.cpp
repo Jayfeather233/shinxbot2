@@ -1,6 +1,6 @@
 #include "bilidecode.h"
 
-av_result bili_decode::get_av(std::string s, size_t pos = 0)
+av_result bili_decode::get_av(std::string s, size_t pos)
 {
     pos = s.find("av", pos);
     if (pos == s.npos) {
@@ -15,7 +15,7 @@ av_result bili_decode::get_av(std::string s, size_t pos = 0)
     return std::make_pair(avid, pos);
 }
 
-bv_result bili_decode::get_bv(std::string s, size_t pos = 0)
+bv_result bili_decode::get_bv(std::string s, size_t pos)
 {
     pos = s.find("BV", pos);
     if (pos == s.npos) {
