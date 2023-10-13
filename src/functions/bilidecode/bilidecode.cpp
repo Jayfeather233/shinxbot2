@@ -67,7 +67,7 @@ void bili_decode::process(std::string message, const msg_meta &conf)
     }
     if (flg) {
         if (raw_info["code"].asInt64() != 0) {
-            conf.p->cq_send("Something error.", conf);
+            conf.p->cq_send("获取视频出错。", conf);
         }
         else {
             conf.p->cq_send(get_decode_info(raw_info), conf);
@@ -102,11 +102,11 @@ std::string bili_decode::get_decode_info(const Json::Value &raw_info)
     oss << raw_info["data"]["bvid"].asString() << " 分区："
         << raw_info["data"]["tname"].asString() << std::endl;
     oss << "标题：" << raw_info["data"]["title"].asString() << std::endl;
-    std::string desc = raw_info["data"]["desc"].asString();
+    std::wstring desc = string_to_wstring(raw_info["data"]["desc"].asString());
     if (desc.length() >= 20) {
-        desc = desc.substr(0, 20) + "...";
+        desc = desc.substr(0, 20) + L"...";
     }
-    oss << "简介：" << desc << std::endl;
+    oss << "简介：" << wstring_to_string(desc) << std::endl;
 
     oss << "UP: " << raw_info["data"]["owner"]["name"].asString() << std::endl;
     oss << "播放 " << raw_info["data"]["stat"]["view"].asInt64() << " 点赞 "
