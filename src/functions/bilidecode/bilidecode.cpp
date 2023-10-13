@@ -32,8 +32,9 @@ bv_result bili_decode::get_bv(std::string s, size_t pos)
 void bili_decode::process(std::string message, const msg_meta &conf)
 {
     Json::Value raw_info;
-    bool flg = true;
+    bool flg = false;
     if (message.find("BV") != message.npos) {
+        flg = true;
         bv_result res = get_bv(message);
         std::string bvid = res.first;
         size_t pos = res.second;
@@ -50,6 +51,7 @@ void bili_decode::process(std::string message, const msg_meta &conf)
         }
     }
     else if (message.find("av") != message.npos) {
+        flg = true;
         av_result res = get_av(message);
         uint64_t avid = res.first;
         size_t pos = res.second;
