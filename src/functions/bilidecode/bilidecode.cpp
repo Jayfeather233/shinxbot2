@@ -43,6 +43,7 @@ void bili_decode::process(std::string message, const msg_meta &conf)
             if (bvid != res.first)
                 flg = false;
             res = get_bv(message, pos);
+            pos = res.second;
         }
         if (flg) {
             raw_info = get_raw_info(bvid);
@@ -57,6 +58,7 @@ void bili_decode::process(std::string message, const msg_meta &conf)
             if (avid != res.first)
                 flg = false;
             res = get_av(message, pos);
+            pos = res.second;
         }
         if (flg) {
             raw_info = get_raw_info(avid);
