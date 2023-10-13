@@ -21,9 +21,8 @@ bv_result bili_decode::get_bv(std::string s, size_t pos)
     if (pos == s.npos) {
         return std::make_pair(std::string(), pos);
     }
-    pos += 2;
     std::string bvid;
-    while (pos < s.length() && is_digit(s[pos]) && is_word(s[pos])) {
+    while (pos < s.length() && (is_digit(s[pos]) || is_word(s[pos]))) {
         bvid += s[pos];
         ++pos;
     }
@@ -39,6 +38,7 @@ void bili_decode::process(std::string message, const msg_meta &conf)
         std::string bvid = res.first;
         size_t pos = res.second;
         res = get_bv(message, pos);
+        pos = res.second;
         while (flg && pos != message.npos) {
             if (bvid != res.first)
                 flg = false;
@@ -54,6 +54,7 @@ void bili_decode::process(std::string message, const msg_meta &conf)
         uint64_t avid = res.first;
         size_t pos = res.second;
         res = get_av(message, pos);
+        pos = res.second;
         while (flg && pos != message.npos) {
             if (avid != res.first)
                 flg = false;
