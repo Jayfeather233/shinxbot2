@@ -67,13 +67,8 @@ void bili_decode::process(std::string message, const msg_meta &conf)
             raw_info = get_raw_info(avid);
         }
     }
-    if (flg) {
-        if (raw_info["code"].asInt64() != 0) {
-            conf.p->cq_send("获取视频出错。", conf);
-        }
-        else {
-            conf.p->cq_send(get_decode_info(raw_info), conf);
-        }
+    if (flg && raw_info["code"].asInt64() == 0) {
+        conf.p->cq_send(get_decode_info(raw_info), conf);
 
         conf.p->setlog(LOG::INFO, "bilidecoder: group " +
                                       std::to_string(conf.group_id) + " user " +
