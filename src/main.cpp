@@ -4,6 +4,7 @@
 #include <vector>
 #include <atomic>
 #include <sys/wait.h>
+#include <thread>
 
 void set_global_log(LOG type, std::string message){
     std::time_t nt =
@@ -21,6 +22,7 @@ void set_global_log(LOG type, std::string message){
 }
 
 std::vector<int> send_port, receive_port;
+std::vector<bot*> bots;
 
 void bot_run(bot *u){
     while(1){
@@ -34,6 +36,12 @@ void bot_run(bot *u){
             waitpid(k, NULL, 0);
         }
     }
+}
+
+void add_new_bot(bot *t){
+    bots.push_back(t);
+    std::thread u = std::thread(bot_run, t);
+    u.detach();
 }
 
 int main()
@@ -68,16 +76,15 @@ int main()
 
     int len = send_port.size();
 
-    for (int i=0;i<len;i++){
-        try{
-            bot *t = new mybot(receive_port[i], send_port[i]);
-            std::thread u = std::thread(bot_run, t);
-            u.detach();
-        }catch(...){
-            exit(0);
-        }
-    }
+    add_new_bot(new mybot(receive_port[0], send_port[0]));
+    
     while(true) sleep(10);
+
+    //Never goes here~
+
+    for (bot *t : bots) {
+        delete t;
+    }
 
     curl_global_cleanup();
 

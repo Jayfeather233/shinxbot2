@@ -3,7 +3,7 @@
 #include <iostream>
 #include <jsoncpp/json/json.h>
 
-enum LOG { INFO=0, WARNING=1, ERROR=2 };
+enum LOG { INFO = 0, WARNING = 1, ERROR = 2 };
 extern std::string LOG_name[];
 
 class bot;
@@ -22,21 +22,60 @@ struct msg_meta {
     bot *p;
 };
 
-class bot{
+class bot {
 protected:
     int receive_port, send_port;
+
+    uint64_t botqq;
+
 public:
     bot() = delete;
     bot(bot &bot) = delete;
     bot(bot &&bot) = delete;
-    bot(int recv_port, int send_port) : receive_port(recv_port), send_port(send_port){}
-    virtual void run() = 0;
-    virtual bool is_op(const int64_t a) const = 0;
+    bot(int recv_port, int send_port);
 
-    virtual std::string cq_send(const std::string &message, const msg_meta &conf) const = 0;
-    virtual std::string cq_send(const std::string &end_point, const Json::Value &J) const = 0;
-    virtual std::string cq_get(const std::string &end_point) const = 0;
-    virtual void setlog(LOG type, std::string message) = 0;
-    virtual int64_t get_botqq() const = 0;
+    /**
+     * Starter of the bot.
+     * ATTENTION: run() must not quit. Otherwise the main() will call it again.
+     */
+    virtual void run() = 0;
+
+    /**
+     * Is this user the bot's operator?
+     */
+    virtual bool is_op(const int64_t a) const;
+
+    /**
+     * send(POST) to gocq
+     */
+    virtual std::string cq_send(const std::string &message,
+                                const msg_meta &conf) const;
+
+    /**
+     * send(POST) to gocq
+     */
+    virtual std::string cq_send(const std::string &end_point,
+                                const Json::Value &J) const;
+
+    /**
+     * GET from gocq
+     */
+    virtual std::string cq_get(const std::string &end_point) const;
+
+    /**
+     * Write down logs.
+     */
+    virtual void setlog(LOG type, std::string message);
+
+    /**
+     * get mine qq.
+     */
+    virtual int64_t get_botqq() const;
+
+    /**
+     * receive a message, how to process
+     */
     virtual void input_process(std::string *input) = 0;
+
+    virtual ~bot();
 };

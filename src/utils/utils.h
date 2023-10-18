@@ -43,7 +43,7 @@ std::pair<std::string, std::string> divide_http_addr(const std::string &url);
 /**
  * get user's name (group name if group_id != -1)
  */
-std::string get_username(const bot* p, int64_t user_id, int64_t group_id);
+std::string get_username(const bot *p, int64_t user_id, int64_t group_id);
 
 /**
  * convert a string into json
@@ -216,7 +216,7 @@ Json::Value parse_set_to_json(const std::set<des_type> &mp)
 
 /**
  * Check if an element is in Json Array. True then return the inedx, false
- * return -1
+ * return the Array length
  */
 template <typename T>
 Json::ArrayIndex json_array_find(const Json::Value &J, const T &data)
@@ -232,34 +232,37 @@ Json::ArrayIndex json_array_find(const Json::Value &J, const T &data)
             continue;
         }
     }
-    return -1;
+    return sz;
 }
 
 /**
  * upload a file to group/folder.
  * file: reletive path
  */
-void upload_file(bot* p, const std::filesystem::path &file, const int64_t &group_id,
-                 const std::string &path);
+void upload_file(bot *p, const std::filesystem::path &file,
+                 const int64_t &group_id, const std::string &path);
 
 /**
  * Get the folder id in a group
  */
-std::string get_folder_id(const bot* p, const int64_t &group_id, const std::string &path);
+std::string get_folder_id(const bot *p, const int64_t &group_id,
+                          const std::string &path);
 
 /**
  * Determine if a folder in group exists
  */
-bool is_folder_exist(const bot* p, const int64_t &group_id, const std::string &path);
+bool is_folder_exist(const bot *p, const int64_t &group_id,
+                     const std::string &path);
 
 /**
  * Determine if someone is operator
  */
-bool is_group_op(const bot* p, const int64_t &group_id, const int64_t &user_id);
+bool is_group_op(const bot *p, const int64_t &group_id, const int64_t &user_id);
 
-inline bool is_digit(const char &s){
-    return '0'<=s && s<='9';
+inline bool is_digit(const char &s) { return '0' <= s && s <= '9'; }
+inline bool is_word(const char &s)
+{
+    return ('a' <= s && s <= 'z') || ('A' <= s && s <= 'Z');
 }
-inline bool is_word(const char &s){
-    return ('a'<=s && s<='z')||('A'<=s && s<='Z');
-}
+
+void broadcast(std::string msg, const bot *u);

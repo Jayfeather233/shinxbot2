@@ -23,7 +23,7 @@ void gray_list::process(std::string message, const msg_meta &conf){
 
     std::string user_name = get_username(conf.p, user_id, conf.group_id);
     Json::ArrayIndex ind;
-    if((ind = json_array_find(g_list[conf.group_id], user_id))!=-1){
+    if((ind = json_array_find(g_list[conf.group_id], user_id))!=g_list[conf.group_id].size()){
         Json::Value Jdata;
         Jdata["group_id"] = conf.group_id;
         Jdata["user_id"] = user_id;
