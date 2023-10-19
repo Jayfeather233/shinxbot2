@@ -276,6 +276,9 @@ void img::process(std::string message, const msg_meta &conf)
                         conf);
         return;
     }
+    Json::Value J;
+    J["message_id"] = conf.message_id;
+    conf.p->cq_send("mark_msg_as_read", J);
     conf.p->setlog(LOG::INFO, "img at group " + std::to_string(conf.group_id));
     conf.p->cq_send("[CQ:image,file=file://" + get_local_path() +
                         "/resource/mt/" + name + "/" + std::to_string(index) +

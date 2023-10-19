@@ -6,13 +6,15 @@
 
 void hhsh::process(std::string message, const msg_meta &conf)
 {
-
+    Json::Value J;
+    J["message_id"] = conf.message_id;
+    conf.p->cq_send("mark_msg_as_read", J);
     if (message.length() <= 5) {
         conf.p->cq_send("首字母缩写识别： hhsh + 缩写 ", conf);
         return;
     }
 
-    Json::Value J;
+    J.clear();
     J["text"] = my_replace(message.substr(4), ' ', ',');
 
     Json::Value Ja;

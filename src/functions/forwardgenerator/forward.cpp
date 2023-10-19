@@ -73,7 +73,10 @@ Json::Value forward::get_content(bot *p, std::wistringstream &wiss, int64_t grou
 
 void forward::process(std::string message, const msg_meta &conf)
 {
-    std::wstring w_mess = string_to_wstring(message).substr(2);
+    Json::Value J;
+    J["message_id"] = conf.message_id;
+    conf.p->cq_send("mark_msg_as_read", J);
+    std::wstring w_mess = trim(string_to_wstring(message).substr(2));
     if (w_mess == L"帮助") {
         conf.p->cq_send("格式为：\n"
                         "转发\n"
@@ -91,7 +94,7 @@ void forward::process(std::string message, const msg_meta &conf)
         return;
     }
     std::wistringstream wiss(w_mess);
-    Json::Value J;
+    J.clear();
     J["messages"] = get_content(conf.p, wiss, conf.group_id);
 
     if (conf.message_type == "group") {

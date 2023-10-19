@@ -8,6 +8,9 @@ static std::map<int64_t, bool> in_queue;
 
 void original::process(std::string message, const msg_meta &conf)
 {
+    Json::Value J;
+    J["message_id"] = conf.message_id;
+    conf.p->cq_send("mark_msg_as_read", J);
     if (in_queue.find(conf.user_id) == in_queue.end())
         in_queue[conf.user_id] = false;
 

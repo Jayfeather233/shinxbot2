@@ -17,6 +17,9 @@ std::string get_code(int color)
 
 void r_color::process(std::string message, const msg_meta &conf)
 {
+    Json::Value J;
+    J["message_id"] = conf.message_id;
+    conf.p->cq_send("mark_msg_as_read", J);
     std::wstring w_mess = trim(string_to_wstring(message).substr(4));
     int color = 0;
     if (w_mess[0] == L'#') {

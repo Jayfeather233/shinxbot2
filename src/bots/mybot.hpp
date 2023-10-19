@@ -34,9 +34,9 @@ private:
     int start_server();
 
     /**
-     * Check if the log output should be updated
+     * Check if the log output stream should be updated
      */
-    void get_log();
+    void log_init();
 
     /**
      * Get bot's qq and read op_list

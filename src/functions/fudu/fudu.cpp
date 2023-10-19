@@ -11,6 +11,9 @@ void fudu::process(std::string message, const msg_meta &conf)
             times[conf.group_id]++;
             if (times[conf.group_id] == 5) {
                 times[conf.group_id] = 0;
+                Json::Value J;
+                J["message_id"] = conf.message_id;
+                conf.p->cq_send("mark_msg_as_read", J);
                 conf.p->cq_send(message, conf);
             }
         }

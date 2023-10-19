@@ -105,7 +105,7 @@ int mybot::start_server()
     }
     return 0;
 }
-void mybot::get_log()
+void mybot::log_init()
 {
     std::ostringstream oss;
     std::time_t nt =
@@ -146,7 +146,7 @@ void mybot::init()
     }
     std::cout << "botqq:" << botqq << std::endl;
 
-    get_log();
+    log_init();
 
     Json::Value J_op = string_to_json(readfile("./config/op_list.json", "[]"));
     parse_json_to_set(J_op, op_list);
@@ -291,7 +291,7 @@ void mybot::setlog(LOG type, std::string message)
           tt.tm_mon == last_getlog.tm_mon &&
           tt.tm_mday == last_getlog.tm_mday)) {
         last_getlog = tt;
-        this->get_log();
+        this->log_init();
     }
 
     std::ostringstream oss;

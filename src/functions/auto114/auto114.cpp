@@ -65,6 +65,9 @@ std::string auto114::getans(int64_t input)
 
 void auto114::process(std::string message, const msg_meta &conf)
 {
+    Json::Value J;
+    J["message_id"] = conf.message_id;
+    conf.p->cq_send("mark_msg_as_read", J);
     std::istringstream iss(message.substr(4));
     int64_t input;
     iss >> input;

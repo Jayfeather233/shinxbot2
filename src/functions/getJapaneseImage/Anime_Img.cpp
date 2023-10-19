@@ -6,6 +6,9 @@
 
 void AnimeImg::process(std::string message, const msg_meta &conf)
 {
+    Json::Value J;
+    J["message_id"] = conf.message_id;
+    conf.p->cq_send("mark_msg_as_read", J);
     try {
         Json::Value J = string_to_json(
             do_get("https://www.dmoe.cc/random.php?return=json"));

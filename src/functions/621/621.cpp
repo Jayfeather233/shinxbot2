@@ -72,6 +72,9 @@ std::string number_trans(int64_t u)
 
 void e621::process(std::string message, const msg_meta &conf)
 {
+    Json::Value J;
+    J["message_id"] = conf.message_id;
+    conf.p->cq_send("mark_msg_as_read", J);
     message = trim(message);
     if (message.find("621.add") == 0) {
         message = trim(message.substr(7));
@@ -150,7 +153,7 @@ void e621::process(std::string message, const msg_meta &conf)
     }
     input = deal_input(input, is_pool);
 
-    Json::Value J;
+    J.clear();
     int i;
     for (i = 0; i < 3; i++) {
         try {

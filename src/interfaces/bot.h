@@ -46,19 +46,19 @@ public:
     virtual bool is_op(const int64_t a) const;
 
     /**
-     * send(POST) to gocq
+     * send(POST) to gocq (or any other you want)
      */
     virtual std::string cq_send(const std::string &message,
                                 const msg_meta &conf) const;
 
     /**
-     * send(POST) to gocq
+     * send(POST) to gocq (or any other you want)
      */
     virtual std::string cq_send(const std::string &end_point,
                                 const Json::Value &J) const;
 
     /**
-     * GET from gocq
+     * GET from gocq (or any other you want)
      */
     virtual std::string cq_get(const std::string &end_point) const;
 
@@ -68,7 +68,7 @@ public:
     virtual void setlog(LOG type, std::string message);
 
     /**
-     * get mine qq.
+     * get mine qq. (or other id-like-thing)
      */
     virtual int64_t get_botqq() const;
 
