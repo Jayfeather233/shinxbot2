@@ -60,16 +60,6 @@ std::string e621::deal_input(const std::string &input, bool is_pool)
     return res;
 }
 
-std::string number_trans(int64_t u)
-{
-    if (u > 1000000)
-        return std::to_string(u / 1000000) + "M";
-    else if (u > 1000)
-        return std::to_string(u / 1000) + "k";
-    else
-        return std::to_string(u);
-}
-
 void e621::process(std::string message, const msg_meta &conf)
 {
     Json::Value J;
@@ -130,7 +120,7 @@ void e621::process(std::string message, const msg_meta &conf)
             Json::ArrayIndex sz = Ja.size();
             for (Json::ArrayIndex i = 0; i < sz; i++) {
                 res += Ja[i]["name"].asString() + "    " +
-                       std::to_string(Ja[i]["post_count"].asInt64()) + "\n";
+                       to_human_string(Ja[i]["post_count"].asInt64()) + "\n";
             }
             conf.p->cq_send(res, conf);
         }

@@ -1,3 +1,8 @@
+/**
+ * This code using API from Bilibili.
+ * Decode by https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/video/videostream_url.md
+*/
+
 #include "bilidecode.h"
 
 av_result bili_decode::get_av(std::string s, size_t pos)
@@ -106,18 +111,19 @@ std::string bili_decode::get_decode_info(const Json::Value &raw_info)
         << raw_info["data"]["tname"].asString() << std::endl;
     oss << "标题：" << raw_info["data"]["title"].asString() << std::endl;
     std::wstring desc = string_to_wstring(raw_info["data"]["desc"].asString());
-    if (desc.length() >= 20) {
-        desc = desc.substr(0, 20) + L"...";
+    if (desc.length() >= 100) {
+        desc = desc.substr(0, 100) + L"...";
     }
     oss << "简介：" << wstring_to_string(desc) << std::endl;
 
     oss << "UP: " << raw_info["data"]["owner"]["name"].asString() << std::endl;
-    oss << "播放 " << raw_info["data"]["stat"]["view"].asInt64() << " 点赞 "
-        << raw_info["data"]["stat"]["like"].asInt64() << " 回复 "
-        << raw_info["data"]["stat"]["reply"].asInt64() << " 弹幕 "
-        << raw_info["data"]["stat"]["danmaku"].asInt64() << std::endl;
+    oss << "播放 " << to_human_string(raw_info["data"]["stat"]["view"].asInt64()) << " 点赞 "
+        << to_human_string(raw_info["data"]["stat"]["like"].asInt64()) << " 回复 "
+        << to_human_string(raw_info["data"]["stat"]["reply"].asInt64()) << " 弹幕 "
+        << to_human_string(raw_info["data"]["stat"]["danmaku"].asInt64() )<< std::endl;
+    oss << "Link: https://www.bilibili.com/video/" + raw_info["data"]["bvid"].asString() + "/"  << std::endl;
 
-    return oss.str();
+    return trim(oss.str());
 
     // ["bvid"]     str -> bvid
     // ["tname"]    str -> 子分区名

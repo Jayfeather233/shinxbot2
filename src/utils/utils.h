@@ -266,3 +266,5 @@ inline bool is_word(const char &s)
 }
 
 void broadcast(std::string msg, const bot *u);
+
+std::string to_human_string(const int64_t u);
