@@ -9,7 +9,7 @@ resource/download
 resource/generate
 resource/mt
 log/
-test.cpp
+test*
 config/621_level.json
 config/proxy.json
 config/cats/

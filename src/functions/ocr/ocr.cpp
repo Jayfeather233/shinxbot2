@@ -5,6 +5,36 @@
 #include <map>
 static std::map<int64_t, bool> in_queue;
 
+std::string ocr::ocr_tostring(const Json::Value &J) {
+    Json::ArrayIndex sz = J.size();
+    std::ostringstream oss;
+    long long top, bottom, center;
+    long long new_top, new_bottom;
+    for(Json::ArrayIndex i = 0;i<sz;i++){
+        top = J[i]["coordinates"][0]["y"].asInt64();
+        bottom = J[i]["coordinates"][2]["y"].asInt64();
+        center = (top+bottom)>>1;
+        oss << J[i]["text"].asString();
+        ++i;
+
+        for(;i<sz;i++){
+            new_top = J[i]["coordinates"][0]["y"].asInt64();
+            new_bottom = J[i]["coordinates"][2]["y"].asInt64();
+            if(new_top > center || new_bottom < center) {
+                oss << std::endl;
+                --i;
+                break;
+            } else {
+                top = (top + new_top) >> 1;
+                bottom = (bottom + new_bottom) >> 1;
+                oss << ' ' << J[i]["text"].asString();
+            }
+        }
+    }
+    oss << std::endl;
+    return oss.str();
+}
+
 void ocr::process(std::string message, const msg_meta &conf)
 {
     size_t index = message.find("[CQ:image,file=");
@@ -22,11 +52,7 @@ void ocr::process(std::string message, const msg_meta &conf)
     Json::Value J;
     J["image"] = message.substr(index, index2 - index);
     J = string_to_json(conf.p->cq_send("ocr_image", J))["data"]["texts"];
-    Json::ArrayIndex sz = J.size();
-    std::string res;
-    for (Json::ArrayIndex i = 0; i < sz; i++) {
-        res += J[i]["text"].asString() + " ";
-    }
+    std::string res = ocr_tostring(J);
     conf.p->cq_send(res, conf);
     conf.p->setlog(LOG::INFO, "OCR at group " + std::to_string(conf.group_id) +
                                   " by " + std::to_string(conf.user_id));
