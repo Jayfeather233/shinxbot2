@@ -1,9 +1,13 @@
-#!/bin/sh
+#!/bin/bash
 
-mkdir ./build
-mkdir ./resource/download
-mkdir ./resource/generate
-mkdir ./resource/temp
+directories=("./build" "./resource/download" "./resource/generate" "./resource/temp")  # Add your directories here
+
+for directory in "${directories[@]}"
+do
+    if [ ! -d "$directory" ]; then
+        mkdir "$directory"
+    fi
+done
 
 cd ./build
 cmake -DCMAKE_BUILD_TYPE=Release ..
