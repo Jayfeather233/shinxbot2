@@ -404,7 +404,7 @@ std::string e621::get_image_info(bot *p, const Json::Value &J, size_t count,
     else {
         is_downloaded = true;
     }
-    if (is_downloaded && fileExt != "gif" && fileExt != "webm" &&
+    if (is_downloaded && fileExt != "webm" &&
         fileExt != "mp4")
         addRandomNoise("./resource/download/e621/" + imageLocalPath);
 

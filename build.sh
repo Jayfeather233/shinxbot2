@@ -1,6 +1,6 @@
 #!/bin/bash
 
-directories=("./build" "./resource/download" "./resource/generate" "./resource/temp")  # Add your directories here
+directories=("./build" "./resource/download" "./resource/generate" "./resource/r_color")  # Add your directories here
 
 for directory in "${directories[@]}"
 do
