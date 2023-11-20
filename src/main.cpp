@@ -62,8 +62,6 @@ int main()
         }
     }
 
-    int len = send_port.size();
-
     add_new_bot(new mybot(receive_port[0], send_port[0]));
     
     while(true) sleep(10);

@@ -39,7 +39,12 @@ void download(const std::string &httpAddress, const std::string &filePath,
     std::string command = "curl -o " + p.string() + " ";
     if(!proxy) command += "--noproxy '*' ";
     command += httpAddress + " > /dev/null 2>&1";
-    system(command.c_str());
+    int ret = system(command.c_str());
+    if(ret) {
+        std::ostringstream oss;
+        oss << "download " << httpAddress << " to " << filePath << "/" << fileName << " Proxy=" << proxy << "failed.";
+        set_global_log(LOG::ERROR, oss.str());
+    }
 }
 
 // void addRandomNoiseSingle(CImg<unsigned char> &image) {
@@ -96,11 +101,11 @@ void addRandomNoiseSingle(Magick::Image &img) {
     }
 
     // Loop through each pixel and add a random value
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
+    for (size_t y = 0; y < height; ++y) {
+        for (size_t x = 0; x < width; ++x) {
             Magick::ColorRGB pixel = img.pixelColor(x, y);
 
-            const int var = 4;
+            const int var = 8;
 
             double randomValuer = (get_random(var)-(var>>1))*1.0/256;
             double randomValueg = (get_random(var)-(var>>1))*1.0/256;
@@ -121,7 +126,7 @@ void addRandomNoise(const std::string &filePath){
             Magick::readImages(&img, filePath);
             size_t numFrames = img.size();
             std::vector<Magick::Image> result;
-            int frameInterval = 10;
+            int frameInterval = 1;
             for(size_t i = 0; i < numFrames; ++i){
                 Magick::Image frame = img[i];
                 if( i % frameInterval == 0) {
