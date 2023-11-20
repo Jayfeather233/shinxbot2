@@ -8,12 +8,7 @@
 #include <map>
 #include <set>
 #include <string>
-
-#define cimg_display 0
-#define cimg_use_png 1
-#define cimg_use_jpeg 1
-#include "CImg.h"
-using namespace cimg_library;
+#include <Magick++.h>
 
 /**
  * do a http post with a json body.
@@ -268,3 +263,5 @@ inline bool is_word(const char &s)
 void broadcast(std::string msg, const bot *u);
 
 std::string to_human_string(const int64_t u);
+
+void set_global_log(LOG type, std::string message);

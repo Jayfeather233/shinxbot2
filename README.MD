@@ -60,7 +60,7 @@ libcurl: sudo apt-get install libcurl4-openssl-dev
 openssl: sudo apt-get install openssl-dev (or libssl-dev)
 jsoncpp: sudo apt-get install libjsoncpp-dev
 CImg: already included
-      and sudo apt-get install libjpeg-dev libpng-dev
+      and sudo apt-get install libjpeg-dev libpng-dev libtiff-dev
 base64: already included
 libzip: sudo apt-get install libzip-dev
 maybe it will work

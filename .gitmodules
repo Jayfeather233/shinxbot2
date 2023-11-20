@@ -1,7 +1,3 @@
-[submodule "lib/CImg"]
-	path = lib/CImg
-	url = https://github.com/GreycLab/CImg
-	branch = master
 [submodule "lib/base64"]
 	path = lib/base64
 	url = https://github.com/tobiaslocker/base64

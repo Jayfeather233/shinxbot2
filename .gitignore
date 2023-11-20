@@ -4,7 +4,7 @@ a.out
 build/
 test/
 config/port.txt
-resource/temp
+resource/r_color
 resource/download
 resource/generate
 resource/mt

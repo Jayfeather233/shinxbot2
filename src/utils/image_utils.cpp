@@ -42,36 +42,100 @@ void download(const std::string &httpAddress, const std::string &filePath,
     system(command.c_str());
 }
 
-void addRandomNoise(const std::string &filePath)
-{
-    int pid = fork();
-    if (pid < 0) {
-        throw "AddRandomNoise: fork failed.";
+// void addRandomNoiseSingle(CImg<unsigned char> &image) {
+//     int w = image.width();
+//     int h = image.height();
+//     if ((int64_t)w * h > 4000000) {
+//         double resize_d = sqrt((double)w * h / 4000000.0);
+//         image.resize((size_t)(w / resize_d), (size_t)(h / resize_d));
+//         w = image.width();
+//         h = image.height();
+//     }
+//     int channels = image.spectrum();
+//     for (int i = 0; i < w; i++) {
+//         for (int j = 0; j < h; j++) {
+//             for (int k = 0; k < channels; k++) {
+//                 int value = image(i, j, 0, k) + get_random(128) - 2;
+//                 value = std::max(0, std::min(value, 255));
+//                 image(i, j, 0, k) = static_cast<unsigned char>(value);
+//             }
+//         }
+//     }
+// }
+// void addRandomNoise(const std::string &filePath)
+// {
+//     int pid = fork();
+//     if (pid < 0) {
+//         throw "AddRandomNoise: fork failed.";
+//     }
+//     else if (pid == 0) {
+//         if(filePath.find(".gif") != filePath.npos) {
+
+//             // TODO: process gif file
+
+//         } else {
+//             CImg<unsigned char> image(filePath.c_str());
+//             addRandomNoiseSingle(image);
+//             image.save(filePath.c_str());
+//         }
+//         exit(0);
+//     }
+//     else {
+//         waitpid(pid, 0, 0);
+//     }
+// }
+
+void addRandomNoiseSingle(Magick::Image &img) {
+    size_t width = img.columns();
+    size_t height = img.rows();
+    if (width * height > 4000000) {
+        double resize_d = sqrt((double)width * height / 4000000.0);
+        img.resize(Magick::Geometry((size_t)(width / resize_d), (size_t)(height / resize_d)));
+        width = img.columns();
+        height = img.rows();
     }
-    else if (pid == 0) {
-        CImg<unsigned char> image(filePath.c_str());
-        int w = image.width();
-        int h = image.height();
-        if ((int64_t)w * h > 4000000) {
-            double resize_d = sqrt((double)w * h / 4000000.0);
-            image.resize((size_t)(w / resize_d), (size_t)(h / resize_d));
-            w = image.width();
-            h = image.height();
+
+    // Loop through each pixel and add a random value
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            Magick::ColorRGB pixel = img.pixelColor(x, y);
+
+            const int var = 4;
+
+            double randomValuer = (get_random(var)-(var>>1))*1.0/256;
+            double randomValueg = (get_random(var)-(var>>1))*1.0/256;
+            double randomValueb = (get_random(var)-(var>>1))*1.0/256;
+            pixel.red(std::max(std::min(pixel.red() + randomValuer, 1.0), 0.0));
+            pixel.green(std::max(std::min(pixel.green() + randomValueg, 1.0), 0.0));
+            pixel.blue(std::max(std::min(pixel.blue() + randomValueb, 1.0), 0.0));
+
+            img.pixelColor(x, y, pixel);
         }
-        int channels = image.spectrum();
-        for (int i = 0; i < w; i++) {
-            for (int j = 0; j < h; j++) {
-                for (int k = 0; k < channels; k++) {
-                    int value = image(i, j, 0, k) + get_random(4) - 2;
-                    value = std::max(0, std::min(value, 255));
-                    image(i, j, 0, k) = static_cast<unsigned char>(value);
+    }
+}
+
+void addRandomNoise(const std::string &filePath){
+    try{
+        if(filePath.find(".gif") != filePath.npos) {
+            std::vector<Magick::Image> img;
+            Magick::readImages(&img, filePath);
+            size_t numFrames = img.size();
+            std::vector<Magick::Image> result;
+            int frameInterval = 10;
+            for(size_t i = 0; i < numFrames; ++i){
+                Magick::Image frame = img[i];
+                if( i % frameInterval == 0) {
+                    addRandomNoiseSingle(frame);
                 }
+                result.push_back(frame);
             }
+            Magick::writeImages(result.begin(), result.end(), filePath);
+        } else {
+            Magick::Image img(filePath);
+            addRandomNoiseSingle(img);
+            img.write(filePath);
         }
-        image.save(filePath.c_str());
-        exit(0);
-    }
-    else {
-        waitpid(pid, 0, 0);
+    } catch (std::exception &e){
+        set_global_log(LOG::ERROR, e.what());
     }
 }
