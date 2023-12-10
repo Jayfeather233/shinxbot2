@@ -42,13 +42,13 @@
 
 ### 关于源文件
 
-./functions 所有功能的代码
+./src/functions 所有功能的代码
 
-./inc 功能头文件
+./src/inc 功能头文件
 
-./interfaces 接口，所有功能继承这个类
+./src/interfaces 接口，所有功能继承这个类
 
-./utils 一些工具
+./src/utils 一些工具
 
 ### 如何运行这个机器人
 
@@ -65,7 +65,7 @@ Magick++: libmagick++-dev
 maybe it will work
 ```
 
-CImg 与 base64 作为子模块在 ./lib 下，请也一并 clone 它们。
+base64 作为子模块在 ./lib 下，请也一并 clone 它。
 
 需要先配置并启动 go-cqhttp。打开 "反向HTTP POST地址"，并设置你自己的接收端口。（一般在go-cqhttp目录下的config.yaml）
 
