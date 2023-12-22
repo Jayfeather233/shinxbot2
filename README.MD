@@ -26,6 +26,8 @@
 
 - openai的 `gpt-3.5-turbo` API支持
 
+- google的 `gemini-pro[-vision]` API支持
+
 - 群友聊天截图保存功能（美图）
 
 - 龙王提醒
