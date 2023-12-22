@@ -244,14 +244,14 @@ std::string gemini::generate_image(std::string message, int64_t id)
     }
     // J.clear();
     // J["contents"] = history[1][id];
-    J["contents"] = J;
+    Json::Value Q;
+    Q["contents"][0] = J;
     // shrink_prompt_size(id, 1);
-    std::cout << J.toStyledString() << std::endl;
     Json::Value res = string_to_json(do_post(
         (std::string) "https://generativelanguage.googleapis.com/v1beta/models/"
                       "gemini-pro-vision:generateContent?key=" +
             *nowkey,
-        J, {}, true));
+        Q, {}, true));
     next_key(nowkey);
     std::string str_ans;
     if (res.isMember("error")) {
@@ -261,9 +261,9 @@ std::string gemini::generate_image(std::string message, int64_t id)
         str_ans =
             res["candidates"][0]["content"]["parts"][0]["text"].asString();
         // str_ans = res.toStyledString();
-        J.clear();
-        J["role"] = "model";
-        J["parts"][0]["text"] = str_ans;
+        // J.clear();
+        // J["role"] = "model";
+        // J["parts"][0]["text"] = str_ans;
         // history[1][id].append(J);
     }
     return str_ans;
