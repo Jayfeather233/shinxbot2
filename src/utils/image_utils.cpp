@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <sys/wait.h>
+#include <Magick++.h>
 
 void download(const std::string &httpAddress, const std::string &filePath,
               const std::string &fileName, const bool proxy)
@@ -46,49 +47,6 @@ void download(const std::string &httpAddress, const std::string &filePath,
         set_global_log(LOG::ERROR, oss.str());
     }
 }
-
-// void addRandomNoiseSingle(CImg<unsigned char> &image) {
-//     int w = image.width();
-//     int h = image.height();
-//     if ((int64_t)w * h > 4000000) {
-//         double resize_d = sqrt((double)w * h / 4000000.0);
-//         image.resize((size_t)(w / resize_d), (size_t)(h / resize_d));
-//         w = image.width();
-//         h = image.height();
-//     }
-//     int channels = image.spectrum();
-//     for (int i = 0; i < w; i++) {
-//         for (int j = 0; j < h; j++) {
-//             for (int k = 0; k < channels; k++) {
-//                 int value = image(i, j, 0, k) + get_random(128) - 2;
-//                 value = std::max(0, std::min(value, 255));
-//                 image(i, j, 0, k) = static_cast<unsigned char>(value);
-//             }
-//         }
-//     }
-// }
-// void addRandomNoise(const std::string &filePath)
-// {
-//     int pid = fork();
-//     if (pid < 0) {
-//         throw "AddRandomNoise: fork failed.";
-//     }
-//     else if (pid == 0) {
-//         if(filePath.find(".gif") != filePath.npos) {
-
-//             // TODO: process gif file
-
-//         } else {
-//             CImg<unsigned char> image(filePath.c_str());
-//             addRandomNoiseSingle(image);
-//             image.save(filePath.c_str());
-//         }
-//         exit(0);
-//     }
-//     else {
-//         waitpid(pid, 0, 0);
-//     }
-// }
 
 void addRandomNoiseSingle(Magick::Image &img) {
     size_t width = img.columns();
@@ -143,4 +101,25 @@ void addRandomNoise(const std::string &filePath){
     } catch (std::exception &e){
         set_global_log(LOG::ERROR, e.what());
     }
+}
+
+std::pair<std::string, std::string> image2base64(std::filesystem::path filepath){
+    Magick::Image img(filepath.string());
+    Magick::Blob blob;
+    img.write(&blob);
+    std::string type = img.magick();
+    if(type == "PNG"){
+        type = "image/png";
+    } else if(type == "JPEG"){
+        type = "image/jpeg";
+    } else if(type == "WEBP"){
+        type = "image/webp";
+    } else if(type == "HEIC"){
+        type = "image/heic";
+    } else if(type == "HEIF"){
+        type = "image/heif";
+    } else {
+        type = "image/error";
+    }
+    return std::make_pair(type, blob.base64());
 }

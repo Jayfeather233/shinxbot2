@@ -1,0 +1,14 @@
+{
+    "keys": [
+        ""
+    ],
+    "mode": [
+        "default"
+    ],
+    "modes": {
+        "default": []
+    },
+    "black_list": [
+        "这是要屏蔽的词"
+    ]
+}

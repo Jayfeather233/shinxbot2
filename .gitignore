@@ -18,6 +18,7 @@ config/openai.json
 config/op_list.json
 compile_commands.json
 config/img.json
+config/gemini.json
 config/forwarder.json
 dev_tools/inspector
 config/g_list.json

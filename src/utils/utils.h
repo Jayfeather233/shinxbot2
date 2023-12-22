@@ -8,7 +8,6 @@
 #include <map>
 #include <set>
 #include <string>
-#include <Magick++.h>
 
 /**
  * do a http post with a json body.
@@ -265,3 +264,5 @@ void broadcast(std::string msg, const bot *u);
 std::string to_human_string(const int64_t u);
 
 void set_global_log(LOG type, std::string message);
+
+std::pair<std::string, std::string> image2base64(std::filesystem::path filepath);

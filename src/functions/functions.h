@@ -17,3 +17,4 @@
 #include "./op_gray/gray_list.h"
 #include "./original/original.h"
 #include "./bilidecode/bilidecode.h"
+#include "./gemini/gemini.h"

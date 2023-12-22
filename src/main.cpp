@@ -72,6 +72,7 @@ int main()
         delete t;
     }
 
+    Magick::TerminateMagick();
     curl_global_cleanup();
 
     return 0;

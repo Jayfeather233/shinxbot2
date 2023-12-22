@@ -246,13 +246,14 @@ void mybot::run()
     functions.push_back(new catmain());
     functions.push_back(new ocr());
     functions.push_back(new httpcats());
-    functions.push_back(new gpt3_5());
+    // functions.push_back(new gpt3_5()); // Sorry but no keys
     functions.push_back(new img());
     functions.push_back(new recall());
     // functions.push_back(new forwarder()); // Easy to get your account frozen.
     functions.push_back(new gray_list());
     functions.push_back(new original());
     functions.push_back(new bili_decode());
+    functions.push_back(new gemini());
 
     events.push_back(new talkative());
     events.push_back(new m_change());

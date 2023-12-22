@@ -4,6 +4,8 @@
 #include <iostream>
 #include <sys/wait.h>
 
+#include <Magick++.h>
+
 std::string int_to_hex = "0123456789ABCDEF";
 
 std::string get_code(int color)
