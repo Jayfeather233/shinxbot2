@@ -225,22 +225,26 @@ std::string gemini::generate_image(std::string message, int64_t id)
         break;
     }
     index = message.find("[CQ:image");
-    if (cnt == 0) {
-        return "Bot Inner Error.";
-    }
-    history[1][id].clear();
-    std::pair<std::string, std::string> img =
-        image2base64((std::string) "./resource/download/" + fn);
     Json::Value J;
-    J["role"] = "user";
-    J["parts"][0]["text"] =
-        message.substr(0, index) + message.substr(index2 + 1);
-    J["parts"][1]["inline_data"]["mime_type"] = img.first;
-    J["parts"][1]["inline_data"]["data"] = img.second;
-    history[1][id].append(J);
+    if (cnt == 0) {
+        J["role"] = "user";
+        J["parts"][0]["text"] = message;
+        history[1][id].append(J);
+    }
+    else {
+        std::pair<std::string, std::string> img =
+            image2base64((std::string) "./resource/download/" + fn);
+        J["role"] = "user";
+        J["parts"][0]["text"] =
+            message.substr(0, index) + message.substr(index2 + 1);
+        J["parts"][1]["inline_data"]["mime_type"] = img.first;
+        J["parts"][1]["inline_data"]["data"] = img.second;
+        history[1][id].append(J);
+    }
     J.clear();
     J["contents"] = history[1][id];
     shrink_prompt_size(id, 1);
+    std::cout << J.toStyledString() << std::endl;
     Json::Value res = string_to_json(do_post(
         (std::string) "https://generativelanguage.googleapis.com/v1beta/models/"
                       "gemini-pro-vision:generateContent?key=" +
@@ -254,6 +258,7 @@ std::string gemini::generate_image(std::string message, int64_t id)
     else {
         str_ans =
             res["candidates"][0]["content"]["parts"][0]["text"].asString();
+        // str_ans = res.toStyledString();
         J.clear();
         J["role"] = "model";
         J["parts"][0]["text"] = str_ans;
@@ -283,7 +288,7 @@ void gemini::process(std::string message, const msg_meta &conf)
             cq_send(conf.p, "clear done.", conf);
             return;
         }
-        result = generate_image(message, id);
+        result = generate_text(message, id);
     }
     cq_send(conf.p, result, conf);
 }
