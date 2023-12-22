@@ -114,6 +114,8 @@ size_t MAX_PRO_REPLY = 2048;
 size_t MAX_PRO_VISION_LENGTH = 12288;
 size_t MAX_PRO_VISION_REPLY = 4096;
 
+const std::string help_msg = "Gemini by Google.\nUseage:\n.gem For text only\n.gemvi For image with text\n.gem.reset for reset histroy.";
+
 #define next_key(nowkey)                                                       \
     nowkey++;                                                                  \
     if (nowkey == keys.end())                                                  \
@@ -281,6 +283,9 @@ void gemini::process(std::string message, const msg_meta &conf)
             history[1][id].clear();
             cq_send(conf.p, "clear done.", conf);
             return;
+        }else if (message.find(".help") == 0) {
+            cq_send(conf.p, help_msg, conf);
+            return;
         }
         result = generate_image(message, id);
     }
@@ -288,6 +293,9 @@ void gemini::process(std::string message, const msg_meta &conf)
         if (message.find(".reset") == 0) {
             history[0][id].clear();
             cq_send(conf.p, "clear done.", conf);
+            return;
+        }else if (message.find(".help") == 0) {
+            cq_send(conf.p, help_msg, conf);
             return;
         }
         result = generate_text(message, id);
