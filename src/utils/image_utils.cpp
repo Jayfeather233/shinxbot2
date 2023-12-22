@@ -105,6 +105,8 @@ void addRandomNoise(const std::string &filePath){
 
 std::pair<std::string, std::string> image2base64(std::string filepath){
     Magick::Image img(filepath);
+    img.thumbnail(Magick::Geometry(2048, 2048));
+    
     Magick::Blob blob;
     img.write(&blob);
     std::string type = img.magick();
