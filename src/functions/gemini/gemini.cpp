@@ -227,9 +227,10 @@ std::string gemini::generate_image(std::string message, int64_t id)
     index = message.find("[CQ:image");
     Json::Value J;
     if (cnt == 0) {
-        J["role"] = "user";
-        J["parts"][0]["text"] = message;
-        history[1][id].append(J);
+        // J["role"] = "user";
+        // J["parts"][0]["text"] = message;
+        // history[1][id].append(J);
+        return "Picture please.";
     }
     else {
         std::pair<std::string, std::string> img =
@@ -239,11 +240,12 @@ std::string gemini::generate_image(std::string message, int64_t id)
             message.substr(0, index) + message.substr(index2 + 1);
         J["parts"][1]["inline_data"]["mime_type"] = img.first;
         J["parts"][1]["inline_data"]["data"] = img.second;
-        history[1][id].append(J);
+        // history[1][id].append(J);
     }
-    J.clear();
-    J["contents"] = history[1][id];
-    shrink_prompt_size(id, 1);
+    // J.clear();
+    // J["contents"] = history[1][id];
+    J["contents"] = J;
+    // shrink_prompt_size(id, 1);
     std::cout << J.toStyledString() << std::endl;
     Json::Value res = string_to_json(do_post(
         (std::string) "https://generativelanguage.googleapis.com/v1beta/models/"
@@ -262,7 +264,7 @@ std::string gemini::generate_image(std::string message, int64_t id)
         J.clear();
         J["role"] = "model";
         J["parts"][0]["text"] = str_ans;
-        history[1][id].append(J);
+        // history[1][id].append(J);
     }
     return str_ans;
 }
