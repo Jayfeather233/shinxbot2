@@ -171,18 +171,19 @@ void gemini::shrink_prompt_size(int64_t u, bool is_vision)
     size_t limits = is_vision ? (MAX_PRO_VISION_LENGTH - MAX_PRO_VISION_REPLY)
                               : (MAX_PRO_LENGTH - MAX_PRO_REPLY);
     Json::Value ign;
-    while (get_tokens(history[u]) > limits) {
-        history[u].removeIndex(0, &ign);
+    while (get_tokens(history[is_vision][u]) > limits) {
+        history[is_vision][u].removeIndex(0, &ign);
     }
 }
 
-std::string gemini::generate_text(std::string message, int64_t id) {
+std::string gemini::generate_text(std::string message, int64_t id)
+{
     Json::Value J;
     J["role"] = "user";
     J["parts"][0]["text"] = message;
-    history[id].append(J);
+    history[0][id].append(J);
     J.clear();
-    J["contents"] = history[id];
+    J["contents"] = history[0][id];
     shrink_prompt_size(id, 0);
     Json::Value res = string_to_json(do_post(
         (std::string) "https://generativelanguage.googleapis.com/v1beta/models/"
@@ -191,15 +192,17 @@ std::string gemini::generate_text(std::string message, int64_t id) {
         J, {}, true));
     next_key(nowkey);
     std::string str_ans;
-    if(res.isMember("error")){
+    if (res.isMember("error")) {
         str_ans = res.toStyledString();
     }
-    else{
-        str_ans =res["candidates"][0]["content"]["parts"][0]["text"].asString();
+    else {
+        str_ans =
+            res["candidates"][0]["content"]["parts"][0]["text"].asString();
+        J.clear();
+        J["role"] = "model";
+        J["parts"][0]["text"] = str_ans;
+        history[0][id].append(J);
     }
-    J.clear();
-    J["role"] = "model";
-    J["parts"][0]["text"] = str_ans;
     return str_ans;
 }
 std::string gemini::generate_image(std::string message, int64_t id)
@@ -225,7 +228,7 @@ std::string gemini::generate_image(std::string message, int64_t id)
     if (cnt == 0) {
         return "Bot Inner Error.";
     }
-    history[id].clear();
+    history[1][id].clear();
     std::pair<std::string, std::string> img =
         image2base64((std::string) "./resource/download/" + fn);
     Json::Value J;
@@ -234,9 +237,9 @@ std::string gemini::generate_image(std::string message, int64_t id)
         message.substr(0, index) + message.substr(index2 + 1);
     J["parts"][1]["inline_data"]["mime_type"] = img.first;
     J["parts"][1]["inline_data"]["data"] = img.second;
-    history[id].append(J);
+    history[1][id].append(J);
     J.clear();
-    J["content"] = history[id];
+    J["contents"] = history[1][id];
     shrink_prompt_size(id, 1);
     Json::Value res = string_to_json(do_post(
         (std::string) "https://generativelanguage.googleapis.com/v1beta/models/"
@@ -244,10 +247,18 @@ std::string gemini::generate_image(std::string message, int64_t id)
             *nowkey,
         J, {}, true));
     next_key(nowkey);
-    std::string str_ans =res["candidates"][0]["content"]["parts"][0]["text"].asString();
-    J.clear();
-    J["role"] = "model";
-    J["parts"][0]["text"] = str_ans;
+    std::string str_ans;
+    if (res.isMember("error")) {
+        str_ans = res.toStyledString();
+    }
+    else {
+        str_ans =
+            res["candidates"][0]["content"]["parts"][0]["text"].asString();
+        J.clear();
+        J["role"] = "model";
+        J["parts"][0]["text"] = str_ans;
+        history[1][id].append(J);
+    }
     return str_ans;
 }
 
@@ -257,11 +268,22 @@ void gemini::process(std::string message, const msg_meta &conf)
                                               : ((conf.user_id << 1) | 1);
     message = message.substr(4);
     std::string result;
-    if (message.find("[CQ:image") != message.npos) {
+    if (message.find("vi") == 0) {
+        message = message.substr(2);
+        if (message.find(".reset") == 0) {
+            history[1][id].clear();
+            cq_send(conf.p, "clear done.", conf);
+            return;
+        }
         result = generate_image(message, id);
     }
     else {
-        result = generate_text(message, id);
+        if (message.find(".reset") == 0) {
+            history[0][id].clear();
+            cq_send(conf.p, "clear done.", conf);
+            return;
+        }
+        result = generate_image(message, id);
     }
     cq_send(conf.p, result, conf);
 }
@@ -269,4 +291,8 @@ bool gemini::check(std::string message, const msg_meta &conf)
 {
     return message.find(".gem") == 0;
 }
-std::string gemini::help() { return "gemini: MultiModal AI, useage: .gem"; }
+std::string gemini::help()
+{
+    return "gemini: MultiModal AI,\n\tuseage: .gem for text only,\n\t.gemvi "
+           "for image with text";
+}

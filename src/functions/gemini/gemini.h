@@ -12,7 +12,7 @@ private:
     std::vector<std::string> modes;
     std::map<std::string, Json::Value> mode_prompt;
 
-    std::map<int64_t, Json::Value> history;
+    std::map<int64_t, Json::Value> history[2];
 public:
     gemini();
     void shrink_prompt_size(int64_t id, bool is_vision);
