@@ -9,43 +9,43 @@
 void download(const std::string &httpAddress, const std::string &filePath,
               const std::string &fileName, const bool proxy)
 {
-    // try {
-    //     std::string data = do_get(httpAddress, {}, proxy);
-    //     std::fstream ofile;
-    //     try {
-    //         ofile = openfile(filePath + "/" + fileName,
-    //                          std::ios::out | std::ios::binary);
-    //     }
-    //     catch (...) {
-    //     }
-    //     ofile << data;
-    //     ofile.flush();
-    //     ofile.close();
-    //     // writefile(filePath + "/" + fileName, data);
-    //     // std::ofstream out(, std::ios::out | std::ios::binary);
-    //     // out.write(data.c_str(), data.size());
-    //     // out.close();
-    // }
-    // catch (const std::exception &e) {
-    //     setlog(LOG::ERROR, "At download from" + httpAddress + " to " +
-    //                            filePath + "." + fileName +
-    //                            ", Exception occurred: " + e.what());
-    // }
-    std::filesystem::path p(filePath);
-    if (!std::filesystem::exists(p)) {
-        std::filesystem::create_directories(p);
+    try {
+        std::string data = do_get(httpAddress, {}, proxy);
+        std::fstream ofile;
+        try {
+            ofile = openfile(filePath + "/" + fileName,
+                             std::ios::out | std::ios::binary);
+        }
+        catch (...) {
+        }
+        ofile << data;
+        ofile.flush();
+        ofile.close();
+        // writefile(filePath + "/" + fileName, data);
+        // std::ofstream out(, std::ios::out | std::ios::binary);
+        // out.write(data.c_str(), data.size());
+        // out.close();
     }
-    p /= fileName;
-    // std::cout<<p.string()<<std::endl;
-    std::string command = "curl -o " + p.string() + " ";
-    if(!proxy) command += "--noproxy '*' ";
-    command += httpAddress + " > /dev/null 2>&1";
-    int ret = system(command.c_str());
-    if(ret) {
-        std::ostringstream oss;
-        oss << "download " << httpAddress << " to " << filePath << "/" << fileName << " Proxy=" << proxy << "failed.";
-        set_global_log(LOG::ERROR, oss.str());
+    catch (const std::exception &e) {
+        set_global_log(LOG::ERROR, "At download from" + httpAddress + " to " +
+                               filePath + "." + fileName +
+                               ", Exception occurred: " + e.what());
     }
+    // std::filesystem::path p(filePath);
+    // if (!std::filesystem::exists(p)) {
+    //     std::filesystem::create_directories(p);
+    // }
+    // p /= fileName;
+    // // std::cout<<p.string()<<std::endl;
+    // std::string command = "curl -o " + p.string() + " ";
+    // if(!proxy) command += "--noproxy '*' ";
+    // command += httpAddress + " > /dev/null 2>&1";
+    // int ret = system(command.c_str());
+    // if(ret) {
+    //     std::ostringstream oss;
+    //     oss << "download " << httpAddress << " to " << filePath << "/" << fileName << " Proxy=" << proxy << "failed.";
+    //     set_global_log(LOG::ERROR, oss.str());
+    // }
 }
 
 void addRandomNoiseSingle(Magick::Image &img) {
@@ -103,8 +103,8 @@ void addRandomNoise(const std::string &filePath){
     }
 }
 
-std::pair<std::string, std::string> image2base64(std::filesystem::path filepath){
-    Magick::Image img(filepath.string());
+std::pair<std::string, std::string> image2base64(std::string filepath){
+    Magick::Image img(filepath);
     Magick::Blob blob;
     img.write(&blob);
     std::string type = img.magick();

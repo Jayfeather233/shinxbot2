@@ -265,4 +265,4 @@ std::string to_human_string(const int64_t u);
 
 void set_global_log(LOG type, std::string message);
 
-std::pair<std::string, std::string> image2base64(std::filesystem::path filepath);
+std::pair<std::string, std::string> image2base64(std::string filepath);
