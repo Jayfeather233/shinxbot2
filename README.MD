@@ -26,7 +26,9 @@
 
 - openai的 `gpt-3.5-turbo` API支持
 
-- google的 `gemini-pro[-vision]` API支持
+- google的 `gemini-pro[-vision]` API支持，[url](https://ai.google.dev/docs)
+
+- StableDiffusion的 `SDXL-Turbo` API支持，[url](https://sdxlturbo.ai/)
 
 - 群友聊天截图保存功能（美图）
 

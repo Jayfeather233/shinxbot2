@@ -18,3 +18,4 @@
 #include "./original/original.h"
 #include "./bilidecode/bilidecode.h"
 #include "./gemini/gemini.h"
+#include "./sdxl/sdxl.h"

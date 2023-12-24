@@ -254,6 +254,7 @@ void mybot::run()
     functions.push_back(new original());
     functions.push_back(new bili_decode());
     functions.push_back(new gemini());
+    functions.push_back(new sdxl());
 
     events.push_back(new talkative());
     events.push_back(new m_change());
