@@ -9,7 +9,7 @@ std::string help_msg =
 
 void sdxl::process(std::string message, const msg_meta &conf)
 {
-    if(message.find(".sdxl.help")){
+    if(message.find(".sdxl.help") == 0){
         cq_send(conf.p, help_msg, conf);
         return;
     }
