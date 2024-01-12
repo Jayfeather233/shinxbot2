@@ -14,7 +14,7 @@ static size_t write_callback(char *ptr, size_t size, size_t nmemb,
     return num_bytes;
 }
 
-std::mutex http_lock;
+// std::mutex http_lock;
 
 std::string do_post(const std::string &httpaddr,
                     const Json::Value &json_message,

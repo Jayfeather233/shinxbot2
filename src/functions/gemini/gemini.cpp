@@ -210,7 +210,7 @@ std::string gemini::generate_text(std::string message, int64_t id)
 std::string gemini::generate_image(std::string message, int64_t id)
 {
     int cnt = 0;
-    size_t index = -1, index2;
+    size_t index = -1, index2 = -1;
     std::string fn = std::to_string(get_random());
     while (true) {
         index = message.find(",url=", index + 1);

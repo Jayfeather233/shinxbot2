@@ -11,11 +11,11 @@ std::string get_stranger_name(const bot *p, int64_t user_id)
 {
     auto it = stranger_name.find(p->get_botqq());
     std::map<int64_t, std::string>::iterator it2;
-    if(it == stranger_name.end()){
+    if (it == stranger_name.end()) {
         goto no_cache2;
     }
     it2 = it->second.find(user_id);
-    if(it2 == it->second.end()){
+    if (it2 == it->second.end()) {
         goto no_cache2;
     }
 no_cache2:

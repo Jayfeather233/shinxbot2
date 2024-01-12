@@ -240,9 +240,8 @@ void mybot::run()
     functions.push_back(new auto114());
     functions.push_back(new hhsh());
     functions.push_back(new fudu());
-    functions.push_back(new forward());
+    functions.push_back(new forward_msg_gen());
     functions.push_back(new r_color());
-    functions.push_back(new e621());
     functions.push_back(new catmain());
     functions.push_back(new ocr());
     functions.push_back(new httpcats());

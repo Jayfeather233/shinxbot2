@@ -27,12 +27,6 @@ std::string do_post(const std::string &httpaddr,
 std::string do_get(const std::string &httpaddr,
                    const std::map<std::string, std::string> &headers = {},
                    const bool proxy_flg = false);
-/**
- * divide a http address.
- * Example: url = https://www.abc.com/hello/world
- * return = pair <https://www.abc.com, hello/world>
- */
-std::pair<std::string, std::string> divide_http_addr(const std::string &url);
 
 /**
  * get user's name (group name if group_id != -1)

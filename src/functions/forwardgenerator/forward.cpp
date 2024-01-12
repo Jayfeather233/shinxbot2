@@ -3,8 +3,9 @@
 #include <iostream>
 #include <jsoncpp/json/json.h>
 
-Json::Value forward::get_data(bot *p, std::wstring s1, std::wistringstream &wiss,
-                              int64_t group_id)
+Json::Value forward_msg_gen::get_data(bot *p, std::wstring s1,
+                                      std::wistringstream &wiss,
+                                      int64_t group_id)
 {
     Json::Value res;
     std::wstring s2;
@@ -44,17 +45,18 @@ Json::Value forward::get_data(bot *p, std::wstring s1, std::wistringstream &wiss
             size_t po1 = pos + 10;
             while (s2[pos] != L']')
                 pos++;
-            s2.insert(
-                pos, L",name=" +
-                         string_to_wstring(get_username(p, 
-                             get_userid(s2.substr(po1, pos - po1)), group_id)));
+            s2.insert(pos,
+                      L",name=" + string_to_wstring(get_username(
+                                      p, get_userid(s2.substr(po1, pos - po1)),
+                                      group_id)));
         }
         res["content"] = wstring_to_string(s2);
     }
     return res;
 }
 
-Json::Value forward::get_content(bot *p, std::wistringstream &wiss, int64_t group_id)
+Json::Value forward_msg_gen::get_content(bot *p, std::wistringstream &wiss,
+                                         int64_t group_id)
 {
     std::wstring s1;
     Json::Value Ja;
@@ -65,13 +67,13 @@ Json::Value forward::get_content(bot *p, std::wistringstream &wiss, int64_t grou
         }
         Json::Value J;
         J["type"] = "node";
-        J["data"] = get_data(p,s1, wiss, group_id);
+        J["data"] = get_data(p, s1, wiss, group_id);
         Ja.append(J);
     }
     return Ja;
 }
 
-void forward::process(std::string message, const msg_meta &conf)
+void forward_msg_gen::process(std::string message, const msg_meta &conf)
 {
     Json::Value J;
     J["message_id"] = conf.message_id;
@@ -100,21 +102,22 @@ void forward::process(std::string message, const msg_meta &conf)
     if (conf.message_type == "group") {
         J["group_id"] = conf.group_id;
         conf.p->cq_send("send_group_forward_msg", J);
-        conf.p->setlog(LOG::INFO, "forward at group " +
+        conf.p->setlog(LOG::INFO, "forward_msg_gen at group " +
                                       std::to_string(conf.group_id) + " by " +
                                       std::to_string(conf.user_id));
     }
     else {
         J["user_id"] = conf.user_id;
         conf.p->cq_send("send_private_forward_msg", J);
-        conf.p->setlog(LOG::INFO, "forward by " + std::to_string(conf.user_id));
+        conf.p->setlog(LOG::INFO,
+                       "forward_msg_gen by " + std::to_string(conf.user_id));
     }
 }
-bool forward::check(std::string message, const msg_meta &conf)
+bool forward_msg_gen::check(std::string message, const msg_meta &conf)
 {
     return string_to_wstring(message).find(L"转发") == 0;
 }
-std::string forward::help()
+std::string forward_msg_gen::help()
 {
     return "自动生成转发信息： 详细资料请输入 转发帮助";
 }

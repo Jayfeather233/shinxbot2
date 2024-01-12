@@ -1,7 +1,7 @@
 #include "processable.h"
 #include <jsoncpp/json/json.h>
 
-class forward : public processable {
+class forward_msg_gen : public processable {
 private:
     Json::Value get_data(bot *p, std::wstring s1, std::wistringstream &wiss,
                          int64_t group_id);
