@@ -38,7 +38,7 @@ void img_fun::process(std::string message, const msg_meta &conf)
                       "&s=160";
             filename = "qq" + std::to_string(userid);
         }
-        else if (wmessage.find(L"[CQ:img") != wmessage.npos) {
+        else if (wmessage.find(L"[CQ:image") != wmessage.npos) {
             size_t index = wmessage.find(L",file=");
             index += 6;
             for (int i = index; i < wmessage.length(); i++) {
