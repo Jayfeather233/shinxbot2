@@ -55,7 +55,7 @@ void download(const std::string &httpAddress, const std::string &filePath,
     }
 }
 
-void addRandomNoiseSingle(Magick::Image &img)
+void addRandomNoiseSingle(Magick::Image &img, int strength = 4)
 {
     size_t width = img.columns();
     size_t height = img.rows();
@@ -72,11 +72,11 @@ void addRandomNoiseSingle(Magick::Image &img)
         for (size_t x = 0; x < width; ++x) {
             Magick::ColorRGB pixel = img.pixelColor(x, y);
 
-            const int var = 8;
+            const int var = strength << 1;
 
-            double randomValuer = (get_random(var) - (var >> 1)) * 1.0 / 256;
-            double randomValueg = (get_random(var) - (var >> 1)) * 1.0 / 256;
-            double randomValueb = (get_random(var) - (var >> 1)) * 1.0 / 256;
+            double randomValuer = (get_random(var) - (var >> 1)) / 256.0;
+            double randomValueg = (get_random(var) - (var >> 1)) / 256.0;
+            double randomValueb = (get_random(var) - (var >> 1)) / 256.0;
             pixel.red(std::max(std::min(pixel.red() + randomValuer, 1.0), 0.0));
             pixel.green(
                 std::max(std::min(pixel.green() + randomValueg, 1.0), 0.0));
@@ -144,4 +144,81 @@ std::pair<std::string, std::string> image2base64(std::string filepath)
         type = "image/error";
     }
     return std::make_pair(type, blob.base64());
+}
+
+// TODO: mirror [axis]
+//      Kaleido_scope WanHuaTong
+//      rotate
+
+void copyImageTo(Magick::Image &dst, const Magick::Image src, size_t x1,
+                 size_t x2, size_t y1, size_t y2, size_t x3, size_t y3)
+{
+    Magick::Geometry gem = Magick::Geometry(y2 - y1, x2 - x1, y1, x1);
+    Magick::Image subimg = src;
+    subimg.crop(gem);
+    dst.composite(subimg, y3, x3,
+                  MagickCore::CompositeOperator::CopyCompositeOp);
+}
+
+void mirrorImage(Magick::Image &img, char axis, bool direction)
+{
+    Magick::Image new_img = img;
+    if (axis == 0) {
+        new_img.flip();
+        if (direction == 0) {
+            copyImageTo(img, new_img, new_img.rows() >> 1, new_img.rows(), 0,
+                        new_img.columns(), img.rows() >> 1, 0);
+        }
+        else if (direction == 1) {
+            copyImageTo(img, new_img, 0, new_img.rows() >> 1, 0,
+                        new_img.columns(), 0, 0);
+        }
+        else {
+            goto mirrorImageError;
+        }
+    }
+    else if (axis == 1) {
+        new_img.flop();
+        if (direction == 0) {
+            copyImageTo(img, new_img, 0, new_img.rows(), new_img.columns() >> 1,
+                        new_img.columns(), 0, img.columns() >> 1);
+        }
+        else if (direction == 1) {
+            copyImageTo(img, new_img, 0, new_img.rows(), 0,
+                        new_img.columns() >> 1, 0, 0);
+        }
+        else {
+            goto mirrorImageError;
+        }
+    }
+    else {
+        goto mirrorImageError;
+    }
+    return;
+mirrorImageError:
+    std::ostringstream oss;
+    oss << "Invalid parameter in " << __FUNCTION__ << ", axis= " << axis
+        << ", direction= " << direction;
+    set_global_log(LOG::ERROR, oss.str());
+    throw "Invalid parameter, see more in log.";
+}
+
+void mirrorImage(std::vector<Magick::Image> &img, char axis, bool direction)
+{
+    for (Magick::Image &im : img) {
+        mirrorImage(im, axis, direction);
+    }
+}
+
+std::vector<Magick::Image> rotateImage(const Magick::Image img, int fps,
+                                       bool clockwise)
+{
+    Magick::Image dimg = img;
+    std::vector<Magick::Image> ret;
+    double deg_per_frame = 360.0 / fps * (clockwise ? 1 : -1);
+    for (int i = 0; i < fps; i++) {
+        ret.push_back(dimg);
+        dimg.rotate(deg_per_frame); // TODO: FIXME: do not change iamge size
+    }
+    return ret;
 }

@@ -18,3 +18,4 @@
 #include "./bilidecode/bilidecode.h"
 #include "./gemini/gemini.h"
 #include "./sdxl/sdxl.h"
+#include "./img_fun/img_fun.h"
