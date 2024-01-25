@@ -38,7 +38,7 @@ void img_fun::process(std::string message, const msg_meta &conf)
                       "&s=160";
             filename = "qq" + std::to_string(userid);
         }
-        else if (wmessage.find(L"[CQ:img")) {
+        else if (wmessage.find(L"[CQ:img") == 0) {
             size_t index = wmessage.find(L",file=");
             index += 6;
             for (int i = index; i < wmessage.length(); i++) {
@@ -59,7 +59,7 @@ void img_fun::process(std::string message, const msg_meta &conf)
             }
         }
         else {
-            cq_send(conf.p, "请将图片一并发出。", conf);
+            conf.p->cq_send("请将图片一并发出。", conf);
             return;
         }
         download(fileurl, "./resource/download/", filename);
@@ -68,7 +68,7 @@ void img_fun::process(std::string message, const msg_meta &conf)
         if(img.animationDelay()){
             std::vector<Magick::Image> img_list;
             Magick::readImages(&img_list, "./resource/download/" + filename);
-            mirrorImage(img, axis, order);
+            mirrorImage(img_list, axis, order);
             Magick::writeImages(img_list.begin(), img_list.end(), "./resource/download/" + filename);
         } else {
             mirrorImage(img, axis, order);

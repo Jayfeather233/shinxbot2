@@ -290,7 +290,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
 
     // history[id] = J;
     // J = Json::Value();
-    J["model"] = "gpt-3.5-turbo-0301";
+    J["model"] = "gpt-3.5-turbo-1106";
     Json::Value K = mode_prompt[pre_default[id]];
     auto it = history.find(id);
     if (it != history.end()) {
