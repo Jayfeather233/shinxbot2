@@ -4,8 +4,14 @@
 
 #include <iostream>
 
+std::string imgfun_help_msg = "图片处理。\n对称 axis=[0|1] order=[0|1] @或图片。\n\t axis， order为可选，axis指定x/y轴，order指定翻转哪边";
+
 void img_fun::process(std::string message, const msg_meta &conf)
 {
+    if(message == "img_fun.help"){
+        conf.p->cq_send(imgfun_help_msg, conf);
+        return;
+    }
     // TODO: mirror [axis]
     //      Kaleido_scope WanHuaTong
     //      rotate
@@ -75,6 +81,8 @@ void img_fun::process(std::string message, const msg_meta &conf)
 }
 bool img_fun::check(std::string message, const msg_meta &conf)
 {
-    return (string_to_wstring(message).find(L"对称") == 0);
+    return (string_to_wstring(message).find(L"对称") == 0) || message == "img_fun.help";
 }
-std::string img_fun::help() {}
+std::string img_fun::help() {
+    return "图片处理。 img_fun.help 获得更多帮助。";
+}
