@@ -263,3 +263,9 @@ void kaleido(Magick::Image &img){
     }
     // I gave up.
 }
+void kaleido(std::vector<Magick::Image> &img)
+{
+    for (Magick::Image &im : img) {
+        kaleido(im);
+    }
+}

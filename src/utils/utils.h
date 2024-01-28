@@ -288,3 +288,6 @@ void mirrorImage(std::vector<Magick::Image> &img, char axis = 1,
 /// @param clockwise if rotate in clockwise
 /// @return a sequence of gif image
 std::vector<Magick::Image> rotateImage(const Magick::Image img, int fps, bool clockwise = 1);
+
+void kaleido(std::vector<Magick::Image> &img);
+void kaleido(Magick::Image &img);
