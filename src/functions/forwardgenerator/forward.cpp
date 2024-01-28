@@ -115,7 +115,7 @@ void forward_msg_gen::process(std::string message, const msg_meta &conf)
 }
 bool forward_msg_gen::check(std::string message, const msg_meta &conf)
 {
-    return string_to_wstring(message).find(L"转发") == 0;
+    return string_to_wstring(message).find(L"转发 ") == 0;
 }
 std::string forward_msg_gen::help()
 {

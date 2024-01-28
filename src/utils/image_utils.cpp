@@ -74,9 +74,9 @@ void addRandomNoiseSingle(Magick::Image &img, int strength = 4)
 
             const int var = strength << 1;
 
-            double randomValuer = (get_random(var) - (var >> 1)) / 256.0;
-            double randomValueg = (get_random(var) - (var >> 1)) / 256.0;
-            double randomValueb = (get_random(var) - (var >> 1)) / 256.0;
+            double randomValuer = (get_random(var) - (var >> 1)) / 255.0;
+            double randomValueg = (get_random(var) - (var >> 1)) / 255.0;
+            double randomValueb = (get_random(var) - (var >> 1)) / 255.0;
             pixel.red(std::max(std::min(pixel.red() + randomValuer, 1.0), 0.0));
             pixel.green(
                 std::max(std::min(pixel.green() + randomValueg, 1.0), 0.0));
@@ -214,11 +214,52 @@ std::vector<Magick::Image> rotateImage(const Magick::Image img, int fps,
                                        bool clockwise)
 {
     Magick::Image dimg = img;
+    double ratio = dimg.columns() * dimg.rows() / 1000000;
+    if (ratio > 1) {
+        dimg.resize(
+            Magick::Geometry(dimg.columns() / ratio, dimg.rows() / ratio));
+    }
+
+    size_t midx = dimg.columns() >> 1; // width
+    size_t midy = dimg.rows() >> 1;
+    size_t ll = std::min(midx, midy);
+    dimg.crop(Magick::Geometry(ll << 1, ll << 1, midx - ll, midy - ll));
+
     std::vector<Magick::Image> ret;
     double deg_per_frame = 360.0 / fps * (clockwise ? 1 : -1);
+    dimg.animationDelay(100 / fps);
+    dimg.backgroundColor(Magick::Color(3, 5, 7, 0));
     for (int i = 0; i < fps; i++) {
-        ret.push_back(dimg);
-        dimg.rotate(deg_per_frame); // TODO: FIXME: do not change iamge size
+        Magick::Image ximg = dimg;
+        if (i)
+            ximg.rotate(deg_per_frame * i);
+        size_t xmidx = ximg.columns() >> 1;
+        size_t xmidy = ximg.rows() >> 1;
+        ximg.crop(Magick::Geometry(ll << 1, ll << 1, xmidx - ll, xmidy - ll));
+        
+
+        for (size_t i = 0; i < ximg.columns(); ++i) {
+            for (size_t j = 0; j < ximg.rows(); ++j) {
+                if (std::abs((long long)(i - ll)) + std::abs((long long)(j - ll)) >
+                    ll) {
+                    if ((i - ll) * (i - ll) + (j - ll) * (j - ll) > ll * ll) {
+                        ximg.pixelColor(i, j, Magick::Color(0, 0, 0, 0));
+                    }
+                }
+            }
+        }
+        // TODO: FIXME: BUGS HERE
+        // I gave up.
+        ret.push_back(ximg);
     }
     return ret;
+}
+
+void kaleido(Magick::Image &img){
+    double ratio = img.columns() * img.rows() / 1000000;
+    if (ratio > 1) {
+        img.resize(
+            Magick::Geometry(img.columns() / ratio, img.rows() / ratio));
+    }
+    // I gave up.
 }

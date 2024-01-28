@@ -41,7 +41,7 @@ void r_color::process(std::string message, const msg_meta &conf)
     }
     else {
         color =
-            get_random(256) * 65536 + get_random(256) * 256 + get_random(256);
+            get_random(255) * 65536 + get_random(255) * 256 + get_random(255);
     }
     color = color % 16777216;
 
@@ -50,28 +50,27 @@ void r_color::process(std::string message, const msg_meta &conf)
     try {
         const int img_size = 256;
         // Create a new image with specified size and color
-        Magick::ColorRGB colorrgb((color / 65536)/256.0,
-        (color / 256 % 256)/256.0,
-        (color % 256)/256.0);
+        double dr, dg, db;
+        Magick::ColorRGB colorrgb(dr = (color / 65536) / 255.0,
+                                  dg = (color / 256 % 256) / 255.0,
+                                  db = (color % 256) / 255.0);
         Magick::Image image(Magick::Geometry(img_size, img_size), colorrgb);
 
         // Set the font and font size
         image.fontFamily("sans-serif");
         image.fontPointsize(32);
 
-        int cnt = 0;
-        for (int i = 0; i < 25; i++) {
-            cnt += (color & (1 << i)) ? 1 : 0;
-        }
         // Set the text color
-        image.fillColor(cnt >= 12 ? "black" : "white");
+        image.fillColor(dr+dg+db>=1.5 ? "black" : "white");
 
         // Annotate (write) the text on the image
-        image.annotate(name, Magick::Geometry(img_size, img_size, 0, 0), Magick::CenterGravity);
+        image.annotate(name, Magick::Geometry(img_size, img_size, 0, 0),
+                       Magick::CenterGravity);
 
         // Save the image
         image.write((std::string) "./resource/r_color/" + name + ".png");
-    } catch (std::exception &error) {
+    }
+    catch (std::exception &error) {
         set_global_log(LOG::ERROR, error.what());
     }
 

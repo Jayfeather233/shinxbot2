@@ -84,6 +84,6 @@ void auto114::process(std::string message, const msg_meta &conf)
 }
 bool auto114::check(std::string message, const msg_meta &conf)
 {
-    return message.find("homo") == 0;
+    return message.find("homo ") == 0;
 }
 std::string auto114::help() { return "恶臭数字论证器： homo+数字"; }
