@@ -41,7 +41,7 @@ void r_color::process(std::string message, const msg_meta &conf)
     }
     else {
         color =
-            get_random(255) * 65536 + get_random(255) * 256 + get_random(255);
+            get_random(256) * 65536 + get_random(256) * 256 + get_random(256);
     }
     color = color % 16777216;
 

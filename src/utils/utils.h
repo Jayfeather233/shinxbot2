@@ -116,7 +116,7 @@ int64_t get_userid(const std::wstring &s);
 int64_t get_userid(const std::string &s);
 
 /**
- * get a random number [0, maxi]
+ * get a random number [0, maxi)
  */
 int get_random(int maxi = 65536);
 

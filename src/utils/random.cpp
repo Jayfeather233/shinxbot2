@@ -12,6 +12,6 @@ engine generator = engine(seed);
 int get_random(int maxi)
 {
     std::uniform_int_distribution<u32> uni_dis =
-        std::uniform_int_distribution<u32>(0, maxi);
+        std::uniform_int_distribution<u32>(0, maxi-1);
     return uni_dis(generator);
 }
