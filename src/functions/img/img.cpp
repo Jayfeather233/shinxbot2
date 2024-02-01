@@ -139,8 +139,7 @@ std::string img::commands(std::string message, const msg_meta &conf)
                 }
             }
             else {
-                auto it = belongs.find(conf.group_id);
-                if (it == belongs.end()) {
+                if (conf.group_id == -1 || belongs.find(conf.group_id) == belongs.end()) {
                     for (auto it2 : default_img) {
                         if (images[it2] != 0)
                             oss << it2 << '(' << images[it2] << ")\n";
