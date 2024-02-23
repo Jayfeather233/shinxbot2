@@ -157,7 +157,7 @@ void copyImageTo(Magick::Image &dst, const Magick::Image src, size_t x1,
     Magick::Image subimg = src;
     subimg.crop(gem);
     dst.composite(subimg, y3, x3,
-                  MagickCore::CompositeOperator::CopyCompositeOp);
+                  MagickCore::CompositeOperator::OverCompositeOp);
 }
 
 void mirrorImage(Magick::Image &img, char axis, bool direction)
@@ -210,20 +210,66 @@ void mirrorImage(std::vector<Magick::Image> &img, char axis, bool direction)
     }
 }
 
+using namespace Magick;
+
+void crop_to_circle(Magick::Image &img)
+{
+    Magick::Geometry geo = Magick::Geometry(img.columns(), img.rows());
+    size_t len = std::min(geo.width(), geo.height());
+    geo.xOff((geo.width() - len) >> 1);
+    geo.yOff((geo.height() - len) >> 1);
+    geo.height(len);
+    geo.width(len);
+    img.crop(geo);
+    img.page(Magick::Geometry(0, 0, 0, 0));
+    geo = Magick::Geometry(img.columns(), img.rows());
+
+    size_t half_len = len >> 1;
+
+    for (size_t y = 0; y < len; ++y) {
+        for (size_t x = 0; x < len; ++x) {
+            size_t xx = ((x > half_len) ? (x - half_len) : (half_len - x));
+            size_t yy = ((y > half_len) ? (y - half_len) : (half_len - y));
+            if (xx + yy > 1.42 * half_len ||
+                xx * xx + yy * yy > half_len * half_len) {
+                img.pixelColor(x, y, Magick::Color(0, 0, 0, 0));
+            }
+        }
+    }
+}
+
+void constsize_rotate(Magick::Image &img, double deg)
+{
+    size_t oriWidth = img.columns(), oriHeight = img.rows();
+    // img.backgroundColor(Magick::Color(5, 0, 0, 0));
+    img.rotate(deg);
+    img.page(Magick::Geometry(0, 0, 0, 0));
+    size_t newWidth = img.columns(), newHeight = img.rows();
+
+    Magick::Geometry geo =
+        Magick::Geometry(oriWidth, oriHeight, (newWidth - oriWidth) >> 1,
+                         (newHeight - oriHeight) >> 1);
+
+    img.crop(geo);
+    img.page(Magick::Geometry(0, 0, 0, 0));
+    // img.write("test_cir_"+std::to_string(deg)+".png");
+}
+
 std::vector<Magick::Image> rotateImage(const Magick::Image img, int fps,
                                        bool clockwise)
 {
     Magick::Image dimg = img;
+    dimg.alphaChannel(MagickCore::AlphaChannelOption::SetAlphaChannel);
+
     double ratio = dimg.columns() * dimg.rows() / 1000000;
     if (ratio > 1) {
         dimg.resize(
             Magick::Geometry(dimg.columns() / ratio, dimg.rows() / ratio));
+        dimg.page(Magick::Geometry(0, 0, 0, 0));
     }
 
-    size_t midx = dimg.columns() >> 1; // width
-    size_t midy = dimg.rows() >> 1;
-    size_t ll = std::min(midx, midy);
-    dimg.crop(Magick::Geometry(ll << 1, ll << 1, midx - ll, midy - ll));
+    // crop_to_circle(dimg);
+    // dimg.write("./src/test_cir.png");
 
     std::vector<Magick::Image> ret;
     double deg_per_frame = 360.0 / fps * (clockwise ? 1 : -1);
@@ -231,41 +277,70 @@ std::vector<Magick::Image> rotateImage(const Magick::Image img, int fps,
     dimg.backgroundColor(Magick::Color(3, 5, 7, 0));
     for (int i = 0; i < fps; i++) {
         Magick::Image ximg = dimg;
-        if (i)
-            ximg.rotate(deg_per_frame * i);
-        size_t xmidx = ximg.columns() >> 1;
-        size_t xmidy = ximg.rows() >> 1;
-        ximg.crop(Magick::Geometry(ll << 1, ll << 1, xmidx - ll, xmidy - ll));
-        
-
-        for (size_t i = 0; i < ximg.columns(); ++i) {
-            for (size_t j = 0; j < ximg.rows(); ++j) {
-                if (std::abs((long long)(i - ll)) + std::abs((long long)(j - ll)) >
-                    ll) {
-                    if ((i - ll) * (i - ll) + (j - ll) * (j - ll) > ll * ll) {
-                        ximg.pixelColor(i, j, Magick::Color(0, 0, 0, 0));
-                    }
-                }
-            }
-        }
-        // TODO: FIXME: BUGS HERE
-        // I gave up.
+        ximg.animationDelay(100 / fps);
+        constsize_rotate(ximg, deg_per_frame * i);
+        crop_to_circle(ximg);
         ret.push_back(ximg);
     }
     return ret;
 }
 
-void kaleido(Magick::Image &img){
+void kaleido(Magick::Image &img, int layers, int nums_per_layer)
+{
+    img.alphaChannel(MagickCore::AlphaChannelOption::SetAlphaChannel);
     double ratio = img.columns() * img.rows() / 1000000;
     if (ratio > 1) {
-        img.resize(
-            Magick::Geometry(img.columns() / ratio, img.rows() / ratio));
+        img.resize(Magick::Geometry(img.columns() / ratio, img.rows() / ratio));
+        img.page(Magick::Geometry(0, 0, 0, 0));
     }
-    // I gave up.
+    Magick::Geometry img_size = Magick::Geometry(img.columns(), img.rows());
+    size_t maxl = std::max(img_size.height(), img_size.width());
+    img_size.height(maxl);
+    img_size.width(maxl);
+
+    Magick::Image ximg = Magick::Image(img_size, Magick::Color(0, 0, 0, 0)); // Resize to Square
+    copyImageTo(ximg, img, 0, img.rows(), 0, img.columns(), (ximg.rows()-img.rows())>>1, (ximg.columns()-img.columns())>>1);
+    img = ximg;
+    img.backgroundColor(Magick::Color(0, 0, 0, 0));
+
+    img_size = Magick::Geometry(img.columns(), img.rows());
+
+    double deg_per_item = -360.0 / nums_per_layer;
+    double rad_per_item_2 = M_PI / nums_per_layer;
+    const double const1 = tan(rad_per_item_2);
+    
+    size_t ret_len = (img.columns() / 2.0 / const1 + img.columns()*1.1)*2;
+
+    Magick::Image ret_img(Magick::Geometry(ret_len, ret_len),
+                          Magick::Color("#FFFFFF"));
+
+    img.rotate(90);
+    for (int i = 0; i < layers; ++i) {
+        for (int j = 0; j < nums_per_layer; ++j) {
+            Magick::Image using_img = img;
+            using_img.rotate(deg_per_item * j);
+            using_img.page(Magick::Geometry(0, 0, 0, 0));
+            int _x = 0, _y = 0;
+            int n = layers - i - 1;
+            double len = img.columns() / 2.0 / const1 + img.columns() / 2;
+            double sinx = sin(M_PI_2 - rad_per_item_2 * 2 * j);
+            double cosx = cos(M_PI_2 - rad_per_item_2 * 2 * j);
+            _x = sinx * len + ret_len/2 - using_img.rows()/2;
+            _y = -cosx * len + ret_len/2 - using_img.columns()/2;
+            // TODO: Calulate the coordinates here
+            copyImageTo(ret_img, using_img, 0, using_img.rows(), 0,
+                        using_img.columns(), _y, _x);
+        }
+        img_size.width(img_size.width() >> 1);
+        img_size.height(img_size.height() >> 1);
+        img.resize(img_size);
+        img.page(Magick::Geometry(0, 0, 0, 0));
+    }
+    img = ret_img;
 }
-void kaleido(std::vector<Magick::Image> &img)
+void kaleido(std::vector<Magick::Image> &img, int layers, int nums_per_layer)
 {
     for (Magick::Image &im : img) {
-        kaleido(im);
+        kaleido(im, layers, nums_per_layer);
     }
 }

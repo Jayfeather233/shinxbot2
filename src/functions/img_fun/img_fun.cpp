@@ -6,7 +6,8 @@
 
 static std::string imgfun_help_msg =
     "图片处理。\n对称 axis=[0|1] order=[0|1] @或图片。\n\t axis， "
-    "order为可选，axis指定x/y轴，order指定翻转哪边";
+    "order为可选，axis指定x/y轴，order指定翻转哪边\n旋转 fps=[24] order=[0|1] "
+    "@或图片。\n万花筒 layers=[3] num=[8] @或图片。";
 
 void img_fun::process(std::string message, const msg_meta &conf)
 {
@@ -39,14 +40,36 @@ void img_fun::process(std::string message, const msg_meta &conf)
         proc_type = (img_fun_type){img_fun_type::MIRROR, axis, order};
     }
     else if (wmessage.find(L"旋转") == 0) {
+        int fps = 24;
         char order = 0;
         wmessage = trim(wmessage.substr(2));
+        if (wmessage.find(L"fps=") == 0) {
+            wmessage = trim(wmessage.substr(4));
+            fps = std::max(0, std::min(50, (int)get_userid(wmessage)));
+            wmessage = trim(wmessage.substr(wmessage.find(L' ') + 1));
+        }
         if (wmessage.find(L"order=") == 0) {
             wmessage = trim(wmessage.substr(6));
             order = wmessage[0] == L'1';
             wmessage = trim(wmessage.substr(1));
         }
-        proc_type = (img_fun_type){img_fun_type::ROTATE, order};
+        proc_type = (img_fun_type){img_fun_type::ROTATE, fps, order};
+    }
+    else if (wmessage.find(L"万花筒") == 0) {
+        int layers = 3;
+        int nums = 8;
+        wmessage = trim(wmessage.substr(2));
+        if (wmessage.find(L"layer=") == 0) {
+            wmessage = trim(wmessage.substr(6));
+            layers = std::max(1, std::min(4, (int)get_userid(wmessage)));
+            wmessage = trim(wmessage.substr(wmessage.find(L' ') + 1));
+        }
+        if (wmessage.find(L"num=") == 0) {
+            wmessage = trim(wmessage.substr(4));
+            nums = std::max(2, std::min(8, (int)get_userid(wmessage)));
+            wmessage = trim(wmessage.substr(1));
+        }
+        proc_type = (img_fun_type){img_fun_type::KALEIDO, layers, nums};
     }
     else if ((it = is_input.find(conf.user_id)) != is_input.end()) {
         proc_type = is_input[conf.user_id];
@@ -91,25 +114,23 @@ void img_fun::process(std::string message, const msg_meta &conf)
     download(fileurl, "./resource/download/", filename);
     Magick::Image img;
     img.read("./resource/download/" + filename);
-    if (img.animationDelay()) {
+    if (img.animationDelay() || proc_type.type == img_fun_type::ROTATE) {
         std::vector<Magick::Image> img_list;
         Magick::readImages(&img_list, "./resource/download/" + filename);
         if (proc_type.type == img_fun_type::MIRROR)
             mirrorImage(img_list, proc_type.para1, proc_type.para2);
         else if (proc_type.type == img_fun_type::ROTATE)
-            conf.p->cq_send("No gif in rotate.", conf);
+            img_list = rotateImage(img, proc_type.para1, proc_type.para2);
         else if (proc_type.type == img_fun_type::KALEIDO)
-            kaleido(img_list);
+            kaleido(img_list, proc_type.para1, proc_type.para2);
         Magick::writeImages(img_list.begin(), img_list.end(),
-                            "./resource/download/" + filename);
+                            "./resource/download/" + filename + ".gif");
     }
     else {
         if (proc_type.type == img_fun_type::MIRROR)
             mirrorImage(img, proc_type.para1, proc_type.para2);
-        else if (proc_type.type == img_fun_type::ROTATE)
-            rotateImage(img, 25, proc_type.para1);
         else if (proc_type.type == img_fun_type::KALEIDO)
-            kaleido(img);
+            kaleido(img, proc_type.para1, proc_type.para2);
         img.write("./resource/download/" + filename);
     }
     conf.p->cq_send("[CQ:image,file=file://" + get_local_path() +
