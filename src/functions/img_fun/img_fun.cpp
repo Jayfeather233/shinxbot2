@@ -117,20 +117,30 @@ void img_fun::process(std::string message, const msg_meta &conf)
     if (img.animationDelay() || proc_type.type == img_fun_type::ROTATE) {
         std::vector<Magick::Image> img_list;
         Magick::readImages(&img_list, "./resource/download/" + filename);
-        if (proc_type.type == img_fun_type::MIRROR)
+        if (proc_type.type == img_fun_type::MIRROR){
+            filename += "_mir.gif";
             mirrorImage(img_list, proc_type.para1, proc_type.para2);
-        else if (proc_type.type == img_fun_type::ROTATE)
+        }
+        else if (proc_type.type == img_fun_type::ROTATE){
+            filename += "_rot.gif";
             img_list = rotateImage(img, proc_type.para1, proc_type.para2);
-        else if (proc_type.type == img_fun_type::KALEIDO)
+        }
+        else if (proc_type.type == img_fun_type::KALEIDO){
+            filename += "_kal.gif";
             kaleido(img_list, proc_type.para1, proc_type.para2);
+        }
         Magick::writeImages(img_list.begin(), img_list.end(),
-                            "./resource/download/" + filename + ".gif");
+                            "./resource/download/" + filename);
     }
     else {
-        if (proc_type.type == img_fun_type::MIRROR)
+        if (proc_type.type == img_fun_type::MIRROR){
+            filename += "_mir.png";
             mirrorImage(img, proc_type.para1, proc_type.para2);
-        else if (proc_type.type == img_fun_type::KALEIDO)
+        }
+        else if (proc_type.type == img_fun_type::KALEIDO){
+            filename += "_kal.png";
             kaleido(img, proc_type.para1, proc_type.para2);
+        }
         img.write("./resource/download/" + filename);
     }
     conf.p->cq_send("[CQ:image,file=file://" + get_local_path() +
