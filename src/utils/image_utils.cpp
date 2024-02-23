@@ -212,8 +212,7 @@ void mirrorImage(std::vector<Magick::Image> &img, char axis, bool direction)
 
 using namespace Magick;
 
-void crop_to_circle(Magick::Image &img)
-{
+void crop_to_square(Magick::Image &img){
     Magick::Geometry geo = Magick::Geometry(img.columns(), img.rows());
     size_t len = std::min(geo.width(), geo.height());
     geo.xOff((geo.width() - len) >> 1);
@@ -222,9 +221,12 @@ void crop_to_circle(Magick::Image &img)
     geo.width(len);
     img.crop(geo);
     img.page(Magick::Geometry(0, 0, 0, 0));
-    geo = Magick::Geometry(img.columns(), img.rows());
+}
 
-    size_t half_len = len >> 1;
+void crop_to_circle(Magick::Image &img)
+{
+    crop_to_square(img);
+    size_t len = img.columns(), half_len = img.columns() >> 1;
 
     for (size_t y = 0; y < len; ++y) {
         for (size_t x = 0; x < len; ++x) {
@@ -251,6 +253,7 @@ void constsize_rotate(Magick::Image &img, double deg)
                          (newHeight - oriHeight) >> 1);
 
     img.crop(geo);
+    printf("croped\n");
     img.page(Magick::Geometry(0, 0, 0, 0));
     // img.write("test_cir_"+std::to_string(deg)+".png");
 }
@@ -267,9 +270,7 @@ std::vector<Magick::Image> rotateImage(const Magick::Image img, int fps,
             Magick::Geometry(dimg.columns() / ratio, dimg.rows() / ratio));
         dimg.page(Magick::Geometry(0, 0, 0, 0));
     }
-
-    // crop_to_circle(dimg);
-    // dimg.write("./src/test_cir.png");
+    crop_to_square(dimg);
 
     std::vector<Magick::Image> ret;
     double deg_per_frame = 360.0 / fps * (clockwise ? 1 : -1);
