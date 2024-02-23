@@ -58,16 +58,18 @@ void img_fun::process(std::string message, const msg_meta &conf)
     else if (wmessage.find(L"万花筒") == 0) {
         int layers = 3;
         int nums = 8;
-        wmessage = trim(wmessage.substr(2));
+        wmessage = trim(wmessage.substr(3));
         if (wmessage.find(L"layer=") == 0) {
             wmessage = trim(wmessage.substr(6));
             layers = std::max(1, std::min(4, (int)get_userid(wmessage)));
             wmessage = trim(wmessage.substr(wmessage.find(L' ') + 1));
+            printf("layers=%d\n", layers);
         }
         if (wmessage.find(L"num=") == 0) {
             wmessage = trim(wmessage.substr(4));
             nums = std::max(2, std::min(8, (int)get_userid(wmessage)));
-            wmessage = trim(wmessage.substr(1));
+            wmessage = trim(wmessage.substr(wmessage.find(L' ') + 1));
+            printf("nums=%d\n", nums);
         }
         proc_type = (img_fun_type){img_fun_type::KALEIDO, layers, nums};
     }
