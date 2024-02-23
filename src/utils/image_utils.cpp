@@ -342,6 +342,7 @@ void kaleido(Magick::Image &img, int layers, int nums_per_layer)
 void kaleido(std::vector<Magick::Image> &img, int layers, int nums_per_layer)
 {
     for (Magick::Image &im : img) {
+        im.page(Magick::Geometry(0, 0, 0, 0));
         kaleido(im, layers, nums_per_layer);
     }
 }
