@@ -5,7 +5,7 @@
 #include <jsoncpp/json/json.h>
 #include <map>
 
-std::map<int64_t, std::map<int64_t, std::string>> stranger_name;
+static std::map<int64_t, std::map<int64_t, std::string>> stranger_name;
 
 std::string get_stranger_name(const bot *p, int64_t user_id)
 {
@@ -29,7 +29,7 @@ no_cache2:
     return name;
 }
 
-std::map<int64_t, std::map<int64_t, std::map<int64_t, std::string>>>
+static std::map<int64_t, std::map<int64_t, std::map<int64_t, std::string>>>
     group_member_name;
 
 std::string get_group_member_name(const bot *p, int64_t user_id,

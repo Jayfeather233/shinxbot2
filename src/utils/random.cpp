@@ -5,9 +5,9 @@
 using u32 = uint_least32_t;
 using engine = std::mt19937;
 
-std::random_device os_seed;
-const u32 seed = os_seed();
-engine generator = engine(seed);
+static std::random_device os_seed;
+static const u32 seed = os_seed();
+static engine generator = engine(seed);
 
 int get_random(int maxi)
 {

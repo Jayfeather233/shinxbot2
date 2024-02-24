@@ -214,17 +214,24 @@ void mybot::input_process(std::string *input)
                             catch (char *e) {
                                 cq_send((std::string) "Throw an char*: " + e,
                                         conf);
+                                setlog(LOG::ERROR,
+                                       (std::string) "Throw an char*: " + e);
                             }
                             catch (std::string e) {
                                 cq_send("Throw an string: " + e, conf);
+                                setlog(LOG::ERROR, "Throw an string: " + e);
                             }
                             catch (std::exception &e) {
                                 cq_send((std::string) "Throw an exception: " +
                                             e.what(),
                                         conf);
+                                setlog(LOG::ERROR,
+                                       (std::string) "Throw an exception: " +
+                                           e.what());
                             }
                             catch (...) {
                                 cq_send("Throw an unknown error", conf);
+                                setlog(LOG::ERROR, "Throw an unknown error");
                             }
                         }
                     }

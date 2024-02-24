@@ -29,7 +29,7 @@ Json::Value forward_msg_gen::get_data(bot *p, std::wstring s1,
             flg = true;
         }
     }
-    int64_t uin = get_userid(s1);
+    int64_t uin = my_string2int64(s1);
     res["name"] = get_username(p, uin, group_id);
     res["uin"] = uin;
     if (s2 == L"转发") {
@@ -47,7 +47,7 @@ Json::Value forward_msg_gen::get_data(bot *p, std::wstring s1,
                 pos++;
             s2.insert(pos,
                       L",name=" + string_to_wstring(get_username(
-                                      p, get_userid(s2.substr(po1, pos - po1)),
+                                      p, my_string2int64(s2.substr(po1, pos - po1)),
                                       group_id)));
         }
         res["content"] = wstring_to_string(s2);

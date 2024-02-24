@@ -3,7 +3,7 @@
 #include <codecvt>
 #include <locale>
 
-std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+static std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
 
 std::wstring string_to_wstring(const std::string &u)
 {
@@ -14,8 +14,8 @@ std::string wstring_to_string(const std::wstring &u)
     return converter.to_bytes(u);
 }
 
-std::string whitespaces = "\t\r\n ";
-std::wstring w_whitespaces = L"\t\r\n ";
+static std::string whitespaces = "\t\r\n ";
+static std::wstring w_whitespaces = L"\t\r\n ";
 
 std::string trim(const std::string &u)
 {
@@ -26,6 +26,7 @@ std::string trim(const std::string &u)
     size_t las = u.find_last_not_of(whitespaces);
     return u.substr(fir, las - fir + 1);
 }
+
 std::wstring trim(const std::wstring &u)
 {
     size_t fir = u.find_first_not_of(w_whitespaces);
@@ -35,6 +36,7 @@ std::wstring trim(const std::wstring &u)
     size_t las = u.find_last_not_of(w_whitespaces);
     return u.substr(fir, las - fir + 1);
 }
+
 std::string my_replace(const std::string &s, const char old, const char ne)
 {
     std::string ans;

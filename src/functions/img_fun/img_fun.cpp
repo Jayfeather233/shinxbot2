@@ -45,7 +45,7 @@ void img_fun::process(std::string message, const msg_meta &conf)
         wmessage = trim(wmessage.substr(2));
         if (wmessage.find(L"fps=") == 0) {
             wmessage = trim(wmessage.substr(4));
-            fps = std::max(0, std::min(50, (int)get_userid(wmessage)));
+            fps = std::max(0, std::min(50, (int)my_string2int64(wmessage)));
             wmessage = trim(wmessage.substr(wmessage.find(L' ') + 1));
         }
         if (wmessage.find(L"order=") == 0) {
@@ -61,13 +61,13 @@ void img_fun::process(std::string message, const msg_meta &conf)
         wmessage = trim(wmessage.substr(3));
         if (wmessage.find(L"layer=") == 0) {
             wmessage = trim(wmessage.substr(6));
-            layers = std::max(1, std::min(4, (int)get_userid(wmessage)));
+            layers = std::max(1, std::min(4, (int)my_string2int64(wmessage)));
             wmessage = trim(wmessage.substr(wmessage.find(L' ') + 1));
             printf("layers=%d\n", layers);
         }
         if (wmessage.find(L"num=") == 0) {
             wmessage = trim(wmessage.substr(4));
-            nums = std::max(2, std::min(8, (int)get_userid(wmessage)));
+            nums = std::max(2, std::min(8, (int)my_string2int64(wmessage)));
             wmessage = trim(wmessage.substr(wmessage.find(L' ') + 1));
             printf("nums=%d\n", nums);
         }
@@ -82,7 +82,7 @@ void img_fun::process(std::string message, const msg_meta &conf)
     }
 
     if (wmessage.find(L"[CQ:at") != wmessage.npos) {
-        int64_t userid = get_userid(wmessage);
+        int64_t userid = my_string2int64(wmessage);
         fileurl =
             "http://q1.qlogo.cn/g?b=qq&nk=" + std::to_string(userid) + "&s=160";
         filename = "qq" + std::to_string(userid);
@@ -90,7 +90,7 @@ void img_fun::process(std::string message, const msg_meta &conf)
     else if (wmessage.find(L"[CQ:image") != wmessage.npos) {
         size_t index = wmessage.find(L",file=");
         index += 6;
-        for (int i = index; i < wmessage.length(); i++) {
+        for (size_t i = index; i < wmessage.length(); i++) {
             if (wmessage[i] == L'.') {
                 filename = wstring_to_string(wmessage.substr(index, i - index));
                 break;
@@ -99,7 +99,7 @@ void img_fun::process(std::string message, const msg_meta &conf)
 
         index = wmessage.find(L",url=");
         wmessage = wmessage.substr(index + 5);
-        for (int i = 0; i < wmessage.length(); i++) {
+        for (size_t i = 0; i < wmessage.length(); i++) {
             if (wmessage[i] == L']' || wmessage[i] == L',') {
                 fileurl = wstring_to_string(wmessage.substr(0, i));
                 break;

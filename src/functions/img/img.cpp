@@ -15,7 +15,7 @@ img::img()
 {
     Json::Value J = string_to_json(readfile("./config/img.json", "{}"));
     for (std::string u : J["belongs"].getMemberNames()) {
-        belongs[get_userid(u)] = J["belongs"][u];
+        belongs[my_string2int64(u)] = J["belongs"][u];
     }
     parse_json_to_set(J["default"], default_img);
     J = J["data"];
@@ -197,7 +197,7 @@ std::string img::commands(std::string message, const msg_meta &conf)
                     return "即将删除 *所有* " + name + "图片，请确认[N/y]";
                 }
                 else {
-                    del_single(name, get_userid(indexs) - 1);
+                    del_single(name, my_string2int64(indexs) - 1);
                     return "已删除";
                 }
             }
@@ -267,7 +267,7 @@ void img::process(std::string message, const msg_meta &conf)
         index = get_random(it2->second) + 1;
     }
     else {
-        index = get_userid(indexs);
+        index = my_string2int64(indexs);
     }
     index--;
     if (index < 0 || index >= it2->second) {

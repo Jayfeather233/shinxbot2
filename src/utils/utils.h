@@ -109,11 +109,11 @@ std::string my_replace(const std::string &s, const char old, const char ne);
 /**
  * convert all numbers in a string into int64_t
  */
-int64_t get_userid(const std::wstring &s);
+int64_t my_string2int64(const std::wstring &s);
 /**
  * convert all numbers in a string into int64_t
  */
-int64_t get_userid(const std::string &s);
+int64_t my_string2int64(const std::string &s);
 
 /**
  * get a random number [0, maxi)
@@ -291,6 +291,7 @@ void mirrorImage(std::vector<Magick::Image> &img, char axis = 1,
 std::vector<Magick::Image> rotateImage(const Magick::Image img, int fps,
                                        bool clockwise = 1);
 
+void kaleido(Magick::Image &img, int layers = 3, int nums_per_layer = 8, const Magick::Image las = Magick::Image(Magick::Geometry(0,0)));
+
 void kaleido(std::vector<Magick::Image> &img, int layers = 3,
              int nums_per_layer = 8);
-void kaleido(Magick::Image &img, int layers = 3, int nums_per_layer = 8);

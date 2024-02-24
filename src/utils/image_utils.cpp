@@ -146,10 +146,6 @@ std::pair<std::string, std::string> image2base64(std::string filepath)
     return std::make_pair(type, blob.base64());
 }
 
-// TODO: mirror [axis]
-//      Kaleido_scope WanHuaTong
-//      rotate
-
 void copyImageTo(Magick::Image &dst, const Magick::Image src, size_t x1,
                  size_t x2, size_t y1, size_t y2, size_t x3, size_t y3)
 {
@@ -212,7 +208,8 @@ void mirrorImage(std::vector<Magick::Image> &img, char axis, bool direction)
 
 using namespace Magick;
 
-void crop_to_square(Magick::Image &img){
+void crop_to_square(Magick::Image &img)
+{
     Magick::Geometry geo = Magick::Geometry(img.columns(), img.rows());
     size_t len = std::min(geo.width(), geo.height());
     geo.xOff((geo.width() - len) >> 1);
@@ -286,7 +283,8 @@ std::vector<Magick::Image> rotateImage(const Magick::Image img, int fps,
     return ret;
 }
 
-void kaleido(Magick::Image &img, int layers, int nums_per_layer)
+void kaleido(Magick::Image &img, int layers, int nums_per_layer,
+             const Magick::Image las)
 {
     img.alphaChannel(MagickCore::AlphaChannelOption::SetAlphaChannel);
     double ratio = img.columns() * img.rows() / 1000000;
@@ -299,8 +297,19 @@ void kaleido(Magick::Image &img, int layers, int nums_per_layer)
     img_size.height(maxl);
     img_size.width(maxl);
 
-    Magick::Image ximg = Magick::Image(img_size, Magick::Color(0, 0, 0, 0)); // Resize to Square
-    copyImageTo(ximg, img, 0, img.rows(), 0, img.columns(), (ximg.rows()-img.rows())>>1, (ximg.columns()-img.columns())>>1);
+    Magick::Image ximg;
+    if (las.columns() > 0) {
+        ximg = las;
+        ximg.resize(img_size);
+        ximg.page(Magick::Geometry(0, 0, 0, 0));
+    }
+    else {
+        ximg = Magick::Image(img_size,
+                             Magick::Color(0, 0, 0, 0)); // Resize to Square
+    }
+    copyImageTo(ximg, img, 0, img.rows(), 0, img.columns(),
+                (ximg.rows() - img.rows()) >> 1,
+                (ximg.columns() - img.columns()) >> 1);
     img = ximg;
     img.backgroundColor(Magick::Color(0, 0, 0, 0));
 
@@ -309,8 +318,8 @@ void kaleido(Magick::Image &img, int layers, int nums_per_layer)
     double deg_per_item = -360.0 / nums_per_layer;
     double rad_per_item_2 = M_PI / nums_per_layer;
     const double const1 = tan(rad_per_item_2);
-    
-    size_t ret_len = (img.columns() / 2.0 / const1 + img.columns()*1.1)*2;
+
+    size_t ret_len = (img.columns() / 2.0 / const1 + img.columns() * 1.1) * 2;
 
     Magick::Image ret_img(Magick::Geometry(ret_len, ret_len),
                           Magick::Color("#FFFFFF"));
@@ -322,12 +331,11 @@ void kaleido(Magick::Image &img, int layers, int nums_per_layer)
             using_img.rotate(deg_per_item * j);
             using_img.page(Magick::Geometry(0, 0, 0, 0));
             int _x = 0, _y = 0;
-            int n = layers - i - 1;
             double len = img.columns() / 2.0 / const1 + img.columns() / 2;
             double sinx = sin(M_PI_2 - rad_per_item_2 * 2 * j);
             double cosx = cos(M_PI_2 - rad_per_item_2 * 2 * j);
-            _x = sinx * len + ret_len/2 - using_img.rows()/2;
-            _y = -cosx * len + ret_len/2 - using_img.columns()/2;
+            _x = sinx * len + ret_len / 2 - using_img.rows() / 2;
+            _y = -cosx * len + ret_len / 2 - using_img.columns() / 2;
             // TODO: Calulate the coordinates here
             copyImageTo(ret_img, using_img, 0, using_img.rows(), 0,
                         using_img.columns(), _y, _x);
@@ -339,10 +347,18 @@ void kaleido(Magick::Image &img, int layers, int nums_per_layer)
     }
     img = ret_img;
 }
+
 void kaleido(std::vector<Magick::Image> &img, int layers, int nums_per_layer)
 {
+    Magick::Image las = Magick::Image(Magick::Geometry(0, 0));
     for (Magick::Image &im : img) {
+        im.backgroundColor(
+            Magick::Color(QuantumRange, QuantumRange, QuantumRange));
+        im.trim();
+        im.backgroundColor(Magick::Color(0, 0, 0));
+        im.trim();
         im.page(Magick::Geometry(0, 0, 0, 0));
-        kaleido(im, layers, nums_per_layer);
+        kaleido(im, layers, nums_per_layer, las);
+        las = im;
     }
 }
