@@ -191,7 +191,7 @@ void mirrorImage(Magick::Image &img, char axis, bool direction,
     else {
         goto mirrorImageError;
     }
-    if (las.columns() > 0) {
+    if (las.columns() > 1) {
         Magick::Image ret_img = las;
         copyImageTo(ret_img, img, 0, img.rows(), 0, img.columns(), 0, 0);
         img = ret_img;
@@ -258,7 +258,6 @@ void constsize_rotate(Magick::Image &img, double deg)
                          (newHeight - oriHeight) >> 1);
 
     img.crop(geo);
-    printf("croped\n");
     img.page(Magick::Geometry(0, 0, 0, 0));
     // img.write("test_cir_"+std::to_string(deg)+".png");
 }
@@ -306,7 +305,7 @@ void kaleido(Magick::Image &img, int layers, int nums_per_layer,
     img_size.width(maxl);
 
     Magick::Image ximg;
-    if (las.columns() > 0) {
+    if (las.columns() > 1) {
         ximg = las;
         ximg.resize(img_size);
         ximg.page(Magick::Geometry(0, 0, 0, 0));
