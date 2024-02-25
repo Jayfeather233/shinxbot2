@@ -207,7 +207,8 @@ mirrorImageError:
 
 void mirrorImage(std::vector<Magick::Image> &img, char axis, bool direction)
 {
-    Magick::Image las = Magick::Image(Magick::Geometry(0, 0));
+    Magick::Image las =
+        Magick::Image(Magick::Geometry(1, 1), Magick::Color("white"));
     for (Magick::Image &im : img) {
         mirrorImage(im, axis, direction, las);
         las = im;
@@ -357,7 +358,8 @@ void kaleido(Magick::Image &img, int layers, int nums_per_layer,
 
 void kaleido(std::vector<Magick::Image> &img, int layers, int nums_per_layer)
 {
-    Magick::Image las = Magick::Image(Magick::Geometry(0, 0));
+    Magick::Image las =
+        Magick::Image(Magick::Geometry(1, 1), Magick::Color("white"));
     for (Magick::Image &im : img) {
         im.backgroundColor(
             Magick::Color(QuantumRange, QuantumRange, QuantumRange));
