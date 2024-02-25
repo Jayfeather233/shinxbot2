@@ -274,7 +274,9 @@ void copyImageTo(Magick::Image &dst, const Magick::Image src, size_t x1,
 /// @param img a Magick Image
 /// @param axis only allow 0/1. 0 for x-axis, 1 for y-axis
 /// @param direction 0/1. 0 for mirror left to right, 1 for reverse
-void mirrorImage(Magick::Image &img, char axis = 1, bool direction = 0);
+void mirrorImage(Magick::Image &img, char axis = 1, bool direction = 0,
+                 const Magick::Image las = Magick::Image(Magick::Geometry(0,
+                                                                          0)));
 
 /// @brief Mirror a given gif image, with mirror axis and direction
 /// @param img a array of Magick Image, gif
@@ -291,7 +293,8 @@ void mirrorImage(std::vector<Magick::Image> &img, char axis = 1,
 std::vector<Magick::Image> rotateImage(const Magick::Image img, int fps,
                                        bool clockwise = 1);
 
-void kaleido(Magick::Image &img, int layers = 3, int nums_per_layer = 8, const Magick::Image las = Magick::Image(Magick::Geometry(0,0)));
+void kaleido(Magick::Image &img, int layers = 3, int nums_per_layer = 8,
+             const Magick::Image las = Magick::Image(Magick::Geometry(0, 0)));
 
 void kaleido(std::vector<Magick::Image> &img, int layers = 3,
              int nums_per_layer = 8);

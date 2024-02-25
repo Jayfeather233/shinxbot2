@@ -156,7 +156,8 @@ void copyImageTo(Magick::Image &dst, const Magick::Image src, size_t x1,
                   MagickCore::CompositeOperator::OverCompositeOp);
 }
 
-void mirrorImage(Magick::Image &img, char axis, bool direction)
+void mirrorImage(Magick::Image &img, char axis, bool direction,
+                 const Magick::Image las)
 {
     Magick::Image new_img = img;
     if (axis == 0) {
@@ -190,6 +191,11 @@ void mirrorImage(Magick::Image &img, char axis, bool direction)
     else {
         goto mirrorImageError;
     }
+    if (las.columns() > 0) {
+        Magick::Image ret_img = las;
+        copyImageTo(ret_img, img, 0, img.rows(), 0, img.columns(), 0, 0);
+        img = ret_img;
+    }
     return;
 mirrorImageError:
     std::ostringstream oss;
@@ -201,8 +207,10 @@ mirrorImageError:
 
 void mirrorImage(std::vector<Magick::Image> &img, char axis, bool direction)
 {
+    Magick::Image las = Magick::Image(Magick::Geometry(0, 0));
     for (Magick::Image &im : img) {
-        mirrorImage(im, axis, direction);
+        mirrorImage(im, axis, direction, las);
+        las = im;
     }
 }
 

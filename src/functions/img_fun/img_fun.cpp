@@ -115,8 +115,13 @@ void img_fun::process(std::string message, const msg_meta &conf)
     is_input.erase(conf.user_id);
     download(fileurl, "./resource/download/", filename);
     Magick::Image img;
-    img.read("./resource/download/" + filename);
-    if (img.animationDelay() || proc_type.type == img_fun_type::ROTATE) {
+    bool mgif = false;
+    try{
+        img.read("./resource/download/" + filename);
+    } catch (...){
+        mgif = true;
+    }
+    if (img.animationDelay() || proc_type.type == img_fun_type::ROTATE || mgif) {
         std::vector<Magick::Image> img_list;
         Magick::readImages(&img_list, "./resource/download/" + filename);
         if (proc_type.type == img_fun_type::MIRROR){
