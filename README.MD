@@ -24,6 +24,8 @@
 
 - 图片OCR (qq自带的那个)
 
+- 图片处理：对称、旋转、万花筒
+
 - openai的 `gpt-3.5-turbo` API支持
 
 - google的 `gemini-pro[-vision]` API支持，[url](https://ai.google.dev/docs)
@@ -59,13 +61,12 @@
 需要几个支持库：[libcurl](https://curl.se/libcurl/) + openssl-dev / [jsoncpp](https://github.com/open-source-parsers/jsoncpp) / [base64](https://github.com/tobiaslocker/base64) / [libzip](https://github.com/nih-at/libzip) / [Magick++]()
 
 ```
-CImg & base64: please git clone them into ./lib
+base64: please git clone them into ./lib
 libcurl: sudo apt-get install libcurl4-openssl-dev
 openssl: sudo apt-get install openssl-dev (or libssl-dev)
 jsoncpp: sudo apt-get install libjsoncpp-dev
-base64: already included
 libzip: sudo apt-get install libzip-dev
-Magick++: libmagick++-dev 
+Magick++: Please refer to [Magick++ installing page](https://www.imagemagick.org/Magick++/Install.html) to manually install it.
 maybe it will work
 ```
 
