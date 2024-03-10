@@ -150,6 +150,16 @@ void mybot::init()
 
     Json::Value J_op = string_to_json(readfile("./config/op_list.json", "[]"));
     parse_json_to_set(J_op, op_list);
+
+    Json::Value J_rec = string_to_json(readfile("./config/recover.json", "[]"));
+    Json::Value Ja_rec = J_rec["commands"];
+    Json::ArrayIndex sz = Ja_rec.size();
+    std::vector<std::string> rec_list;
+    for(Json::ArrayIndex i = 0; i < sz; ++i){
+        rec_list.push_back(Ja_rec[i].asString());
+    }
+
+    recorder = new heartBeat(rec_list);
 }
 
 mybot::mybot(int recv_port, int send_port) : bot(recv_port, send_port) {}
@@ -238,6 +248,10 @@ void mybot::input_process(std::string *input)
                 }
             }
         }
+    } else if(post_type == "meta_event"){
+        if(J["meta_event_type"].asString() == "heartbeat"){
+            recorder->inform();
+        }
     }
 }
 
@@ -277,6 +291,7 @@ void mybot::run()
         start_msg_conf.user_id = ops;
         this->cq_send("Love you!", start_msg_conf);
     }
+    std::thread(&heartBeat::run, recorder).detach();
 
     this->start_server();
 

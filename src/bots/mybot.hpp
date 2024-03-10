@@ -2,6 +2,7 @@
 
 #include "events.h"
 #include "functions.h"
+#include "heartbeat.h"
 
 #include <fstream>
 #include <mutex>
@@ -22,6 +23,8 @@ private:
     std::set<int64_t> op_list;
 
     bool bot_isopen = true;
+
+    heartBeat *recorder;
 
     /**
      * after connect to gocq, read the message out
