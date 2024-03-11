@@ -50,7 +50,7 @@ void NGgame::process(std::string message, const msg_meta &conf)
                 // collect ng words
                 std::vector<int64_t> v = games[conf.group_id].get_player_list();
                 std::random_shuffle(v.begin(), v.end());
-                for (int i = 0; i < v.size() - 1; i++)
+                for (size_t i = 0; i < v.size() - 1; i++)
                 {
                     games[conf.group_id].link[v[i]] = v[i + 1];
                 }
@@ -175,7 +175,7 @@ void NGgame::process(std::string message, const msg_meta &conf)
                             "Set NG word for " + get_username(conf.p, victim, it.first) + ": " + message;
                         conf.p->cq_send(content, rep);
 
-                        int ng_set_cnt = 0;
+                        size_t ng_set_cnt = 0;
                         for (auto sit : it.second.ng)
                         {
                             if (sit.second.compare("") != 0)
