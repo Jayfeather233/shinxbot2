@@ -161,7 +161,7 @@ bool is_group_op(const bot *p, const int64_t &group_id, const int64_t &user_id)
 
 bool is_friend(const bot *p, const int64_t &user_id)
 {
-    Json::Value J = string_to_json(p->cq_get("get_friend_list"));
+    Json::Value J = string_to_json(p->cq_get("get_friend_list"))["data"];
     Json::ArrayIndex sz = J.size();
     for (Json::ArrayIndex i = 0; i < sz; i++)
     {
