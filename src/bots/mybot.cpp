@@ -151,7 +151,7 @@ void mybot::init()
     Json::Value J_op = string_to_json(readfile("./config/op_list.json", "[]"));
     parse_json_to_set(J_op, op_list);
 
-    Json::Value J_rec = string_to_json(readfile("./config/recover.json", "[]"));
+    Json::Value J_rec = string_to_json(readfile("./config/recover.json", "{\"commands\":[]}"));
     Json::Value Ja_rec = J_rec["commands"];
     Json::ArrayIndex sz = Ja_rec.size();
     std::vector<std::string> rec_list;
@@ -276,6 +276,7 @@ void mybot::run()
     functions.push_back(new gemini());
     functions.push_back(new sdxl());
     functions.push_back(new img_fun());
+    functions.push_back(new NGgame());
 
     events.push_back(new talkative());
     events.push_back(new m_change());

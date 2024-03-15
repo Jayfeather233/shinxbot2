@@ -299,3 +299,5 @@ void kaleido(Magick::Image &img, int layers = 3, int nums_per_layer = 8,
 
 void kaleido(std::vector<Magick::Image> &img, int layers = 3,
              int nums_per_layer = 8);
+
+bool is_friend(const bot *p, const int64_t &user_id);

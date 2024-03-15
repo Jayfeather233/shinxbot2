@@ -48,7 +48,7 @@ gpt3_5::gpt3_5()
               "\"black_list\": [\"股票\"],"
               "\"MAX_TOKEN\": 4000,"
               "\"MAX_REPLY\": 700,"
-              "\"RED_LINE\": 1000,"
+              "\"RED_LINE\": 1000"
               "}";
         of.close();
     }

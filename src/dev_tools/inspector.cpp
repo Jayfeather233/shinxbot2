@@ -13,12 +13,11 @@ int send_port_bot;
 int receive_port_bot;
 
 // https://stackoverflow.com/a/26221725/17792535
-template <typename... Args>
-std::string string_format(const std::string &format, Args... args)
+template <typename... Args> std::string string_format(const std::string &format, Args... args)
 {
-    int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) +
-                 1; // Extra space for '\0'
-    if (size_s <= 0) {
+    int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) + 1; // Extra space for '\0'
+    if (size_s <= 0)
+    {
         throw std::runtime_error("Error during formatting.");
     }
     auto size = static_cast<size_t>(size_s);
@@ -31,25 +30,36 @@ std::string string_format(const std::string &format, Args... args)
 void get_config()
 {
     std::ifstream iport("../../config/port.txt");
-    if (iport.is_open()) {
+    if (iport.is_open())
+    {
         iport >> send_port_bot >> receive_port_bot;
         std::cout << send_port_bot << " " << receive_port_bot << std::endl;
         iport.close();
     }
-    else {
-        std::cerr << "Please first generate port.txt by running `cq_bot`"
-                  << std::endl;
+    else
+    {
+        std::cerr << "Please first generate port.txt by running `cq_bot`" << std::endl;
         std::exit(1);
     }
 }
 
-std::string process(const std::string request) { 
+std::string process(const std::string request)
+{
     std::string response = "{}";
     std::istringstream iss{request};
     std::string newline;
     std::getline(iss, newline);
-    if(newline.find("/get_login_info") != std::string::npos){
-       response = "{\"user_id\": 23333, \"nickname\":\"Test\"}";
+    if (newline.find("/get_login_info") != std::string::npos)
+    {
+        response = "{\"user_id\": 23333, \"nickname\":\"Test\"}";
+    }
+    else if (newline.find("/get_friend_list") != std::string::npos)
+    {
+        response = "["
+                   "{\"user_id\": 9982,\"nickname\": \"hi\"},"
+                   "{\"user_id\": 9983,\"nickname\": \"hi\"},"
+                   "{\"user_id\": 9984,\"nickname\": \"hi\"}"
+                   "]";
     }
     std::string cq_body = R"({
         "status": "ok",
@@ -67,17 +77,21 @@ std::string process(const std::string request) {
 void read_server_message(int new_socket)
 {
     char buffer[4096];
-    try {
+    try
+    {
         std::string s_buffer;
         int valread;
-        while (1) {
+        while (1)
+        {
             valread = read(new_socket, buffer, 4000);
-            if (valread < 0) {
+            if (valread < 0)
+            {
                 std::cerr << "Error read message.\n";
             }
             buffer[valread] = 0;
             s_buffer += buffer;
-            if (valread < 4000) {
+            if (valread < 4000)
+            {
                 break;
             }
         }
@@ -93,7 +107,8 @@ void read_server_message(int new_socket)
 
         send(new_socket, response.c_str(), response.length(), 0);
     }
-    catch (const std::exception &exc) {
+    catch (const std::exception &exc)
+    {
         std::cerr << exc.what();
     }
     close(new_socket);
@@ -108,15 +123,16 @@ int start_server()
     // char buffer[4096] = {0};
 
     // Create server socket
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+    {
         std::cerr << "Error creating socket\n";
         return 1;
     }
 
     // Set socket options
     int opt = 1;
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
-                   sizeof(opt))) {
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)))
+    {
         std::cerr << "Error setting socket options\n";
         return 1;
     }
@@ -125,21 +141,24 @@ int start_server()
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(send_port_bot);
-    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
+    {
         std::cerr << "Error binding to socket\n";
         return 1;
     }
 
     // Listen for incoming connections
-    if (listen(server_fd, 3) < 0) {
+    if (listen(server_fd, 3) < 0)
+    {
         std::cerr << "Error listening for connections\n";
         return 1;
     }
 
     // Accept incoming connections and handle requests
-    while (true) {
-        if ((new_socket = accept(server_fd, (struct sockaddr *)&address,
-                                 (socklen_t *)&addrlen)) < 0) {
+    while (true)
+    {
+        if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
+        {
             std::cerr << "Error accepting connection\n";
             continue;
         }
