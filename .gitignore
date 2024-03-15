@@ -10,15 +10,5 @@ resource/generate
 resource/mt
 log/
 test*
-config/621_level.json
-config/proxy.json
-config/cats/
-config/gpt3_5
-config/openai.json
-config/op_list.json
 compile_commands.json
-config/img.json
-config/gemini.json
-config/forwarder.json
 dev_tools/inspector
-config/g_list.json

@@ -1,0 +1,4 @@
+gpt3_5/
+cats/
+*.json
+!*_example.json
