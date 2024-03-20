@@ -15,7 +15,7 @@ img::img()
 {
     Json::Value J = string_to_json(readfile("./config/img.json", "{}"));
     for (std::string u : J["belongs"].getMemberNames()) {
-        belongs[my_string2int64(u)] = J["belongs"][u];
+        belongs[my_string2uint64(u)] = J["belongs"][u];
     }
     parse_json_to_set(J["default"], default_img);
     J = J["data"];
@@ -38,9 +38,9 @@ void img::save()
     writefile("./config/img.json", J.toStyledString());
 }
 
-void img::belong_to(std::string name, int64_t group_id)
+void img::belong_to(std::string name, uint64_t group_id)
 {
-    if (group_id == -1)
+    if (group_id == 0)
         return;
     auto it2 = belongs.find(group_id);
     if (it2 == belongs.end()) {
@@ -54,7 +54,7 @@ void img::belong_to(std::string name, int64_t group_id)
     }
 }
 
-int img::add_image(std::string name, std::string image, int64_t group_id)
+int img::add_image(std::string name, std::string image, uint64_t group_id)
 {
     int cnt = 0;
     size_t index = -1;
@@ -139,7 +139,7 @@ std::string img::commands(std::string message, const msg_meta &conf)
                 }
             }
             else {
-                if (conf.group_id == -1 || belongs.find(conf.group_id) == belongs.end()) {
+                if (conf.group_id == 0 || belongs.find(conf.group_id) == belongs.end()) {
                     for (auto it2 : default_img) {
                         if (images[it2] != 0)
                             oss << it2 << '(' << images[it2] << ")\n";
@@ -197,7 +197,7 @@ std::string img::commands(std::string message, const msg_meta &conf)
                     return "即将删除 *所有* " + name + "图片，请确认[N/y]";
                 }
                 else {
-                    del_single(name, my_string2int64(indexs) - 1);
+                    del_single(name, my_string2uint64(indexs) - 1);
                     return "已删除";
                 }
             }
@@ -237,7 +237,7 @@ void img::process(std::string message, const msg_meta &conf)
     std::istringstream iss(message);
     std::string name, indexs;
     iss >> name >> indexs;
-    std::map<std::string, int64_t>::iterator it2;
+    std::map<std::string, uint64_t>::iterator it2;
     if (conf.message_type == "group") {
         auto it1 = belongs.find(conf.group_id);
         if (it1 == belongs.end()) {

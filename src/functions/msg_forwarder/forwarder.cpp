@@ -5,8 +5,8 @@
 
 inline bool check_valid(const point_t &a, const point_t &b)
 {
-    return (a.first == -1 || b.first == -1 || a.first == b.first) &&
-           (a.second == -1 || b.second == -1 || a.second == b.second);
+    return (a.first == 0 || b.first == 0 || a.first == b.first) &&
+           (a.second == 0 || b.second == 0 || a.second == b.second);
 }
 
 forwarder::forwarder()
@@ -14,10 +14,10 @@ forwarder::forwarder()
     Json::Value J = string_to_json(readfile("./config/forwarder.json", "[]"));
     for (Json::Value j : J) {
         point_t from, to;
-        from = std::make_pair<int64_t, int64_t>(j["from"]["group_id"].asInt64(),
-                                                j["from"]["user_id"].asInt64());
-        to = std::make_pair<int64_t, int64_t>(j["to"]["group_id"].asInt64(),
-                                              j["to"]["user_id"].asInt64());
+        from = std::make_pair<uint64_t, uint64_t>(j["from"]["group_id"].asUInt64(),
+                                                j["from"]["user_id"].asUInt64());
+        to = std::make_pair<uint64_t, uint64_t>(j["to"]["group_id"].asUInt64(),
+                                              j["to"]["user_id"].asUInt64());
         forward_set.insert(std::make_pair(from, to));
     }
 }
@@ -44,8 +44,8 @@ size_t forwarder::configure(std::string message, const msg_meta &conf)
         point_t from, to;
         iss >> from.first >> from.second >> to.first >> to.second;
         if (conf.p->is_op(conf.user_id) ||
-            ((from.first == -1 || is_group_op(conf.p, from.first, conf.user_id)) &&
-             ((to.first == -1 && to.second == conf.user_id) ||
+            ((from.first == 0 || is_group_op(conf.p, from.first, conf.user_id)) &&
+             ((to.first == 0 && to.second == conf.user_id) ||
               (to.first == conf.group_id &&
                is_group_op(conf.p, conf.group_id, conf.user_id))))) {
             t = forward_set.insert(std::make_pair(from, to)).second;
@@ -59,8 +59,8 @@ size_t forwarder::configure(std::string message, const msg_meta &conf)
         point_t from, to;
         iss >> from.first >> from.second >> to.first >> to.second;
         if (conf.p->is_op(conf.user_id) ||
-            ((from.first == -1 || is_group_op(conf.p, from.first, conf.user_id)) &&
-             ((to.first == -1 && to.second == conf.user_id) ||
+            ((from.first == 0 || is_group_op(conf.p, from.first, conf.user_id)) &&
+             ((to.first == 0 && to.second == conf.user_id) ||
               (to.first == conf.group_id &&
                is_group_op(conf.p, conf.group_id, conf.user_id))))) {
             t = forward_set.erase(std::make_pair(from, to));
@@ -90,9 +90,9 @@ void forwarder::process(std::string message, const msg_meta &conf)
         conf.p->cq_send(
             "forwarder.[set/del] src_group_id src_user_id dst_group_id "
             "dst_user_id\n"
-            "If src_group_id == -1, that means all the message by that user\n"
-            "If src_user_id == -1, that means all the message in that group\n"
-            "If dst_group_id == -1, that means forward to private chat\n"
+            "If src_group_id == 0, that means all the message by that user\n"
+            "If src_user_id == 0, that means all the message in that group\n"
+            "If dst_group_id == 0, that means forward to private chat\n"
             "Else then forward to group chat.\n"
             "You can only forward msg from the group you manage to yourself or "
             "another group you manage.",
@@ -109,7 +109,7 @@ void forwarder::process(std::string message, const msg_meta &conf)
     bool flg = false;
     for (auto it : forward_set) {
         if (check_valid(it.first, fr)) {
-            if (!flg && it.first.first != -1) {
+            if (!flg && it.first.first != 0) {
                 Json::Value qst;
                 qst["group_id"] = it.first.first;
                 group_name = string_to_json(conf.p->cq_send(
@@ -119,7 +119,7 @@ void forwarder::process(std::string message, const msg_meta &conf)
             }
             user_name = get_username(conf.p, conf.user_id, conf.group_id) + "(" +
                         std::to_string(conf.user_id) + "): ";
-            all_msg = it.first.first == -1 ? user_name
+            all_msg = it.first.first == 0 ? user_name
                                            : (group_name + " " + user_name);
 
             if (is_full_msg(message)) {
@@ -128,10 +128,10 @@ void forwarder::process(std::string message, const msg_meta &conf)
                 J2["type"] = "node";
                 J2["data"]["id"] = conf.message_id;
                 Ja.append(J2);
-                if (it.second.first == -1) {
+                if (it.second.first == 0) {
                     conf.p->cq_send(
                         all_msg,
-                        (msg_meta){"private", it.second.second, -1, 0});
+                        (msg_meta){"private", it.second.second, 0, 0});
                     Json::Value J;
                     J["user_id"] = it.second.second;
                     J["messages"] = Ja;
@@ -139,7 +139,7 @@ void forwarder::process(std::string message, const msg_meta &conf)
                 }
                 else {
                     conf.p->cq_send(
-                        all_msg, (msg_meta){"group", -1, it.second.first, 0});
+                        all_msg, (msg_meta){"group", 0, it.second.first, 0});
                     Json::Value J;
                     J["group_id"] = it.second.first;
                     J["messages"] = Ja;
@@ -147,15 +147,15 @@ void forwarder::process(std::string message, const msg_meta &conf)
                 }
             }
             else {
-                if (it.second.first == -1) {
+                if (it.second.first == 0) {
                     conf.p->cq_send(
                         all_msg + message,
-                        (msg_meta){"private", it.second.second, -1, 0});
+                        (msg_meta){"private", it.second.second, 0, 0});
                 }
                 else {
                     conf.p->cq_send(
                         all_msg + message,
-                        (msg_meta){"group", -1, it.second.first, 0});
+                        (msg_meta){"group", 0, it.second.first, 0});
                 }
             }
         }

@@ -23,6 +23,11 @@ void mybot::read_server_message(int new_socket)
             if (valread < 0) {
                 break;
             }
+            for(int i=1;i<valread;++i){
+                if(buffer[i]=='r' && buffer[i-1]=='\\'){
+                    buffer[i]='n';
+                }
+            }
             buffer[valread] = 0;
             s_buffer += buffer;
             if (valread < 4000) {
@@ -137,7 +142,7 @@ void mybot::init()
     for (;;) {
         try {
             Json::Value J = string_to_json(cq_get("get_login_info"));
-            botqq = J["data"]["user_id"].asInt64();
+            botqq = J["data"]["user_id"].asUInt64();
             break;
         }
         catch (...) {
@@ -164,7 +169,7 @@ void mybot::init()
 
 mybot::mybot(int recv_port, int send_port) : bot(recv_port, send_port) {}
 
-bool mybot::is_op(const int64_t a) const
+bool mybot::is_op(const uint64_t a) const
 {
     return op_list.find(a) != op_list.end();
 }
@@ -188,12 +193,12 @@ void mybot::input_process(std::string *input)
             int64_t message_id = J["message_id"].asInt64();
             std::string message_type = J["message_type"].asString();
             if (message_type == "group" || message_type == "private") {
-                int64_t user_id = 0, group_id = -1;
+                uint64_t user_id = 0, group_id = 0;
                 if (J.isMember("group_id")) {
-                    group_id = J["group_id"].asInt64();
+                    group_id = J["group_id"].asUInt64();
                 }
                 if (J.isMember("user_id")) {
-                    user_id = J["user_id"].asInt64();
+                    user_id = J["user_id"].asUInt64();
                 }
                 msg_meta conf = (msg_meta){message_type, user_id, group_id,
                                            message_id, this};
@@ -288,7 +293,7 @@ void mybot::run()
     msg_meta start_msg_conf;
     start_msg_conf.message_type = "private";
 
-    for (int64_t ops : op_list) {
+    for (uint64_t ops : op_list) {
         start_msg_conf.user_id = ops;
         this->cq_send("Love you!", start_msg_conf);
     }

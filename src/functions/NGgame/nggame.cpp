@@ -1,6 +1,6 @@
 #include "nggame.h"
 
-static std::map<int64_t, NGame> games;
+static std::map<uint64_t, NGame> games;
 
 void NGgame::process(std::string message, const msg_meta &conf)
 {
@@ -48,7 +48,7 @@ void NGgame::process(std::string message, const msg_meta &conf)
                 rep.message_type = "group";
                 conf.p->cq_send("Send the NG words via private chat.", rep);
                 // collect ng words
-                std::vector<int64_t> v = games[conf.group_id].get_player_list();
+                std::vector<uint64_t> v = games[conf.group_id].get_player_list();
                 std::random_shuffle(v.begin(), v.end());
                 for (size_t i = 0; i < v.size() - 1; i++)
                 {
@@ -165,7 +165,7 @@ void NGgame::process(std::string message, const msg_meta &conf)
                 {
                     if (pit.first == conf.user_id) // gamer
                     {
-                        int64_t victim = it.second.link[conf.user_id];
+                        uint64_t victim = it.second.link[conf.user_id];
                         it.second.ng[victim] = message;
                         msg_meta rep;
                         rep.p = conf.p;
@@ -217,12 +217,12 @@ void NGame::clear()
     link.clear();
 }
 
-void NGame::set_ngword(int64_t user_id, std::string ngword)
+void NGame::set_ngword(uint64_t user_id, std::string ngword)
 {
     ng[user_id] = ngword;
 }
 
-bool NGame::add_member(int64_t user_id)
+bool NGame::add_member(uint64_t user_id)
 {
     auto it = ng.find(user_id);
     if (it == ng.end())
@@ -245,12 +245,12 @@ bool NGame::is_ready()
     return true;
 }
 
-void NGame::out(int64_t user_id)
+void NGame::out(uint64_t user_id)
 {
     dead.push_back(user_id);
 }
 
-bool NGame::is_alive(int64_t user_id)
+bool NGame::is_alive(uint64_t user_id)
 {
     for (auto it : dead)
     {
@@ -262,7 +262,7 @@ bool NGame::is_alive(int64_t user_id)
     return true;
 }
 
-std::string NGame::get_ng(int64_t user_id)
+std::string NGame::get_ng(uint64_t user_id)
 {
     return ng[user_id];
 }
@@ -294,9 +294,9 @@ void NGame::update(bool toabort)
     }
 }
 
-std::vector<int64_t> NGame::get_player_list()
+std::vector<uint64_t> NGame::get_player_list()
 {
-    std::vector<int64_t> l;
+    std::vector<uint64_t> l;
     for (auto it : ng)
     {
         l.push_back(it.first);

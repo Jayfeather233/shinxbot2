@@ -5,7 +5,7 @@
 
 Json::Value forward_msg_gen::get_data(bot *p, std::wstring s1,
                                       std::wistringstream &wiss,
-                                      int64_t group_id)
+                                      uint64_t group_id)
 {
     Json::Value res;
     std::wstring s2;
@@ -29,9 +29,9 @@ Json::Value forward_msg_gen::get_data(bot *p, std::wstring s1,
             flg = true;
         }
     }
-    int64_t uin = my_string2int64(s1);
+    uint64_t uin = my_string2uint64(s1);
     res["name"] = get_username(p, uin, group_id);
-    res["uin"] = uin;
+    res["uin"] = std::to_string(uin); //TODO: maybe changed. But now its string
     if (s2 == L"转发") {
         res["content"] = get_content(p, wiss, group_id);
     }
@@ -47,7 +47,7 @@ Json::Value forward_msg_gen::get_data(bot *p, std::wstring s1,
                 pos++;
             s2.insert(pos,
                       L",name=" + string_to_wstring(get_username(
-                                      p, my_string2int64(s2.substr(po1, pos - po1)),
+                                      p, my_string2uint64(s2.substr(po1, pos - po1)),
                                       group_id)));
         }
         res["content"] = wstring_to_string(s2);
@@ -56,7 +56,7 @@ Json::Value forward_msg_gen::get_data(bot *p, std::wstring s1,
 }
 
 Json::Value forward_msg_gen::get_content(bot *p, std::wistringstream &wiss,
-                                         int64_t group_id)
+                                         uint64_t group_id)
 {
     std::wstring s1;
     Json::Value Ja;

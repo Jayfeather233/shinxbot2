@@ -6,7 +6,7 @@ bot::bot(int recv_port, int send_port)
 {
 }
 
-bool bot::is_op(const int64_t a) const { return false; }
+bool bot::is_op(const uint64_t a) const { return false; }
 
 std::string bot::cq_send(const std::string &message, const msg_meta &conf) const
 {
@@ -32,6 +32,6 @@ std::string bot::cq_get(const std::string &end_point) const
 
 void bot::setlog(LOG type, std::string message) {}
 
-int64_t bot::get_botqq() const { return botqq; }
+uint64_t bot::get_botqq() const { return botqq; }
 
 bot::~bot() {}

@@ -16,8 +16,8 @@ class bot;
  */
 struct msg_meta {
     std::string message_type;
-    int64_t user_id;
-    int64_t group_id;
+    uint64_t user_id;
+    uint64_t group_id;
     int64_t message_id;
     bot *p;
 };
@@ -43,7 +43,7 @@ public:
     /**
      * Is this user the bot's operator?
      */
-    virtual bool is_op(const int64_t a) const;
+    virtual bool is_op(const uint64_t a) const;
 
     /**
      * send(POST) to gocq (or any other you want)
@@ -70,7 +70,7 @@ public:
     /**
      * get mine qq. (or other id-like-thing)
      */
-    virtual int64_t get_botqq() const;
+    virtual uint64_t get_botqq() const;
 
     /**
      * receive a message, how to process

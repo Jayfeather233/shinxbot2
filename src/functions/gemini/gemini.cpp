@@ -168,7 +168,7 @@ size_t gemini::get_tokens(const Json::Value &history)
     return qes["totalTokens"].as<size_t>();
 }
 
-void gemini::shrink_prompt_size(int64_t u, bool is_vision)
+void gemini::shrink_prompt_size(uint64_t u, bool is_vision)
 {
     size_t limits = is_vision ? (MAX_PRO_VISION_LENGTH - MAX_PRO_VISION_REPLY)
                               : (MAX_PRO_LENGTH - MAX_PRO_REPLY);
@@ -178,7 +178,7 @@ void gemini::shrink_prompt_size(int64_t u, bool is_vision)
     }
 }
 
-std::string gemini::generate_text(std::string message, int64_t id)
+std::string gemini::generate_text(std::string message, uint64_t id)
 {
     Json::Value J;
     J["role"] = "user";
@@ -207,7 +207,7 @@ std::string gemini::generate_text(std::string message, int64_t id)
     }
     return str_ans;
 }
-std::string gemini::generate_image(std::string message, int64_t id)
+std::string gemini::generate_image(std::string message, uint64_t id)
 {
     int cnt = 0;
     size_t index = -1, index2 = -1;
@@ -273,7 +273,7 @@ std::string gemini::generate_image(std::string message, int64_t id)
 
 void gemini::process(std::string message, const msg_meta &conf)
 {
-    int64_t id = conf.message_type == "group" ? (conf.group_id << 1)
+    uint64_t id = conf.message_type == "group" ? (conf.group_id << 1)
                                               : ((conf.user_id << 1) | 1);
     message = message.substr(4);
     std::string result;

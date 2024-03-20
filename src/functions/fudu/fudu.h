@@ -2,7 +2,7 @@
 
 class fudu : public processable {
 private:
-    std::map<int64_t, std::string> gmsg;
+    std::map<uint64_t, std::string> gmsg;
     std::map<int64_t, int> times;
 
 public:

@@ -5,12 +5,12 @@
 #include <jsoncpp/json/json.h>
 #include <map>
 
-static std::map<int64_t, std::map<int64_t, std::string>> stranger_name;
+static std::map<uint64_t, std::map<uint64_t, std::string>> stranger_name;
 
-std::string get_stranger_name(const bot *p, int64_t user_id)
+std::string get_stranger_name(const bot *p, uint64_t user_id)
 {
     auto it = stranger_name.find(p->get_botqq());
-    std::map<int64_t, std::string>::iterator it2;
+    std::map<uint64_t, std::string>::iterator it2;
     if (it == stranger_name.end())
     {
         goto no_cache2;
@@ -31,13 +31,13 @@ no_cache2:
     return name;
 }
 
-static std::map<int64_t, std::map<int64_t, std::map<int64_t, std::string>>> group_member_name;
+static std::map<uint64_t, std::map<uint64_t, std::map<uint64_t, std::string>>> group_member_name;
 
 std::string get_group_member_name(const bot *p, int64_t user_id, int64_t group_id)
 {
     auto it1 = group_member_name.find(p->get_botqq());
-    std::map<int64_t, std::map<int64_t, std::string>>::iterator it2;
-    std::map<int64_t, std::string>::iterator it3;
+    std::map<uint64_t, std::map<uint64_t, std::string>>::iterator it2;
+    std::map<uint64_t, std::string>::iterator it3;
     if (it1 == group_member_name.end())
     {
         goto no_cache;
@@ -70,9 +70,9 @@ no_cache:
     return name;
 }
 
-std::string get_username(const bot *p, int64_t user_id, int64_t group_id)
+std::string get_username(const bot *p, uint64_t user_id, uint64_t group_id)
 {
-    if (group_id == -1)
+    if (group_id == 0)
     {
         return get_stranger_name(p, user_id);
     }
@@ -82,7 +82,7 @@ std::string get_username(const bot *p, int64_t user_id, int64_t group_id)
     }
 }
 
-bool is_folder_exist(const bot *p, const int64_t &group_id, const std::string &path)
+bool is_folder_exist(const bot *p, const uint64_t &group_id, const std::string &path)
 {
     Json::Value J;
     J["group_id"] = group_id;
@@ -98,7 +98,7 @@ bool is_folder_exist(const bot *p, const int64_t &group_id, const std::string &p
     return false;
 }
 
-std::string get_folder_id(const bot *p, const int64_t &group_id, const std::string &path)
+std::string get_folder_id(const bot *p, const uint64_t &group_id, const std::string &path)
 {
     Json::Value J;
     J["group_id"] = group_id;
@@ -117,7 +117,7 @@ std::string get_folder_id(const bot *p, const int64_t &group_id, const std::stri
 /**
  * file: reletive path
  */
-void upload_file(bot *p, const std::filesystem::path &file, const int64_t &group_id, const std::string &path)
+void upload_file(bot *p, const std::filesystem::path &file, const uint64_t &group_id, const std::string &path)
 {
     try
     {
@@ -138,19 +138,19 @@ void upload_file(bot *p, const std::filesystem::path &file, const int64_t &group
         J = string_to_json(p->cq_send("upload_group_file", J));
         if (J.isMember("msg"))
         {
-            p->cq_send(J.toStyledString(), (msg_meta){"group", -1, group_id, 0});
+            p->cq_send(J.toStyledString(), (msg_meta){"group", 0, group_id, 0});
         }
     }
     catch (...)
     {
         p->setlog(LOG::WARNING, "File upload failed.");
-        p->cq_send("File upload failed.", (msg_meta){"group", -1, group_id, 0});
+        p->cq_send("File upload failed.", (msg_meta){"group", 0, group_id, 0});
     }
 }
 
-bool is_group_op(const bot *p, const int64_t &group_id, const int64_t &user_id)
+bool is_group_op(const bot *p, const uint64_t &group_id, const uint64_t &user_id)
 {
-    if (group_id == -1)
+    if (group_id == 0)
         return false;
     Json::Value J;
     J["group_id"] = group_id;
@@ -159,13 +159,13 @@ bool is_group_op(const bot *p, const int64_t &group_id, const int64_t &user_id)
     return J["role"].asString() != "member";
 }
 
-bool is_friend(const bot *p, const int64_t &user_id)
+bool is_friend(const bot *p, const uint64_t &user_id)
 {
     Json::Value J = string_to_json(p->cq_get("get_friend_list"))["data"];
     Json::ArrayIndex sz = J.size();
     for (Json::ArrayIndex i = 0; i < sz; i++)
     {
-        if (J[i]["user_id"].asInt64() == user_id)
+        if (J[i]["user_id"].asUInt64() == user_id)
         {
             return true;
         }

@@ -32,7 +32,7 @@ std::string do_get(const std::string &httpaddr,
 /**
  * get user's name (group name if group_id != -1)
  */
-std::string get_username(const bot *p, int64_t user_id, int64_t group_id);
+std::string get_username(const bot *p, uint64_t user_id, uint64_t group_id);
 
 /**
  * convert a string into json
@@ -55,7 +55,7 @@ template <typename T> bool find_in_array(const Json::Value &Ja, const T &data)
 /**
  * Check if someone is the operator of *bot*
  */
-bool is_op(const bot *p, const int64_t a);
+bool is_op(const bot *p, const uint64_t a);
 
 /**
  * send a message to go-cqhttp
@@ -80,7 +80,7 @@ std::string cq_get(const bot *p, const std::string &end_point);
  */
 void setlog(bot *p, LOG type, std::string message);
 void set_global_log(LOG type, std::string message);
-int64_t get_botqq(const bot *p);
+uint64_t get_botqq(const bot *p);
 /**
  * Get the path where the bot is (in absolute path)
  * like: /usr/home/name/bot/
@@ -114,6 +114,14 @@ int64_t my_string2int64(const std::wstring &s);
  * convert all numbers in a string into int64_t
  */
 int64_t my_string2int64(const std::string &s);
+/**
+ * convert all numbers in a string into uint64_t
+ */
+uint64_t my_string2uint64(const std::wstring &s);
+/**
+ * convert all numbers in a string into uint64_t
+ */
+uint64_t my_string2uint64(const std::string &s);
 
 /**
  * get a random number [0, maxi)
@@ -181,14 +189,8 @@ Json::Value parse_map_to_json(const std::map<des_type, data_type> &mp)
 /**
  * Convert a json array to a set
  */
-template <typename des_type>
-void parse_json_to_set(const Json::Value &J, std::set<des_type> &mp)
-{
-    Json::ArrayIndex sz = J.size();
-    for (Json::ArrayIndex i = 0; i < sz; i++) {
-        mp.insert(J[i].as<des_type>());
-    }
-}
+void parse_json_to_set(const Json::Value &J, std::set<uint64_t> &mp);
+void parse_json_to_set(const Json::Value &J, std::set<std::string> &mp);
 
 /**
  * Convert a set to json array
@@ -229,24 +231,24 @@ Json::ArrayIndex json_array_find(const Json::Value &J, const T &data)
  * file: reletive path
  */
 void upload_file(bot *p, const std::filesystem::path &file,
-                 const int64_t &group_id, const std::string &path);
+                 const uint64_t &group_id, const std::string &path);
 
 /**
  * Get the folder id in a group
  */
-std::string get_folder_id(const bot *p, const int64_t &group_id,
+std::string get_folder_id(const bot *p, const uint64_t &group_id,
                           const std::string &path);
 
 /**
  * Determine if a folder in group exists
  */
-bool is_folder_exist(const bot *p, const int64_t &group_id,
+bool is_folder_exist(const bot *p, const uint64_t &group_id,
                      const std::string &path);
 
 /**
  * Determine if someone is operator
  */
-bool is_group_op(const bot *p, const int64_t &group_id, const int64_t &user_id);
+bool is_group_op(const bot *p, const uint64_t &group_id, const uint64_t &user_id);
 
 inline bool is_digit(const char &s) { return '0' <= s && s <= '9'; }
 inline bool is_word(const char &s)
@@ -300,7 +302,7 @@ void kaleido(Magick::Image &img, int layers = 3, int nums_per_layer = 8,
 void kaleido(std::vector<Magick::Image> &img, int layers = 3,
              int nums_per_layer = 8);
 
-bool is_friend(const bot *p, const int64_t &user_id);
+bool is_friend(const bot *p, const uint64_t &user_id);
 
 std::string cq_encode(const std::string& input);
 std::string cq_decode(const std::string& input);

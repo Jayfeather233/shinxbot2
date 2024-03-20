@@ -12,7 +12,7 @@
 class mybot : public bot {
 private:
     bool bot_is_on = true;
-    int64_t botqq;
+    uint64_t botqq;
 
     std::ofstream LOG_output[3];
     std::mutex log_lock;
@@ -20,7 +20,7 @@ private:
 
     std::vector<processable *> functions;
     std::vector<eventprocess *> events;
-    std::set<int64_t> op_list;
+    std::set<uint64_t> op_list;
 
     bool bot_isopen = true;
 
@@ -49,7 +49,7 @@ private:
 public:
     mybot(int recv_port, int send_port);
 
-    bool is_op(const int64_t a) const;
+    bool is_op(const uint64_t a) const;
 
     void input_process(std::string *input);
 

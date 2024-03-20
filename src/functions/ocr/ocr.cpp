@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <map>
-static std::map<int64_t, bool> in_queue;
+static std::map<uint64_t, bool> in_queue;
 
 std::string ocr::ocr_tostring(const Json::Value &J) {
     Json::ArrayIndex sz = J.size();
@@ -50,7 +50,7 @@ void ocr::process(std::string message, const msg_meta &conf)
         ++index2;
     }
     Json::Value J;
-    J["image"] = message.substr(index, index2 - index);
+    J["image"] = cq_decode(message.substr(index, index2 - index));
     J = string_to_json(conf.p->cq_send("ocr_image", J))["data"]["texts"];
     std::string res = ocr_tostring(J);
     conf.p->cq_send(res, conf);

@@ -70,7 +70,7 @@ void Cat::save_cat()
     writefile("./config/cats/" + std::to_string(_id) + ".json", getinfo());
 }
 
-Cat::Cat(const std::string &name, int64_t user_id) : _id(user_id)
+Cat::Cat(const std::string &name, uint64_t user_id) : _id(user_id)
 {
     this->name = name;
     this->food = 50;
@@ -83,9 +83,9 @@ Cat::Cat(const std::string &name, int64_t user_id) : _id(user_id)
     save_cat();
 }
 
-Cat::Cat(int64_t user_id) : _id(user_id)
+Cat::Cat(uint64_t user_id) : _id(user_id)
 {
-    if (user_id == -1)
+    if (user_id == 0)
         return;
 
     std::string ans =

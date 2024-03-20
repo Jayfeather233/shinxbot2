@@ -21,7 +21,7 @@ catmain::catmain()
     Json::Value user_list = string_to_json(ans);
     auto sz = user_list.size();
     for (Json::ArrayIndex i = 0; i < sz; ++i) {
-        cat_map[user_list[i].asInt64()] = Cat((int64_t)user_list[i].asInt64());
+        cat_map[user_list[i].asUInt64()] = Cat((uint64_t)user_list[i].asUInt64());
     }
 }
 

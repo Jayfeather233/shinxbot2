@@ -4,7 +4,7 @@
 gray_list::gray_list(){
     Json::Value J = string_to_json( readfile("./config/g_list.json", "{}") );
     for(std::string group_id_s : J.getMemberNames()){
-        int64_t group_id = my_string2int64(group_id_s);
+        uint64_t group_id = my_string2uint64(group_id_s);
         g_list[group_id] = J[group_id_s];
     }
 }
@@ -19,7 +19,7 @@ void gray_list::save(){
 
 void gray_list::process(std::string message, const msg_meta &conf){
     message = trim(message);
-    int64_t user_id = my_string2int64(message);
+    uint64_t user_id = my_string2uint64(message);
 
     std::string user_name = get_username(conf.p, user_id, conf.group_id);
     Json::ArrayIndex ind;
@@ -43,7 +43,7 @@ void gray_list::process(std::string message, const msg_meta &conf){
         Json::Value res = string_to_json(conf.p->cq_send("将 " + user_name + " 添加进灰名单", conf));
         if(res["status"].asString() == "failed"){
             msg_meta s_conf;
-            s_conf.group_id = -1;
+            s_conf.group_id = 0;
             s_conf.message_type = "private";
             s_conf.user_id = conf.user_id;
             conf.p->cq_send("将 " + user_name + " 添加进灰名单\nmsg: " + res["wording"].asString(), s_conf);

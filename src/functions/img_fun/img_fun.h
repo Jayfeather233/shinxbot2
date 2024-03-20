@@ -14,7 +14,7 @@ struct img_fun_type{
 
 class img_fun : public processable {
 private:
-    std::map<int64_t, img_fun_type> is_input;
+    std::map<uint64_t, img_fun_type> is_input;
 public:
     void process(std::string message, const msg_meta &conf);
     bool check(std::string message, const msg_meta &conf);
