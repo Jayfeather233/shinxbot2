@@ -301,3 +301,9 @@ void kaleido(std::vector<Magick::Image> &img, int layers = 3,
              int nums_per_layer = 8);
 
 bool is_friend(const bot *p, const int64_t &user_id);
+
+std::string cq_encode(const std::string& input);
+std::string cq_decode(const std::string& input);
+std::wstring cq_encode(const std::wstring& input);
+std::wstring cq_decode(const std::wstring& input);
+std::string messageArr_to_string(const Json::Value &J);

@@ -113,7 +113,7 @@ void img_fun::process(std::string message, const msg_meta &conf)
     }
 
     is_input.erase(conf.user_id);
-    download(fileurl, "./resource/download/", filename);
+    download(cq_decode(fileurl), "./resource/download/", filename);
     Magick::Image img;
     bool mgif = false;
     try{

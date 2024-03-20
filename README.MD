@@ -1,6 +1,6 @@
 # shinxBot2
 
-一个基于[go-cqhttp](https://github.com/Mrs4s/go-cqhttp)的机器人以及（轻微的）多机器人管理框架。
+一个基于 ~~go-cqhttp~~ [Lagrange.Onebot](https://github.com/LagrangeDev/Lagrange.Core)(迁移中) 的机器人以及（轻微的）多机器人管理框架。
 
 ~~做着玩的~~
 

@@ -184,7 +184,7 @@ void mybot::input_process(std::string *input)
     }
     else if (post_type == "message") {
         if (J.isMember("message_type") && J.isMember("message")) {
-            std::string message = J["message"].asString();
+            std::string message = messageArr_to_string(J["message"]);
             int64_t message_id = J["message_id"].asInt64();
             std::string message_type = J["message_type"].asString();
             if (message_type == "group" || message_type == "private") {

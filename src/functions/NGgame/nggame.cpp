@@ -1,6 +1,6 @@
-#include "./nggame.h"
+#include "nggame.h"
 
-std::map<int64_t, NGame> games;
+static std::map<int64_t, NGame> games;
 
 void NGgame::process(std::string message, const msg_meta &conf)
 {

@@ -221,7 +221,7 @@ std::string gemini::generate_image(std::string message, int64_t id)
         while (message[index2] != ']') {
             ++index2;
         }
-        download(message.substr(index, index2 - index), "./resource/download/",
+        download(cq_decode(message.substr(index, index2 - index)), "./resource/download/",
                  fn);
         cnt++;
         break;

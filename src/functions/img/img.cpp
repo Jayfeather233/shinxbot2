@@ -70,7 +70,7 @@ int img::add_image(std::string name, std::string image, int64_t group_id)
 
         belong_to(name, group_id);
 
-        download(image.substr(index, index2 - index), "./resource/mt/" + name,
+        download(cq_decode(image.substr(index, index2 - index)), "./resource/mt/" + name,
                  std::to_string(images[name]));
         images[name]++;
         cnt++;
