@@ -176,6 +176,10 @@ bool mybot::is_op(const uint64_t a) const
 
 void mybot::input_process(std::string *input)
 {
+    if(*input == ""){
+        delete input;
+        return;
+    }
     Json::Value J = string_to_json(*input);
     delete input;
     std::string post_type = J["post_type"].asString();
