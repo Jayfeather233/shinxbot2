@@ -1,6 +1,6 @@
 # shinxBot2
 
-一个基于 ~~go-cqhttp~~ [Lagrange.Onebot](https://github.com/LagrangeDev/Lagrange.Core)(迁移中) 的机器人以及（轻微的）多机器人管理框架。
+一个基于 ~~go-cqhttp~~ [Lagrange.Onebot](https://github.com/LagrangeDev/Lagrange.Core)(已迁移，如有bug提issue) 的机器人以及（轻微的（还没写））多机器人管理框架。
 
 ~~做着玩的~~
 
@@ -66,7 +66,10 @@ libcurl: sudo apt-get install libcurl4-openssl-dev
 openssl: sudo apt-get install openssl-dev (or libssl-dev)
 jsoncpp: sudo apt-get install libjsoncpp-dev
 libzip: sudo apt-get install libzip-dev
-Magick++: Please refer to [Magick++ installing page](https://www.imagemagick.org/Magick++/Install.html) to manually install it.
+Magick++:
+    sudo apt-get install libmagick++-dev libmagick++-6.q16hdri-dev
+    then remove them (this step actually do dependency install),
+    then refer to [Magick++ installing page](https://www.imagemagick.org/Magick++/Install.html) to manually install it. (for a higher version of 7)
 maybe it will work
 ```
 
