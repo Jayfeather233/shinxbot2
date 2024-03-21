@@ -88,16 +88,17 @@ void img_fun::process(std::string message, const msg_meta &conf)
         filename = "qq" + std::to_string(userid);
     }
     else if (wmessage.find(L"[CQ:image") != wmessage.npos) {
-        size_t index = wmessage.find(L",file=");
-        index += 6;
-        for (size_t i = index; i < wmessage.length(); i++) {
-            if (wmessage[i] == L'.') {
-                filename = wstring_to_string(wmessage.substr(index, i - index));
-                break;
-            }
-        }
+        std::time_t nt = std::chrono::system_clock::to_time_t(
+            std::chrono::system_clock::now());
+        tm tt = *localtime(&nt);
 
-        index = wmessage.find(L",url=");
+        std::ostringstream oss;
+        oss << std::setw(2) << std::setfill('0') << tt.tm_hour << ":"
+            << std::setw(2) << std::setfill('0') << tt.tm_min << ":"
+            << std::setw(2) << std::setfill('0') << tt.tm_sec;
+        filename = std::to_string(conf.user_id) + "_" + oss.str();
+
+        size_t index = wmessage.find(L",url=");
         wmessage = wmessage.substr(index + 5);
         for (size_t i = 0; i < wmessage.length(); i++) {
             if (wmessage[i] == L']' || wmessage[i] == L',') {
@@ -116,23 +117,25 @@ void img_fun::process(std::string message, const msg_meta &conf)
     download(cq_decode(fileurl), "./resource/download/", filename);
     Magick::Image img;
     bool mgif = false;
-    try{
+    try {
         img.read("./resource/download/" + filename);
-    } catch (...){
+    }
+    catch (...) {
         mgif = true;
     }
-    if (img.animationDelay() || proc_type.type == img_fun_type::ROTATE || mgif) {
+    if (img.animationDelay() || proc_type.type == img_fun_type::ROTATE ||
+        mgif) {
         std::vector<Magick::Image> img_list;
         Magick::readImages(&img_list, "./resource/download/" + filename);
-        if (proc_type.type == img_fun_type::MIRROR){
+        if (proc_type.type == img_fun_type::MIRROR) {
             filename += "_mir.gif";
             mirrorImage(img_list, proc_type.para1, proc_type.para2);
         }
-        else if (proc_type.type == img_fun_type::ROTATE){
+        else if (proc_type.type == img_fun_type::ROTATE) {
             filename += "_rot.gif";
             img_list = rotateImage(img, proc_type.para1, proc_type.para2);
         }
-        else if (proc_type.type == img_fun_type::KALEIDO){
+        else if (proc_type.type == img_fun_type::KALEIDO) {
             filename += "_kal.gif";
             kaleido(img_list, proc_type.para1, proc_type.para2);
         }
@@ -140,11 +143,11 @@ void img_fun::process(std::string message, const msg_meta &conf)
                             "./resource/download/" + filename);
     }
     else {
-        if (proc_type.type == img_fun_type::MIRROR){
+        if (proc_type.type == img_fun_type::MIRROR) {
             filename += "_mir.png";
             mirrorImage(img, proc_type.para1, proc_type.para2);
         }
-        else if (proc_type.type == img_fun_type::KALEIDO){
+        else if (proc_type.type == img_fun_type::KALEIDO) {
             filename += "_kal.png";
             kaleido(img, proc_type.para1, proc_type.para2);
         }
