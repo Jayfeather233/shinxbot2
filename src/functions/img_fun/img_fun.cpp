@@ -93,8 +93,8 @@ void img_fun::process(std::string message, const msg_meta &conf)
         tm tt = *localtime(&nt);
 
         std::ostringstream oss;
-        oss << std::setw(2) << std::setfill('0') << tt.tm_hour << ":"
-            << std::setw(2) << std::setfill('0') << tt.tm_min << ":"
+        oss << std::setw(2) << std::setfill('0') << tt.tm_hour << "_"
+            << std::setw(2) << std::setfill('0') << tt.tm_min << "_"
             << std::setw(2) << std::setfill('0') << tt.tm_sec;
         filename = std::to_string(conf.user_id) + "_" + oss.str();
 
