@@ -428,6 +428,10 @@ void NGgame::process(std::string message, const msg_meta &conf)
         }
         else if (message.find(prefix + "join") != std::string::npos)
         {
+            if(game.get_state() == gameState::idle)
+            {
+                send_msg_ng(conf.p, gid, 0, "No existed game. Send @Bot ng start to create one");
+            }
             if (game.get_state() != gameState::join)
             {
                 send_msg_ng(conf.p, gid, 0, "Pls wait for the ongoing game to terminate");
