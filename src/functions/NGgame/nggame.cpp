@@ -296,7 +296,7 @@ void NGgame::process(std::string message, const msg_meta &conf)
         auto &game = games[conf.group_id];
         if (message.find(prefix + "guess") != std::string::npos) // guess
         {
-            std::string guess = message.substr(message.find("guess") + 8);
+            std::string guess = message.substr(message.find("guess") + 6);
             if (game.check_ng(guess, uid))
             {
                 send_msg_ng(conf.p, gid, 0, "Congrats! Your NG word is " + guess);
@@ -306,6 +306,7 @@ void NGgame::process(std::string message, const msg_meta &conf)
             else
             {
                 send_msg_ng(conf.p, gid, 0, "Oops, your NG word is " + game.get_ng(uid) + "\nGood luck next time!");
+                game.lose(uid);
                 if (game.check_end())
                 {
                     send_msg_ng(conf.p, gid, 0,
