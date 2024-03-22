@@ -309,3 +309,5 @@ std::string cq_decode(const std::string& input);
 std::wstring cq_encode(const std::wstring& input);
 std::wstring cq_decode(const std::wstring& input);
 std::string messageArr_to_string(const Json::Value &J);
+
+std::string get_stranger_name(const bot *p, uint64_t user_id);
