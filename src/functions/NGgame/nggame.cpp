@@ -1,6 +1,6 @@
 #include "nggame.h"
 
-static std::string help_url = "https://paste.ubuntu.com/p/8Z23qRcnKc/plain/";
+static std::string help_url = "https://demo.hedgedoc.org/zSOS-JMKSCey2E_4UjrrOQ?view";
 
 void send_msg_ng(bot *p, uint64_t group_id, uint64_t user_id, std::string content);
 
@@ -432,7 +432,7 @@ void NGgame::process(std::string message, const msg_meta &conf)
             {
                 send_msg_ng(conf.p, gid, 0, "No existed game. Send @Bot ng start to create one");
             }
-            if (game.get_state() != gameState::join)
+            else if (game.get_state() != gameState::join)
             {
                 send_msg_ng(conf.p, gid, 0, "Pls wait for the ongoing game to terminate");
             }
