@@ -317,11 +317,11 @@ void NGgame::process(std::string message, const msg_meta &conf)
         else // normal check
         {
             std::string expanded_msg = expand_at(message, conf);
-            std::cout<<"message: "<<expanded_msg<<std::endl;
             if (game.check_ng(expanded_msg, uid))
             {
                 send_msg_ng(conf.p, gid, 0,
                             get_username(conf.p, uid, gid) + " Out! The NG word is " + game.get_ng(uid));
+                game.lose(uid);
                 if (game.check_end())
                 {
                     send_msg_ng(conf.p, gid, 0,
@@ -413,10 +413,12 @@ void NGgame::process(std::string message, const msg_meta &conf)
                             "A game is collecting NG words (" + std::to_string(game.ready_cnt()) + "/" +
                                 std::to_string(game.total_cnt()) + ")");
                 send_msg_ng(conf.p, 0, uid, "Your victim is " + get_username(conf.p, game.get_vic(uid), gid));
+                break;
             }
             case gameState::work: {
                 send_msg_ng(conf.p, gid, 0, game.overall(conf));
                 send_msg_ng(conf.p, 0, uid, game.get_info(uid, conf));
+                break;
             }
             default: {
                 // should not execute here
