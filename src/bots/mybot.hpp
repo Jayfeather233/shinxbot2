@@ -12,7 +12,6 @@
 class mybot : public bot {
 private:
     bool bot_is_on = true;
-    uint64_t botqq;
 
     std::ofstream LOG_output[3];
     std::mutex log_lock;

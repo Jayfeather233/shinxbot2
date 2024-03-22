@@ -1,5 +1,6 @@
 #include "processable.h"
 #include <algorithm>
+#include <chrono>
 #include <map>
 #include <vector>
 
@@ -11,32 +12,62 @@ enum gameState
     work
 };
 
-class NGame
+typedef struct Player player;
+
+struct Player
+{
+    uint64_t id;
+    player *pre;
+    player *nex;
+    std::string word;
+    bool alive;
+    Player(uint64_t user_id)
+    {
+        id = user_id;
+        pre = nex = NULL;
+        word = "";
+        alive = true;
+    }
+};
+
+class NGGame
 {
   private:
     gameState state;
-    std::vector<uint64_t> dead;
+    std::map<uint64_t, player *> ng;
 
   public:
-    std::map<uint64_t, std::string> ng;
-    std::map<uint64_t, uint64_t> link;
-    void clear();
-    void set_ngword(uint64_t user_id, std::string ngword);
-    bool add_member(uint64_t user_id);
-    void set_link();
+    // player action
+    bool join(uint64_t user_id);
+    bool set(uint64_t user_id, std::string word);
+    bool lose(uint64_t user_id);
+    bool quit(uint64_t user_id);
 
-    bool is_ready();
-    void out(uint64_t user_id);
-    bool is_alive(uint64_t user_id);
-    std::string get_ng(uint64_t user_id);
-    int get_alive_num();
-    int get_player_num();
+    // game action
+    void set_state(gameState next_state);
+    void link();
+    void abort();
+    void send_list(const msg_meta &conf);
+    void send_vic(const msg_meta &conf);
 
-    std::vector<uint64_t> get_player_list();
+    // info
     gameState get_state();
-    void update(bool toabort);
+    uint64_t get_vic(uint64_t user_id);
+    uint64_t get_winner();
+    std::string get_ng(uint64_t user_id);
+    std::string get_info(uint64_t user_id, const msg_meta &conf);
+    std::string overall(const msg_meta &conf);
+    std::vector<uint64_t> get_lazy();
 
-    std::string get_info(uint64_t user_id);
+
+    bool is_alive(uint64_t user_id);
+    bool check_ng(std::string content, uint64_t user_id);
+    bool check_end();
+
+    size_t ready_cnt();
+    size_t alive_cnt();
+    size_t total_cnt();
+    size_t dead_cnt();
 };
 
 class NGgame : public processable
