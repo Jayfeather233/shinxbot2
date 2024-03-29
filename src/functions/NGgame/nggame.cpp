@@ -1,201 +1,501 @@
 #include "nggame.h"
 
-static std::map<uint64_t, NGame> games;
+static std::string help_url = "https://demo.hedgedoc.org/zSOS-JMKSCey2E_4UjrrOQ?view";
+
+void send_msg_ng(bot *p, uint64_t group_id, uint64_t user_id, std::string content);
+
+bool NGGame::join(uint64_t user_id)
+{
+    if (ng.find(user_id) != ng.end())
+    {
+        return false;
+    }
+    ng[user_id] = new player(user_id);
+    return true;
+}
+
+bool NGGame::set(uint64_t user_id, std::string word)
+{
+    if (ng.find(user_id) == ng.end())
+    {
+        return false;
+    }
+    ng[user_id]->word = word;
+    return true;
+}
+
+bool NGGame::lose(uint64_t user_id)
+{
+    if (ng.find(user_id) == ng.end() || !ng[user_id]->alive)
+    {
+        return false;
+    }
+    ng[user_id]->alive = false;
+    return true;
+}
+
+bool NGGame::quit(uint64_t user_id)
+{
+    if (ng.find(user_id) == ng.end())
+    {
+        return false;
+    }
+    // after linking, nex inherite the word from pre
+    if (ng[user_id]->nex)
+    {
+        ng[user_id]->pre->nex = ng[user_id]->nex;
+        ng[user_id]->nex->pre = ng[user_id]->pre;
+        ng[user_id]->nex->word = ng[user_id]->word;
+    }
+    delete ng[user_id];
+    ng[user_id] = NULL;
+    ng.erase(user_id);
+    return true;
+}
+
+void NGGame::set_state(gameState next_state)
+{
+    state = next_state;
+}
+
+void NGGame::link()
+{
+    std::vector<uint64_t> player_list;
+    for (auto it : ng)
+    {
+        player_list.push_back(it.first);
+    }
+    srand(time(0));
+    std::random_shuffle(player_list.begin(), player_list.end());
+    for (size_t i = 0; i < player_list.size(); i++)
+    {
+        ng[player_list[i]]->nex = ng[player_list[(i + 1) % player_list.size()]];
+        ng[player_list[(i + 1) % player_list.size()]]->pre = ng[player_list[i]];
+    }
+    player_list.clear();
+    player_list.shrink_to_fit();
+}
+
+void NGGame::abort()
+{
+    state = gameState::idle;
+    for (auto it : ng)
+    {
+        delete it.second;
+        it.second = NULL;
+    }
+    ng.clear();
+}
+
+void NGGame::send_list(const msg_meta &conf)
+{
+    for (auto it : ng)
+    {
+        send_msg_ng(conf.p, 0, it.first, get_info(it.first, conf));
+    }
+}
+
+void NGGame::send_vic(const msg_meta &conf)
+{
+    for (auto it : ng)
+    {
+        send_msg_ng(conf.p, 0, it.first,
+                    "Pls set NG word for " + get_username(conf.p, it.second->nex->id, conf.group_id));
+    }
+}
+
+gameState NGGame::get_state()
+{
+    return state;
+}
+
+std::string NGGame::get_ng(uint64_t user_id)
+{
+    if (ng.find(user_id) == ng.end() || !ng[user_id])
+    {
+        return "";
+    }
+    return ng[user_id]->word;
+}
+
+uint64_t NGGame::get_vic(uint64_t user_id)
+{
+    if (ng.find(user_id) == ng.end() || !ng[user_id]->nex)
+    {
+        return 0;
+    }
+    return ng[user_id]->nex->id;
+}
+
+uint64_t NGGame::get_winner()
+{
+    if (state == gameState::work)
+    {
+        for (auto it : ng)
+        {
+            if (it.second->alive)
+            {
+                return it.first;
+            }
+        }
+    }
+    return 0;
+}
+
+std::string NGGame::overall(const msg_meta &conf)
+{
+    std::string content = "";
+    for (auto it : ng)
+    {
+        if (is_alive(it.first))
+        {
+            content = content + get_username(conf.p, it.first, conf.group_id) + ": alive\n";
+        }
+        else
+        {
+            content = content + get_username(conf.p, it.first, conf.group_id) + " -> " + get_ng(it.first) + "\n";
+        }
+    }
+    if (content.length())
+    {
+        content.pop_back();
+    }
+    return content;
+}
+
+std::string NGGame::get_info(uint64_t user_id, const msg_meta &conf)
+{
+    std::string content = "";
+    for (auto it : ng)
+    {
+        if (it.first != user_id)
+        {
+            content = content + get_username(conf.p, it.first, conf.group_id) + " -> " + it.second->word + "\n";
+        }
+    }
+    content.pop_back();
+    return content;
+}
+
+std::vector<uint64_t> NGGame::get_lazy()
+{
+    std::vector<uint64_t> lazy;
+    for (auto it : ng)
+    {
+        if (!it.second->word.compare(""))
+        {
+            lazy.push_back(it.second->pre->id);
+        }
+    }
+    return lazy;
+}
+
+size_t NGGame::ready_cnt()
+{
+    size_t cnt = 0;
+    for (auto it : ng)
+    {
+        if (it.second && it.second->word.compare(""))
+        {
+            cnt++;
+        }
+    }
+    return cnt;
+}
+
+bool NGGame::is_alive(uint64_t user_id)
+{
+    if (ng.find(user_id) == ng.end() || !ng[user_id]->alive)
+    {
+        return false;
+    }
+    return true;
+}
+
+bool NGGame::check_ng(std::string content, uint64_t user_id)
+{
+    if (state != gameState::work || ng.find(user_id) == ng.end() || !ng[user_id]->alive ||
+        content.find(ng[user_id]->word) == std::string::npos)
+    {
+        return false;
+    }
+    return true;
+}
+
+bool NGGame::check_end()
+{
+    return state == gameState::work && alive_cnt() <= 1;
+}
+
+size_t NGGame::alive_cnt()
+{
+    size_t cnt = 0;
+    for (auto it : ng)
+    {
+        if (it.second && it.second->alive)
+        {
+            cnt++;
+        }
+    }
+    return cnt;
+}
+
+size_t NGGame::total_cnt()
+{
+    return ng.size();
+}
+
+size_t NGGame::dead_cnt()
+{
+    return total_cnt() - alive_cnt();
+}
+
+static std::map<uint64_t, NGGame> games;
+static msg_meta rep;
+
+void send_msg_ng(bot *p, uint64_t group_id, uint64_t user_id, std::string content)
+{
+    rep.user_id = user_id;
+    rep.group_id = group_id;
+    rep.message_type = group_id ? "group" : "private";
+    p->cq_send(content, rep);
+}
+
+static uint64_t extract_at(std::string cq)
+{
+    if (cq.find("[CQ:at,qq=") == std::string::npos || cq.find("]") == std::string::npos)
+    {
+        return 0;
+    }
+    size_t st = cq.find("=") + 1;
+    size_t ed = cq.find("]");
+    return atoll(cq.substr(st, ed - st).c_str());
+}
+
+static std::string expand_at(std::string raw, const msg_meta &conf)
+{
+    std::string res = raw;
+    while (res.find("[CQ:at,qq=") != std::string::npos || res.find("]") != std::string::npos)
+    {
+        uint64_t qq = extract_at(res);
+        if (qq)
+        {
+            res = "@" + get_username(conf.p, qq, conf.group_id) + res.substr(res.find("]") + 1);
+        }
+    }
+    return res;
+}
 
 void NGgame::process(std::string message, const msg_meta &conf)
 {
+    auto uid = conf.user_id;
+    auto gid = conf.group_id;
+    std::string prefix = "[CQ:at,qq=" + std::to_string(conf.p->get_botqq()) + "] ng ";
     if (conf.message_type == "group")
     {
-        if (games[conf.group_id].get_state() == gameState::work && games[conf.group_id].is_alive(conf.user_id))
+        auto &game = games[conf.group_id];
+        if (message.find(prefix + "guess") != std::string::npos) // guess
         {
-            std::string ngword = games[conf.group_id].get_ng(conf.user_id);
-            if (message.find(ngword) != message.npos)
+            std::string guess = message.substr(message.find("guess") + 6);
+            if (game.check_ng(guess, uid))
             {
-                std::string content =
-                    get_username(conf.p, conf.user_id, conf.group_id) + " Out! The NG word is " + ngword;
-                msg_meta rep;
-                rep.p = conf.p;
-                rep.group_id = conf.group_id;
-                rep.message_type = "group";
-                conf.p->cq_send(content, rep);
-                if (games[conf.group_id].get_alive_num() <= 1)
+                send_msg_ng(conf.p, gid, 0, "Congrats! Your NG word is " + guess);
+                send_msg_ng(conf.p, gid, 0, "Game over! The winner is " + get_username(conf.p, uid, gid));
+                game.abort();
+            }
+            else
+            {
+                send_msg_ng(conf.p, gid, 0, "Oops, your NG word is " + game.get_ng(uid) + "\nGood luck next time!");
+                game.lose(uid);
+                if (game.check_end())
                 {
-                    content = "Game Over! The winner is" + content;
-                    conf.p->cq_send(content, rep);
-                    games[conf.group_id].clear();
-                    games[conf.group_id].update(true);
+                    send_msg_ng(conf.p, gid, 0,
+                                "Game over! The winner is " + get_username(conf.p, game.get_winner(), gid));
+                    game.abort();
                 }
             }
         }
-        if (message.find("[CQ:at,qq=" + std::to_string(conf.p->get_botqq()) + "] ng start") != message.npos)
+        else // normal check
         {
-            switch (games[conf.group_id].get_state())
+            std::string expanded_msg = expand_at(message, conf);
+            if (game.check_ng(expanded_msg, uid))
+            {
+                send_msg_ng(conf.p, gid, 0,
+                            get_username(conf.p, uid, gid) + " Out! The NG word is " + game.get_ng(uid));
+                game.lose(uid);
+                if (game.check_end())
+                {
+                    send_msg_ng(conf.p, gid, 0,
+                                "Game over! The winner is " + get_username(conf.p, game.get_winner(), gid));
+                    game.abort();
+                }
+            }
+        }
+        if (message.find(prefix + "start") != std::string::npos)
+        {
+            switch (game.get_state())
             {
             case gameState::idle: {
-                games[conf.group_id].clear();
-                games[conf.group_id].update(false);
-                msg_meta rep;
-                rep.p = conf.p;
-                rep.group_id = conf.group_id;
-                rep.message_type = "group";
-                conf.p->cq_send("Send \"ng join\" to join", rep);
+                game.set_state(gameState::join);
+                send_msg_ng(conf.p, gid, 0, "Game created, send @Bot ng join to join\nHelp: " + help_url);
                 break;
             }
             case gameState::join: {
-                msg_meta rep;
-                rep.p = conf.p;
-                rep.group_id = conf.group_id;
-                rep.message_type = "group";
-                conf.p->cq_send("Send the NG words via private chat.", rep);
-                // collect ng words
-                std::vector<uint64_t> v = games[conf.group_id].get_player_list();
-                std::random_shuffle(v.begin(), v.end());
-                for (size_t i = 0; i < v.size() - 1; i++)
+                if (game.total_cnt() <= 1)
                 {
-                    games[conf.group_id].link[v[i]] = v[i + 1];
-                }
-                games[conf.group_id].link[v[v.size() - 1]] = v[0];
-                for (auto it : games[conf.group_id].link)
-                {
-                    msg_meta f;
-                    f.message_type = "private";
-                    f.user_id = it.first;
-                    f.p = conf.p;
-                    std::string content = "Please set NG word for " + get_username(conf.p, it.second, conf.group_id);
-                    conf.p->cq_send(content, f);
-                }
-                games[conf.group_id].update(false);
-                break;
-            }
-            case gameState::init: {
-                if (games[conf.group_id].is_ready())
-                {
-                    msg_meta rep;
-                    rep.p = conf.p;
-                    rep.group_id = conf.group_id;
-                    rep.message_type = "group";
-                    conf.p->cq_send("NG game starts!", rep);
-                    games[conf.group_id].update(false);
+                    send_msg_ng(conf.p, gid, 0, "Bocchi-the-NG-Game");
                 }
                 else
                 {
-                    msg_meta rep;
-                    rep.p = conf.p;
-                    rep.group_id = conf.group_id;
-                    rep.message_type = "group";
-                    conf.p->cq_send("Someone has no NG word yet!", rep);
+                    game.set_state(gameState::init);
+                    game.link();
+                    send_msg_ng(conf.p, gid, 0, "Pls send the NG words via private chats");
+                    game.send_vic(conf);
+                }
+                break;
+            }
+            case gameState::init: {
+                if (game.ready_cnt() == game.total_cnt())
+                {
+                    game.set_state(gameState::work);
+                    send_msg_ng(conf.p, gid, 0, "Game starts! Pls check your private chat for the NG words");
+                    game.send_list(conf);
+                }
+                else
+                {
+                    auto lazy_list = game.get_lazy();
+                    std::string content = "";
+                    for (auto it : lazy_list)
+                    {
+                        content = content + get_username(conf.p, it, gid) + ",";
+                    }
+                    content.pop_back();
+                    if (lazy_list.size() > 1)
+                    {
+                        content = content + " has not set the NG word yet";
+                    }
+                    else
+                    {
+                        content = content + " have not set the NG words yet";
+                    }
+                    send_msg_ng(conf.p, gid, 0, content);
                 }
                 break;
             }
             case gameState::work: {
-                msg_meta rep;
-                rep.p = conf.p;
-                rep.group_id = conf.group_id;
-                rep.message_type = "group";
-                conf.p->cq_send("NG game already started!", rep);
+                send_msg_ng(conf.p, gid, 0, "Game already started");
+                break;
+            }
+            default:
+                break;
+            }
+        }
+        else if (message.find(prefix + "abort") != std::string::npos)
+        {
+            game.abort();
+            send_msg_ng(conf.p, gid, 0, "Game aborted.");
+        }
+        else if (message.find(prefix + "state") != std::string::npos)
+        {
+            switch (game.get_state())
+            {
+            case gameState::idle: {
+                send_msg_ng(conf.p, gid, 0, "No ongoing game");
+                break;
+            }
+            case gameState::join: {
+                send_msg_ng(conf.p, gid, 0,
+                            "A game is collecting players, currently " + std::to_string(game.total_cnt()) + " player" +
+                                (game.total_cnt() > 1 ? "s" : ""));
+                break;
+            }
+            case gameState::init: {
+                send_msg_ng(conf.p, gid, 0,
+                            "A game is collecting NG words (" + std::to_string(game.ready_cnt()) + "/" +
+                                std::to_string(game.total_cnt()) + ")");
+                send_msg_ng(conf.p, 0, uid, "Your victim is " + get_username(conf.p, game.get_vic(uid), gid));
+                break;
+            }
+            case gameState::work: {
+                send_msg_ng(conf.p, gid, 0, game.overall(conf));
+                send_msg_ng(conf.p, 0, uid, game.get_info(uid, conf));
                 break;
             }
             default: {
-                msg_meta rep;
-                rep.p = conf.p;
-                rep.group_id = conf.group_id;
-                rep.message_type = "group";
-                conf.p->cq_send("This should not happen.", rep);
+                // should not execute here
             }
             }
         }
-        else if (message.find("[CQ:at,qq=" + std::to_string(conf.p->get_botqq()) + "] ng abort") != message.npos)
+        else if (message.find(prefix + "join") != std::string::npos)
         {
-            msg_meta rep;
-            rep.p = conf.p;
-            rep.group_id = conf.group_id;
-            rep.message_type = "group";
-            conf.p->cq_send("NG game aborts!", rep);
-            games[conf.group_id].clear();
-        }
-        else if (message.find("[CQ:at,qq=" + std::to_string(conf.p->get_botqq()) + "] ng state") != message.npos)
-        {
-            std::string content = "";
-            if (games[conf.group_id].get_state() != gameState::work)
+            if(game.get_state() == gameState::idle)
             {
-                for (auto it2 : games[conf.group_id].ng)
-                {
-                    if (it2.first != conf.user_id)
-                    {
-                        content += get_username(conf.p, it2.first, conf.group_id) + " -> " + it2.second + "\n";
-                    }
-                }
-                msg_meta rep;
-                rep.p = conf.p;
-                rep.user_id = conf.user_id;
-                rep.message_type = "private";
-                conf.p->cq_send(content, rep);
+                send_msg_ng(conf.p, gid, 0, "No existed game. Send @Bot ng start to create one");
+            }
+            else if (game.get_state() != gameState::join)
+            {
+                send_msg_ng(conf.p, gid, 0, "Pls wait for the ongoing game to terminate");
+            }
+            else if (game.join(uid))
+            {
+                send_msg_ng(conf.p, gid, 0,
+                            get_username(conf.p, uid, gid) + " joins the game!\nCurrently " +
+                                std::to_string(game.total_cnt()) + " in this game\nPls add the bot as friend to play");
             }
             else
             {
-                msg_meta rep;
-                rep.p = conf.p;
-                rep.group_id = conf.group_id;
-                rep.message_type = "group";
-                conf.p->cq_send("No Ongoing Game!", rep);
+                send_msg_ng(conf.p, gid, 0, "You are already in this game");
             }
         }
-        else if (message.find("[CQ:at,qq=" + std::to_string(conf.p->get_botqq()) + "] ng join") != message.npos)
+        else if ((message.find(prefix + "quit") != std::string::npos))
         {
-            if (games[conf.group_id].get_state() == gameState::join)
+            uint64_t victim = extract_at(message.substr(message.find("quit")));
+            victim = victim ? victim : uid;
+            if (game.quit(victim))
             {
-                if (!games[conf.group_id].add_member(conf.user_id))
+                send_msg_ng(conf.p, gid, 0,
+                            get_username(conf.p, victim, gid) +
+                                " left the game\nSend @Bot ng state to check the updated NG words");
+                if (game.check_end())
                 {
-                    msg_meta rep;
-                    rep.p = conf.p;
-                    rep.group_id = conf.group_id;
-                    rep.message_type = "group";
-                    conf.p->cq_send("You are already in this game!", rep);
+                    send_msg_ng(conf.p, gid, 0,
+                                "Game over! The winner is " + get_username(conf.p, game.get_winner(), gid));
+                    game.abort();
                 }
             }
+            else
+            {
+                send_msg_ng(conf.p, gid, 0, "Currently you are not in this game");
+            }
+        }
+        else if ((message.find(prefix + "help") != std::string::npos))
+        {
+            send_msg_ng(conf.p, gid, 0, "NG Game Help: " + help_url);
         }
     }
     else if (conf.message_type == "private")
     {
-        for (auto it : games)
+        for (auto g : games)
         {
-            if (it.second.get_state() == gameState::init)
+            auto &game = g.second;
+            if (game.get_state() == gameState::init)
             {
-                for (auto pit : it.second.ng)
+                uint64_t vic = game.get_vic(uid);
+                if (vic)
                 {
-                    if (pit.first == conf.user_id) // gamer
-                    {
-                        uint64_t victim = it.second.link[conf.user_id];
-                        it.second.ng[victim] = message;
-                        msg_meta rep;
-                        rep.p = conf.p;
-                        rep.user_id = conf.user_id;
-                        rep.message_type = "private";
-                        std::string content =
-                            "Set NG word for " + get_username(conf.p, victim, it.first) + ": " + message;
-                        conf.p->cq_send(content, rep);
-
-                        size_t ng_set_cnt = 0;
-                        for (auto sit : it.second.ng)
-                        {
-                            if (sit.second.compare("") != 0)
-                            {
-                                ng_set_cnt++;
-                            }
-                        }
-                        rep.group_id = it.first;
-                        rep.message_type = "group";
-                        content = get_username(conf.p, conf.user_id, it.first) + "has set the NG word! (" +
-                                  std::to_string(ng_set_cnt) + "/" + std::to_string(it.second.ng.size()) + ")";
-                        if (ng_set_cnt == it.second.ng.size())
-                        {
-                            content = content + "\nSent @Bot ng start to start";
-                        }
-                        conf.p->cq_send(content, rep);
-                    }
+                    game.set(vic, message);
+                    send_msg_ng(conf.p, 0, uid,
+                                "Set NG word for" + get_username(conf.p, vic, g.first) + ": " + message);
+                    send_msg_ng(conf.p, g.first, 0,
+                                get_username(conf.p, uid, g.first) + " has set the NG word!(" +
+                                    std::to_string(game.ready_cnt()) + "/" + std::to_string(game.total_cnt()) + ")");
                 }
             }
         }
+    }
+    else
+    {
+        // should not happen
     }
 }
 
@@ -206,100 +506,5 @@ bool NGgame::check(std::string message, const msg_meta &conf)
 
 std::string NGgame::help()
 {
-    return "@Bot ng start\n@Bot ng join\n@Bot ng state\n@Bot ng abort";
-}
-
-void NGame::clear()
-{
-    state = gameState::idle;
-    dead.clear();
-    ng.clear();
-    link.clear();
-}
-
-void NGame::set_ngword(uint64_t user_id, std::string ngword)
-{
-    ng[user_id] = ngword;
-}
-
-bool NGame::add_member(uint64_t user_id)
-{
-    auto it = ng.find(user_id);
-    if (it == ng.end())
-    {
-        set_ngword(user_id, "");
-        return true;
-    }
-    return false;
-}
-
-bool NGame::is_ready()
-{
-    for (auto it : ng)
-    {
-        if (it.second.compare("") == 0)
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
-void NGame::out(uint64_t user_id)
-{
-    dead.push_back(user_id);
-}
-
-bool NGame::is_alive(uint64_t user_id)
-{
-    for (auto it : dead)
-    {
-        if (it == user_id)
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
-std::string NGame::get_ng(uint64_t user_id)
-{
-    return ng[user_id];
-}
-
-int NGame::get_alive_num()
-{
-    return ng.size() - dead.size();
-}
-
-int NGame::get_player_num()
-{
-    return ng.size();
-}
-
-gameState NGame::get_state()
-{
-    return state;
-}
-
-void NGame::update(bool toabort)
-{
-    if (toabort)
-    {
-        state = idle;
-    }
-    else
-    {
-        state = gameState(state + 1);
-    }
-}
-
-std::vector<uint64_t> NGame::get_player_list()
-{
-    std::vector<uint64_t> l;
-    for (auto it : ng)
-    {
-        l.push_back(it.first);
-    }
-    return l;
+    return "NG Game Help: " + help_url;
 }
