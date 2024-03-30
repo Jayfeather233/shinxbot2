@@ -10,10 +10,11 @@ read -r -d '' CURL_TEMPLATE << EOM
     "time": %s,
     "self_id": 23333,
     "post_type": "%s",
-    "message_type": "private",
+    "message_type": "%s",
     "sub_type": "friend",
     "message_id": 12,
     "user_id": 31415926,
+    "group_id": 271828,
     "message": "%s",
     "raw_message": "TODO",
     "font": 456,
@@ -40,14 +41,21 @@ send_msg() {
   printf -v curl_post "$CURL_TEMPLATE" \
     "$(date +%s)"\
     "message"\
-    "$1"
+    "$1"\
+    "$2"
   curl localhost:"$PORT" -X POST -H "Content-Type:application/json\r\nX-Self-ID: 23333" -d "$curl_post"
 }
 
 main() {
   get_port
-  send_msg "$1"
-  echo "Send:" "$1"
+  send_msg "$1" "$2"
+  echo "Send:" "$2" MODE "$1"
 }
 
-main "$1"
+if [ "$1" == "group" ] || [ "$1" == "private" ]; then
+  main "$1" "$2"
+elif [ "$2" == "group" ] || [ "$2" == "private" ]; then
+  main "$2" "$1"
+else
+  main "private" "$1"
+fi
