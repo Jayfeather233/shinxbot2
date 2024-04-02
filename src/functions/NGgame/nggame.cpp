@@ -269,18 +269,19 @@ static uint64_t extract_at(std::string cq)
     }
     size_t st = cq.find("=") + 1;
     size_t ed = cq.find("]");
-    return atoll(cq.substr(st, ed - st).c_str());
+    return my_string2uint64(cq.substr(st, ed - st));
 }
 
 static std::string expand_at(std::string raw, const msg_meta &conf)
 {
     std::string res = raw;
-    while (res.find("[CQ:at,qq=") != std::string::npos || res.find("]") != std::string::npos)
+    size_t pos1, pos2;
+    while ((pos1 = res.find("[CQ:at,qq=")) != std::string::npos || (pos2=res.find("]")) != std::string::npos)
     {
         uint64_t qq = extract_at(res);
         if (qq)
         {
-            res = "@" + get_username(conf.p, qq, conf.group_id) + res.substr(res.find("]") + 1);
+            res = res.substr(0, pos1) + "@" + get_username(conf.p, qq, conf.group_id) + res.substr(pos2 + 1);
         }
     }
     return res;
