@@ -10,7 +10,7 @@ bool NGGame::join(uint64_t user_id)
     {
         return false;
     }
-    ng[user_id] = new player(user_id);
+    ng[user_id] = new player_t(user_id);
     return true;
 }
 
@@ -275,14 +275,16 @@ static uint64_t extract_at(std::string cq)
 static std::string expand_at(std::string raw, const msg_meta &conf)
 {
     std::string res = raw;
-    size_t pos1, pos2;
-    while ((pos1 = res.find("[CQ:at,qq=")) != std::string::npos || (pos2=res.find("]")) != std::string::npos)
+    size_t pos1 = res.find("[CQ:at,qq="), pos2 = res.find("]");
+    while (pos1 != std::string::npos || pos2 != std::string::npos)
     {
         uint64_t qq = extract_at(res);
         if (qq)
         {
             res = res.substr(0, pos1) + "@" + get_username(conf.p, qq, conf.group_id) + res.substr(pos2 + 1);
         }
+        pos1 = res.find("[CQ:at,qq=");
+        pos2 = res.find("]");
     }
     return res;
 }

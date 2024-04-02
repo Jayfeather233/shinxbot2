@@ -12,13 +12,13 @@ enum gameState
     work
 };
 
-typedef struct Player player;
+typedef struct Player player_t;
 
 struct Player
 {
     uint64_t id;
-    player *pre;
-    player *nex;
+    player_t *pre;
+    player_t *nex;
     std::string word;
     bool alive;
     Player(uint64_t user_id)
@@ -34,7 +34,7 @@ class NGGame
 {
   private:
     gameState state;
-    std::map<uint64_t, player *> ng;
+    std::map<uint64_t, player_t *> ng;
 
   public:
     // player action
