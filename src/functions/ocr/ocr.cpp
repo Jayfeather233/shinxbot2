@@ -44,9 +44,10 @@ void ocr::process(std::string message, const msg_meta &conf)
         return;
     }
     in_queue[conf.user_id] = false;
-    index += 15;
+    index = message.find(",url=", index);
+    index += 5;
     size_t index2 = index;
-    while (message[index2] != ',') {
+    while (message[index2] != ',' && message[index2] != ']') {
         ++index2;
     }
     Json::Value J;
