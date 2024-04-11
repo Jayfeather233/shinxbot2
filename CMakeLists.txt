@@ -22,6 +22,7 @@ aux_source_directory(./src MAIN_SOURCES)
 
 # Set the mode you want (e.g., Mode1 or Mode2)
 set(MODE "Mode" CACHE STRING "Build mode: main or test")
+message(MODE="${MODE}")
 
 # Add all source files in the ./src directory to MAIN_SOURCES
 aux_source_directory(./src MAIN_SOURCES)

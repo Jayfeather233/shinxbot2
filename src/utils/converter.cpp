@@ -59,3 +59,52 @@ std::string messageArr_to_string(const Json::Value &J)
         return message_to_string(J);
     }
 }
+
+Json::Value string_to_message(const std::string &s)
+{
+    Json::Value J;
+    if (s[0] == '[') {
+        size_t pos = s.find(','), laspos, mid;
+        J["type"] = s.substr(4, pos - 4);
+        laspos = pos;
+        while (pos != s.length() - 1) {
+            pos = s.find(',', pos + 1);
+            if (pos == s.npos) {
+                pos = s.length() - 1;
+            }
+            mid = s.find('=', laspos + 1);
+            if (mid == s.npos) {
+                throw "CQ code syntax error.";
+            }
+            J["data"][s.substr(laspos + 1, mid - laspos - 1)] =
+                cq_decode(s.substr(mid + 1, pos - mid - 1));
+            laspos = pos;
+        }
+    }
+    else {
+        J["type"] = "text";
+        J["data"]["text"] = s;
+    }
+    return J;
+}
+
+Json::Value string_to_messageArr(const std::string &s)
+{
+    size_t pos = 0, laspos = 0;
+    Json::Value J;
+    while ((pos = s.find('[', pos)) != s.npos) {
+        if (laspos != pos) {
+            J.append(string_to_message(s.substr(laspos, pos - laspos)));
+            laspos = pos;
+        }
+        pos = s.find(']', pos);
+        if (pos == s.npos) {
+            throw "missing match for \'[\' in message: " + s;
+        }
+        pos += 1;
+        J.append(string_to_message(s.substr(laspos, pos - laspos)));
+        laspos = pos;
+    }
+    J.append(string_to_message(s.substr(laspos)));
+    return J;
+}

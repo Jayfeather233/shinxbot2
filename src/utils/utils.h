@@ -256,6 +256,11 @@ inline bool is_word(const char &s)
     return ('a' <= s && s <= 'z') || ('A' <= s && s <= 'Z');
 }
 
+inline bool is_word(const wchar_t &s)
+{
+    return (L'a' <= s && s <= L'z') || (L'A' <= s && s <= L'Z');
+}
+
 void broadcast(std::string msg, const bot *u);
 
 std::string to_human_string(const int64_t u);
@@ -309,5 +314,6 @@ std::string cq_decode(const std::string& input);
 std::wstring cq_encode(const std::wstring& input);
 std::wstring cq_decode(const std::wstring& input);
 std::string messageArr_to_string(const Json::Value &J);
+Json::Value string_to_messageArr(const std::string &s);
 
 std::string get_stranger_name(const bot *p, uint64_t user_id);

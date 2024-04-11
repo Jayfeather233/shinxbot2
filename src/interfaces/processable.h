@@ -16,4 +16,14 @@ public:
     virtual bool check(std::string message, const msg_meta &conf) = 0;
     virtual std::string help() = 0;
     virtual ~processable() {}
+
+    virtual bool is_support_messageArr() { return false; }
+    virtual void process(Json::Value message, const msg_meta &conf)
+    {
+        throw std::logic_error("Called a function that does not exist");
+    }
+    virtual bool check(Json::Value message, const msg_meta &conf)
+    {
+        throw std::logic_error("Called a function that does not exist");
+    }
 };

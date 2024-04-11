@@ -38,7 +38,11 @@ void bili_decode::process(std::string message, const msg_meta &conf)
 {
     Json::Value raw_info;
     bool flg = false;
-    if (message.find("BV") != message.npos) {
+    size_t u;
+    if ((u=message.find("BV")) != message.npos) {
+        if(u!=0 && is_word(message[u-1])){
+            return;
+        }
         Json::Value J;
         J["message_id"] = conf.message_id;
         conf.p->cq_send("mark_msg_as_read", J);
@@ -58,7 +62,10 @@ void bili_decode::process(std::string message, const msg_meta &conf)
             raw_info = get_raw_info(bvid);
         }
     }
-    else if (message.find("av") != message.npos) {
+    else if ((u=message.find("av")) != message.npos) {
+        if(u!=0 && is_word(message[u-1])){
+            return;
+        }
         Json::Value J;
         J["message_id"] = conf.message_id;
         conf.p->cq_send("mark_msg_as_read", J);

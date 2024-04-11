@@ -23,9 +23,9 @@ void mybot::read_server_message(int new_socket)
             if (valread < 0) {
                 break;
             }
-            for(int i=1;i<valread;++i){
-                if(buffer[i]=='r' && buffer[i-1]=='\\'){
-                    buffer[i]='n';
+            for (int i = 1; i < valread; ++i) {
+                if (buffer[i] == 'r' && buffer[i - 1] == '\\') {
+                    buffer[i] = 'n';
                 }
             }
             buffer[valread] = 0;
@@ -156,11 +156,12 @@ void mybot::init()
     Json::Value J_op = string_to_json(readfile("./config/op_list.json", "[]"));
     parse_json_to_set(J_op, op_list);
 
-    Json::Value J_rec = string_to_json(readfile("./config/recover.json", "{\"commands\":[]}"));
+    Json::Value J_rec =
+        string_to_json(readfile("./config/recover.json", "{\"commands\":[]}"));
     Json::Value Ja_rec = J_rec["commands"];
     Json::ArrayIndex sz = Ja_rec.size();
     std::vector<std::string> rec_list;
-    for(Json::ArrayIndex i = 0; i < sz; ++i){
+    for (Json::ArrayIndex i = 0; i < sz; ++i) {
         rec_list.push_back(Ja_rec[i].asString());
     }
 
@@ -176,7 +177,7 @@ bool mybot::is_op(const uint64_t a) const
 
 void mybot::input_process(std::string *input)
 {
-    if(*input == ""){
+    if (*input == "") {
         delete input;
         return;
     }
@@ -193,7 +194,13 @@ void mybot::input_process(std::string *input)
     }
     else if (post_type == "message") {
         if (J.isMember("message_type") && J.isMember("message")) {
-            std::string message = messageArr_to_string(J["message"]);
+            Json::Value messageArr;
+            if (J["message"].isArray()){
+                messageArr = J["message"];
+            } else {
+                messageArr.append(J["message"]);
+            }
+            std::string messageStr = messageArr_to_string(J["message"]);
             int64_t message_id = J["message_id"].asInt64();
             std::string message_type = J["message_type"].asString();
             if (message_type == "group" || message_type == "private") {
@@ -206,7 +213,7 @@ void mybot::input_process(std::string *input)
                 }
                 msg_meta conf = (msg_meta){message_type, user_id, group_id,
                                            message_id, this};
-                if (message == "bot.help") {
+                if (messageStr == "bot.help") {
                     std::string help_message;
                     for (processable *func : functions) {
                         if (func->help() != "")
@@ -216,49 +223,56 @@ void mybot::input_process(std::string *input)
                                     "Jayfeather233/shinxbot2";
                     cq_send(help_message, conf);
                 }
-                else if (message == "bot.off" && is_op(user_id)) {
+                else if (messageStr == "bot.off" && is_op(user_id)) {
                     bot_isopen = false;
                     cq_send("isopen=" + std::to_string(bot_isopen), conf);
                 }
-                else if (message == "bot.on" && is_op(user_id)) {
+                else if (messageStr == "bot.on" && is_op(user_id)) {
                     bot_isopen = true;
                     cq_send("isopen=" + std::to_string(bot_isopen), conf);
                 }
                 else if (bot_isopen) {
                     for (processable *func : functions) {
-                        if (func->check(message, conf)) {
-                            try {
-                                func->process(message, conf);
+                        try {
+                            if (func->is_support_messageArr()) {
+                                if (func->check(messageArr, conf)) {
+                                    func->process(messageArr, conf);
+                                }
                             }
-                            catch (char *e) {
-                                cq_send((std::string) "Throw an char*: " + e,
-                                        conf);
-                                setlog(LOG::ERROR,
-                                       (std::string) "Throw an char*: " + e);
+                            else {
+                                if (func->check(messageStr, conf)) {
+                                    func->process(messageStr, conf);
+                                }
                             }
-                            catch (std::string e) {
-                                cq_send("Throw an string: " + e, conf);
-                                setlog(LOG::ERROR, "Throw an string: " + e);
-                            }
-                            catch (std::exception &e) {
-                                cq_send((std::string) "Throw an exception: " +
-                                            e.what(),
-                                        conf);
-                                setlog(LOG::ERROR,
-                                       (std::string) "Throw an exception: " +
-                                           e.what());
-                            }
-                            catch (...) {
-                                cq_send("Throw an unknown error", conf);
-                                setlog(LOG::ERROR, "Throw an unknown error");
-                            }
+                        }
+                        catch (char *e) {
+                            cq_send((std::string) "Throw an char*: " + e, conf);
+                            setlog(LOG::ERROR,
+                                   (std::string) "Throw an char*: " + e);
+                        }
+                        catch (std::string e) {
+                            cq_send("Throw an string: " + e, conf);
+                            setlog(LOG::ERROR, "Throw an string: " + e);
+                        }
+                        catch (std::exception &e) {
+                            cq_send((std::string) "Throw an exception: " +
+                                        e.what(),
+                                    conf);
+                            setlog(LOG::ERROR,
+                                   (std::string) "Throw an exception: " +
+                                       e.what());
+                        }
+                        catch (...) {
+                            cq_send("Throw an unknown error", conf);
+                            setlog(LOG::ERROR, "Throw an unknown error");
                         }
                     }
                 }
             }
         }
-    } else if(post_type == "meta_event"){
-        if(J["meta_event_type"].asString() == "heartbeat"){
+    }
+    else if (post_type == "meta_event") {
+        if (J["meta_event_type"].asString() == "heartbeat") {
             recorder->inform();
         }
     }
