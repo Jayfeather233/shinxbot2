@@ -81,6 +81,7 @@ Json::Value forward_msg_gen::get_content(bot *p, std::wistringstream &wiss,
         }
         Json::Value J;
         J["type"] = "node";
+        J["data"] = get_data(p, s1, wiss, group_id);
         Ja.append(J);
     }
     return Ja;
