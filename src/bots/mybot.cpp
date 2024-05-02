@@ -308,7 +308,7 @@ void mybot::run()
     functions.push_back(new gemini());
     functions.push_back(new sdxl());
     functions.push_back(new img_fun());
-    functions.push_back(new NGgame());
+    // functions.push_back(new NGgame());
     functions.push_back(new informer());
 
     events.push_back(new talkative());
