@@ -20,3 +20,4 @@
 #include "./sdxl/sdxl.h"
 #include "./img_fun/img_fun.h"
 #include "./NGgame/nggame.h"
+#include "./informer/informer.h"

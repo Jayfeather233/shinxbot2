@@ -24,6 +24,7 @@ private:
     bool bot_isopen = true;
 
     heartBeat *recorder;
+    Timer *mytimer;
 
     /**
      * after connect to gocq, read the message out

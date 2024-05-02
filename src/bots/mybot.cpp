@@ -166,6 +166,12 @@ void mybot::init()
     }
 
     recorder = new heartBeat(rec_list);
+    for (processable *p : functions) {
+        p->set_callback(
+            [this](std::function<void(bot *p)> func) {
+                this->mytimer->add_callback(func);
+        });
+    }
 }
 
 mybot::mybot(int recv_port, int send_port) : bot(recv_port, send_port) {}
@@ -195,9 +201,10 @@ void mybot::input_process(std::string *input)
     else if (post_type == "message") {
         if (J.isMember("message_type") && J.isMember("message")) {
             Json::Value messageArr;
-            if (J["message"].isArray()){
+            if (J["message"].isArray()) {
                 messageArr = J["message"];
-            } else {
+            }
+            else {
                 messageArr.append(J["message"]);
             }
             std::string messageStr = messageArr_to_string(J["message"]);
@@ -280,6 +287,8 @@ void mybot::input_process(std::string *input)
 
 void mybot::run()
 {
+    this->mytimer = new Timer(std::chrono::milliseconds(500), this); // smallest time: 1s
+
     functions.push_back(new AnimeImg());
     functions.push_back(new auto114());
     functions.push_back(new hhsh());
@@ -300,6 +309,7 @@ void mybot::run()
     functions.push_back(new sdxl());
     functions.push_back(new img_fun());
     functions.push_back(new NGgame());
+    functions.push_back(new informer());
 
     events.push_back(new talkative());
     events.push_back(new m_change());
@@ -317,7 +327,9 @@ void mybot::run()
     }
     std::thread(&heartBeat::run, recorder).detach();
 
+    this->mytimer->timer_start();
     this->start_server();
+    this->mytimer->timer_stop();
 
     for (processable *u : functions) {
         delete u;
