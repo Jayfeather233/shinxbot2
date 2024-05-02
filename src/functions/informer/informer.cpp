@@ -81,7 +81,7 @@ std::pair<bool, std::string> informer::isValidTime(const std::string &timeInput)
         std_reg << "\\d+(-)";
     }
     else {
-        std_reg << wday - 1 << "(-)";
+        std_reg << wday % 7 << "(-)";
     }
     for (; i < parts.size(); ++i) {
         if (i)
