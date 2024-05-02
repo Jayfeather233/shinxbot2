@@ -144,9 +144,11 @@ std::string informer::inform_list(const msg_meta &conf)
     std::ostringstream oss;
     uint64_t k = conf.message_type == "private" ? (conf.user_id << 1)
                                                 : ((conf.group_id << 1) + 1);
-    for (auto &t : this->inform_tuplelist[k]) {
-        oss << "Time: " << std::get<1>(t) << " msg: " << std::get<2>(t)
-            << std::endl;
+    size_t sz = this->inform_tuplelist[k].size();
+    for (size_t i = 0; i < sz; ++i) {
+        auto &t = this->inform_tuplelist[k][i];
+        oss << "[" << i << "] Time: " << std::get<1>(t)
+            << " msg: " << std::get<2>(t) << std::endl;
     }
     return oss.str();
 }

@@ -167,9 +167,8 @@ void mybot::init()
 
     recorder = new heartBeat(rec_list);
     for (processable *p : functions) {
-        p->set_callback(
-            [this](std::function<void(bot *p)> func) {
-                this->mytimer->add_callback(func);
+        p->set_callback([this](std::function<void(bot * p)> func) {
+            this->mytimer->add_callback(func);
         });
     }
 }
@@ -287,7 +286,8 @@ void mybot::input_process(std::string *input)
 
 void mybot::run()
 {
-    this->mytimer = new Timer(std::chrono::milliseconds(500), this); // smallest time: 1s
+    this->mytimer =
+        new Timer(std::chrono::milliseconds(500), this); // smallest time: 1s
 
     functions.push_back(new AnimeImg());
     functions.push_back(new auto114());
