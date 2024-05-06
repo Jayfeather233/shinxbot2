@@ -172,7 +172,7 @@ void mybot::init()
         });
         p->set_backup_files(this->archive);
     }
-    this->archive->add_path("./config", "./config");
+    this->archive->add_path("./config");
     this->archive->set_default_pwd(std::to_string(this->botqq));
 }
 
@@ -219,6 +219,7 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
         } else {
             upload_file(conf.p, filepa, conf.group_id, "backup");
         }
+        return false;
     }
     else
         return true;

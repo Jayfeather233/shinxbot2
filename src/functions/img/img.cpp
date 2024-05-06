@@ -296,5 +296,5 @@ bool img::check(std::string message, const msg_meta &conf) { return true; }
 std::string img::help() { return "美图： 美图 帮助 - 列出所有美图命令"; }
 
 void img::set_backup_files(archivist *p) {
-    p->add_path("./resource/mt", "./resource/mt");
+    p->add_path("./resource/mt", "./resource/");
 }

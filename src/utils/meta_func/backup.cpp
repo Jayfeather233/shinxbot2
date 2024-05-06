@@ -75,8 +75,9 @@ bool archivist::make_archive(const std::filesystem::path &path)
         return false;
     }
     else {
+        zip_set_default_password(archive, default_pwd.c_str());
         for (const auto &[path, rele_path, passwd] : this->arc_list) {
-            if (!this->archive_add_path(archive, path, passwd.empty() ? this->default_pwd : passwd, rele_path)) {
+            if (!this->archive_add_path(archive, path, passwd, rele_path)) {
                 zip_close(archive);
                 return false;
             }
