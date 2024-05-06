@@ -211,10 +211,12 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
         std::ostringstream oss;
         oss<<"./backup/"<<std::put_time(&tt, "%Y-%m-%d_%H-%M-%S")<<".zip";
         this->archive->make_archive(oss.str());
+
+        std::string filepa = std::filesystem::absolute(oss.str()).string();
         if(conf.message_type == "private"){
-            send_file_private(conf.p, conf.user_id, oss.str());
+            send_file_private(conf.p, conf.user_id, filepa);
         } else {
-            upload_file(conf.p, oss.str(), conf.group_id, "backup");
+            upload_file(conf.p, filepa, conf.group_id, "backup");
         }
     }
     else
