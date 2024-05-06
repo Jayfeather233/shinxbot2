@@ -173,6 +173,7 @@ void mybot::init()
         p->set_backup_files(this->archive);
     }
     this->archive->add_path("./config", "./config");
+    this->archive->set_default_pwd(std::to_string(this->botqq));
 }
 
 mybot::mybot(int recv_port, int send_port) : bot(recv_port, send_port) {}

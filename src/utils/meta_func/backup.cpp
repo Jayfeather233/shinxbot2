@@ -31,7 +31,7 @@ bool archivist::archive_add_file(zip_t *archive,
     if (!passwd.empty()) {
         int ret = zip_file_set_encryption(archive, ind, ZIP_EM_AES_256,
                                           passwd.c_str());
-        if(ret < 0){
+        if (ret < 0) {
             set_global_log(LOG::ERROR, "backup file enc error");
             return false;
         }
@@ -43,8 +43,9 @@ bool archivist::archive_add_dir(zip_t *archive,
                                 const std::string &passwd,
                                 const std::filesystem::path &rele_path)
 {
-    for (const auto& entry : std::filesystem::directory_iterator(path)) {
-        if(!archive_add_path(archive, entry.path(), passwd, rele_path/path.filename())){
+    for (const auto &entry : std::filesystem::directory_iterator(path)) {
+        if (!archive_add_path(archive, entry.path(), passwd,
+                              rele_path / path.filename())) {
             return false;
         }
     }
@@ -75,7 +76,7 @@ bool archivist::make_archive(const std::filesystem::path &path)
     }
     else {
         for (const auto &[path, rele_path, passwd] : this->arc_list) {
-            if (!this->archive_add_path(archive, path, passwd, rele_path)) {
+            if (!this->archive_add_path(archive, path, passwd.empty() ? this->default_pwd : passwd, rele_path)) {
                 zip_close(archive);
                 return false;
             }
@@ -83,4 +84,9 @@ bool archivist::make_archive(const std::filesystem::path &path)
         zip_close(archive);
         return true;
     }
+}
+
+void archivist::set_default_pwd(const std::string &pwd)
+{
+    this->default_pwd = pwd;
 }

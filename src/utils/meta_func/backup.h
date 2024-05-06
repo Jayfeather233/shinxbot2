@@ -13,6 +13,7 @@ private:
     std::vector<
         std::tuple<std::filesystem::path, std::filesystem::path, std::string>>
         arc_list; // pair<file, rele_path, passwd>
+    std::string default_pwd;
 
     bool archive_add_path(
         zip_t *archive, const std::filesystem::path &path,
@@ -39,4 +40,5 @@ public:
              const std::filesystem::path &rele_path = std::filesystem::path(),
              const std::string passwd = "");
     bool make_archive(const std::filesystem::path &path);
+    void set_default_pwd(const std::string &pwd);
 };
