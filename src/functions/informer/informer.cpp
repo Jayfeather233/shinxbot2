@@ -75,7 +75,7 @@ std::pair<bool, std::string> informer::isValidTime(const std::string &timeInput)
         }
     }
 
-    int i = 0;
+    size_t i = 0;
     std::ostringstream std_reg;
     if (wday == -1) {
         std_reg << "\\d+(-)";

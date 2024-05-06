@@ -33,9 +33,10 @@ void img::save()
     }
     for (auto it : belongs) {
         Json::ArrayIndex sz = it.second.size();
+        Json::Value ign;
         for (Json::ArrayIndex i = 0; i < sz; ++i) {
             if (images[it.second[i].asString()] == 0) {
-                it.second.removeIndex(i, &Json::Value());
+                it.second.removeIndex(i, &ign);
             }
         }
         J["belongs"][std::to_string(it.first)] = it.second;
@@ -95,7 +96,7 @@ void img::del_single(std::string name, int index)
 {
     std::string prefix = "./resource/mt/" + name + "/";
     std::filesystem::remove(prefix + std::to_string(index));
-    for (int i = index + 1; i < images[name]; i++) {
+    for (uint64_t i = index + 1; i < images[name]; i++) {
         std::filesystem::rename(prefix + std::to_string(i),
                                 prefix + std::to_string(i - 1));
     }
@@ -269,7 +270,7 @@ void img::process(std::string message, const msg_meta &conf)
     }
     if (it2 == images.end())
         return;
-    int index;
+    int64_t index;
     if (indexs.length() < 1) {
         index = get_random(it2->second) + 1;
     }

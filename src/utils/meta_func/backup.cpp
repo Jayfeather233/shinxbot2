@@ -31,8 +31,10 @@ bool archivist::archive_add_file(zip_t *archive,
     if (!passwd.empty()) {
         int ret = zip_file_set_encryption(archive, ind, ZIP_EM_AES_256,
                                           passwd.c_str());
-        set_global_log(LOG::ERROR, "backup file enc error");
-        return false;
+        if(ret < 0){
+            set_global_log(LOG::ERROR, "backup file enc error");
+            return false;
+        }
     }
     return true;
 }
@@ -46,6 +48,7 @@ bool archivist::archive_add_dir(zip_t *archive,
             return false;
         }
     }
+    return true;
 }
 bool archivist::archive_add_path(zip_t *archive,
                                  const std::filesystem::path &path,

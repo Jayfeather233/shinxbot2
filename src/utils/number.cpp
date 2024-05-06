@@ -40,11 +40,9 @@ int64_t my_string2int64(const std::wstring &s)
 uint64_t my_string2uint64(const std::wstring &s)
 {
     uint64_t ans = 0;
-    int64_t f = 1;
     bool is_digit = false;
     for (size_t i = 0; i < s.length(); i++) {
         if (s[i] == L'-') {
-            f = -1;
             is_digit = true;
         }
         else if (L'0' <= s[i] && s[i] <= L'9') {
@@ -80,11 +78,9 @@ int64_t my_string2int64(const std::string &s)
 uint64_t my_string2uint64(const std::string &s)
 {
     uint64_t ans = 0;
-    int64_t f = 1;
     bool is_digit = false;
     for (size_t i = 0; i < s.length(); i++) {
         if (s[i] == '-') {
-            f = -1;
             is_digit = true;
         }
         else if ('0' <= s[i] && s[i] <= '9') {
