@@ -32,6 +32,12 @@ void img::save()
             J["data"][it.first] = it.second;
     }
     for (auto it : belongs) {
+        Json::ArrayIndex sz = it.second.size();
+        for (Json::ArrayIndex i = 0; i < sz; ++i) {
+            if (images[it.second[i].asString()] == 0) {
+                it.second.removeIndex(i, &Json::Value());
+            }
+        }
         J["belongs"][std::to_string(it.first)] = it.second;
     }
     J["default"] = parse_set_to_json(default_img);
@@ -70,8 +76,8 @@ int img::add_image(std::string name, std::string image, uint64_t group_id)
 
         belong_to(name, group_id);
 
-        download(cq_decode(image.substr(index, index2 - index)), "./resource/mt/" + name,
-                 std::to_string(images[name]));
+        download(cq_decode(image.substr(index, index2 - index)),
+                 "./resource/mt/" + name, std::to_string(images[name]));
         images[name]++;
         cnt++;
     }
@@ -139,7 +145,8 @@ std::string img::commands(std::string message, const msg_meta &conf)
                 }
             }
             else {
-                if (conf.group_id == 0 || belongs.find(conf.group_id) == belongs.end()) {
+                if (conf.group_id == 0 ||
+                    belongs.find(conf.group_id) == belongs.end()) {
                     for (auto it2 : default_img) {
                         if (images[it2] != 0)
                             oss << it2 << '(' << images[it2] << ")\n";
@@ -286,3 +293,7 @@ void img::process(std::string message, const msg_meta &conf)
 }
 bool img::check(std::string message, const msg_meta &conf) { return true; }
 std::string img::help() { return "美图： 美图 帮助 - 列出所有美图命令"; }
+
+void img::set_backup_files(archivist *p) {
+    p->add_path("./resource/mt", "./resource/mt");
+}

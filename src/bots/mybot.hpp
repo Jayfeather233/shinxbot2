@@ -25,6 +25,7 @@ private:
 
     heartBeat *recorder;
     Timer *mytimer;
+    archivist *archive;
 
     /**
      * after connect to gocq, read the message out
@@ -45,6 +46,11 @@ private:
      * Get bot's qq and read op_list
      */
     void init();
+
+    /**
+     * Handle some meta_event start with 'bot.'
+    */
+    bool meta_func(std::string message, const msg_meta &conf);
 
 public:
     mybot(int recv_port, int send_port);

@@ -12,3 +12,4 @@ log/
 test*
 compile_commands.json
 dev_tools/inspector
+backup/

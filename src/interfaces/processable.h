@@ -26,5 +26,12 @@ public:
     {
         throw std::logic_error("Called a function that does not exist");
     }
-    virtual void set_callback(std::function<void( std::function<void(bot *p)> )> f) {}
+    virtual void
+    set_callback(std::function<void(std::function<void(bot *p)>)> f)
+    {
+    }
+    virtual void
+    set_backup_files(archivist *p)
+    {
+    }
 };

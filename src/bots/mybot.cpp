@@ -170,7 +170,9 @@ void mybot::init()
         p->set_callback([this](std::function<void(bot * p)> func) {
             this->mytimer->add_callback(func);
         });
+        p->set_backup_files(this->archive);
     }
+    this->archive->add_path("./config", "./config");
 }
 
 mybot::mybot(int recv_port, int send_port) : bot(recv_port, send_port) {}
@@ -178,6 +180,45 @@ mybot::mybot(int recv_port, int send_port) : bot(recv_port, send_port) {}
 bool mybot::is_op(const uint64_t a) const
 {
     return op_list.find(a) != op_list.end();
+}
+
+bool mybot::meta_func(std::string message, const msg_meta &conf)
+{
+    if (message == "bot.help") {
+        std::string help_message;
+        for (processable *func : functions) {
+            if (func->help() != "")
+                help_message += func->help() + '\n';
+        }
+        help_message += "本Bot项目地址：https://github.com/"
+                        "Jayfeather233/shinxbot2";
+        cq_send(help_message, conf);
+        return false;
+    }
+    else if (message == "bot.off" && is_op(conf.user_id)) {
+        bot_isopen = false;
+        cq_send("isopen=" + std::to_string(bot_isopen), conf);
+        return false;
+    }
+    else if (message == "bot.on" && is_op(conf.user_id)) {
+        bot_isopen = true;
+        cq_send("isopen=" + std::to_string(bot_isopen), conf);
+        return false;
+    } else if(message == "bot.backup" && is_op(conf.user_id)){
+        std::time_t nt =
+            std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        tm tt = *localtime(&nt);
+        std::ostringstream oss;
+        oss<<"./backup/"<<std::put_time(&tt, "%Y-%m-%d_%H-%M-%S")<<".zip";
+        this->archive->make_archive(oss.str());
+        if(conf.message_type == "private"){
+            send_file_private(conf.p, conf.user_id, oss.str());
+        } else {
+            upload_file(conf.p, oss.str(), conf.group_id, "backup");
+        }
+    }
+    else
+        return true;
 }
 
 void mybot::input_process(std::string *input)
@@ -219,25 +260,8 @@ void mybot::input_process(std::string *input)
                 }
                 msg_meta conf = (msg_meta){message_type, user_id, group_id,
                                            message_id, this};
-                if (messageStr == "bot.help") {
-                    std::string help_message;
-                    for (processable *func : functions) {
-                        if (func->help() != "")
-                            help_message += func->help() + '\n';
-                    }
-                    help_message += "本Bot项目地址：https://github.com/"
-                                    "Jayfeather233/shinxbot2";
-                    cq_send(help_message, conf);
-                }
-                else if (messageStr == "bot.off" && is_op(user_id)) {
-                    bot_isopen = false;
-                    cq_send("isopen=" + std::to_string(bot_isopen), conf);
-                }
-                else if (messageStr == "bot.on" && is_op(user_id)) {
-                    bot_isopen = true;
-                    cq_send("isopen=" + std::to_string(bot_isopen), conf);
-                }
-                else if (bot_isopen) {
+                if(meta_func(messageStr, conf) && bot_isopen)
+                {
                     for (processable *func : functions) {
                         try {
                             if (func->is_support_messageArr()) {
@@ -288,6 +312,7 @@ void mybot::run()
 {
     this->mytimer =
         new Timer(std::chrono::milliseconds(500), this); // smallest time: 1s
+    this->archive = new archivist();
 
     functions.push_back(new AnimeImg());
     functions.push_back(new auto114());

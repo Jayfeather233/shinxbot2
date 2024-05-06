@@ -1,6 +1,8 @@
 #pragma once
 
 #include "bot.h"
+#include "meta_func/backup.h"
+#include "meta_func/timer.h"
 #include <Magick++.h>
 #include <curl/curl.h>
 #include <filesystem>
@@ -9,7 +11,6 @@
 #include <map>
 #include <set>
 #include <string>
-#include "timer.h"
 
 /**
  * do a http post with a json body.
@@ -249,7 +250,8 @@ bool is_folder_exist(const bot *p, const uint64_t &group_id,
 /**
  * Determine if someone is operator
  */
-bool is_group_op(const bot *p, const uint64_t &group_id, const uint64_t &user_id);
+bool is_group_op(const bot *p, const uint64_t &group_id,
+                 const uint64_t &user_id);
 
 inline bool is_digit(const char &s) { return '0' <= s && s <= '9'; }
 inline bool is_word(const char &s)
@@ -310,11 +312,14 @@ void kaleido(std::vector<Magick::Image> &img, int layers = 3,
 
 bool is_friend(const bot *p, const uint64_t &user_id);
 
-std::string cq_encode(const std::string& input);
-std::string cq_decode(const std::string& input);
-std::wstring cq_encode(const std::wstring& input);
-std::wstring cq_decode(const std::wstring& input);
+std::string cq_encode(const std::string &input);
+std::string cq_decode(const std::string &input);
+std::wstring cq_encode(const std::wstring &input);
+std::wstring cq_decode(const std::wstring &input);
 std::string messageArr_to_string(const Json::Value &J);
 Json::Value string_to_messageArr(const std::string &s);
 
 std::string get_stranger_name(const bot *p, uint64_t user_id);
+
+void send_file_private(const bot *p, const uint64_t user_id,
+                       const std::filesystem::path &path);

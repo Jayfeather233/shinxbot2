@@ -28,4 +28,5 @@ public:
     void process(std::string message, const msg_meta &conf);
     bool check(std::string message, const msg_meta &conf);
     std::string help();
+    void set_backup_files(archivist *p);
 };
