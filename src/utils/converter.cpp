@@ -30,7 +30,7 @@ void input_process(bot *p, std::string *input) { p->input_process(input); }
 std::string message_to_string(const Json::Value &J)
 {
     if (J["type"].asString() == "text") {
-        return J["data"]["text"].asString();
+        return cq_encode(J["data"]["text"].asString());
     }
     else {
         std::string ret = "[CQ:" + J["type"].asString();
@@ -83,7 +83,7 @@ Json::Value string_to_message(const std::string &s)
     }
     else {
         J["type"] = "text";
-        J["data"]["text"] = s;
+        J["data"]["text"] = cq_decode(s);
     }
     return J;
 }
