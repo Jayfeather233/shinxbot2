@@ -38,7 +38,7 @@ Json::Value catmain::get_text() { return cat_text; }
 
 void catmain::process(std::string message, const msg_meta &conf)
 {
-    if (message == "[cat].help") {
+    if (message == "&#91;cat&#93;.help") {
         conf.p->cq_send("An interactive cat!\n"
                         "First use adopt to have one.\n"
                         "Then you can play, feed and so on!(start with[cat])",
