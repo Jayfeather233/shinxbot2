@@ -160,6 +160,13 @@ void informer::process(std::string message, const msg_meta &conf)
         std::string inputtime, inputmsg;
         std::istringstream iss(message.substr(3));
         iss >> inputtime >> inputmsg;
+
+        if(inputmsg.find("multimedia.nt.qq.com.cn") != inputmsg.npos){
+            conf.p->cq_send("请用旧版qq发送图片", conf);
+            return;
+        }
+        // TODO: download image and change inputmsg to local image path
+
         auto result = this->isValidTime(inputtime);
         if (result.first) {
             uint64_t k = conf.message_type == "private"
