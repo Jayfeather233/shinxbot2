@@ -268,7 +268,7 @@ void img::process(std::string message, const msg_meta &conf)
     else {
         it2 = images.find(name);
     }
-    if (it2 == images.end())
+    if (it2 == images.end() || it2->second == 0)
         return;
     int64_t index;
     if (indexs.length() < 1) {
