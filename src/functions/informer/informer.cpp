@@ -2,7 +2,8 @@
 
 /*
 Acceptable:
-hh:mm:ss
+wday-hh:mm
+wday-hh
 hh:mm
 hh
 */

@@ -35,6 +35,13 @@ bool archivist::archive_add_file(zip_t *archive,
             set_global_log(LOG::ERROR, "backup file enc error");
             return false;
         }
+    } else {
+        int ret = zip_file_set_encryption(archive, ind, ZIP_EM_AES_256,
+                                          NULL);
+        if (ret < 0) {
+            set_global_log(LOG::ERROR, "backup file enc error");
+            return false;
+        }
     }
     return true;
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#define QQBOT
+
 #include <iostream>
 #include <jsoncpp/json/json.h>
 
