@@ -23,3 +23,5 @@ public:
     void process(Json::Value message, const msg_meta &conf);
     bool check(Json::Value message, const msg_meta &conf);
 };
+
+extern "C" processable* create();

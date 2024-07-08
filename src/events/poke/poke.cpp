@@ -21,3 +21,7 @@ bool poke::check(bot *p, Json::Value J)
         return false;
     return true;
 }
+
+extern "C" eventprocess* create() {
+    return new poke();
+}

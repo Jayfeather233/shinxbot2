@@ -14,3 +14,7 @@ bool friendadd::check(bot *p, Json::Value J)
     return J.isMember("request_type") &&
            J["request_type"].asString() == "friend";
 }
+
+extern "C" eventprocess* create() {
+    return new friendadd();
+}

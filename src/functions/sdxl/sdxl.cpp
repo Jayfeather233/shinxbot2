@@ -64,3 +64,7 @@ std::string sdxl::help()
 {
     return "StableDiffusion XL-Turbo. .sdxl.help for more.";
 }
+
+extern "C" processable* create() {
+    return new sdxl();
+}

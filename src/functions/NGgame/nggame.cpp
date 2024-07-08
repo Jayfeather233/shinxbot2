@@ -511,3 +511,7 @@ std::string NGgame::help()
 {
     return "NG Game Help: " + help_url;
 }
+
+extern "C" processable* create() {
+    return new NGgame();
+}

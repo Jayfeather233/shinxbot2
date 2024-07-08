@@ -1,4 +1,5 @@
 #include "mybot.hpp"
+#include "dynamic_lib.hpp"
 
 #include <algorithm>
 #include <arpa/inet.h>
@@ -11,6 +12,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <thread>
+
+namespace fs = std::filesystem;
 
 void mybot::read_server_message(int new_socket)
 {
@@ -166,7 +169,8 @@ void mybot::init()
     }
 
     recorder = new heartBeat(rec_list);
-    for (processable *p : functions) {
+    for (auto px : functions) {
+        processable *p = std::get<0>(px);
         p->set_callback([this](std::function<void(bot * p)> func) {
             this->mytimer->add_callback(func);
         });
@@ -187,7 +191,8 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
 {
     if (message == "bot.help") {
         std::string help_message;
-        for (processable *func : functions) {
+        for (auto funcx : functions) {
+            processable *func = std::get<0>(funcx);
             if (func->help() != "")
                 help_message += func->help() + '\n';
         }
@@ -205,21 +210,68 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
         bot_isopen = true;
         cq_send("isopen=" + std::to_string(bot_isopen), conf);
         return false;
-    } else if(message == "bot.backup" && is_op(conf.user_id)){
-        std::time_t nt =
-            std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    }
+    else if (message == "bot.backup" && is_op(conf.user_id)) {
+        std::time_t nt = std::chrono::system_clock::to_time_t(
+            std::chrono::system_clock::now());
         tm tt = *localtime(&nt);
         std::ostringstream oss;
-        oss<<"./backup/"<<std::put_time(&tt, "%Y-%m-%d_%H-%M-%S")<<".zip";
+        oss << "./backup/" << std::put_time(&tt, "%Y-%m-%d_%H-%M-%S") << ".zip";
         this->archive->make_archive(oss.str());
 
         std::string filepa = std::filesystem::absolute(oss.str()).string();
-        if(conf.message_type == "private"){
+        if (conf.message_type == "private") {
             send_file_private(conf.p, conf.user_id, filepa);
-        } else {
+        }
+        else {
             upload_file(conf.p, filepa, conf.group_id, "backup");
         }
         return false;
+    }
+    else if (message.find("bot.load") == 0 && is_op(conf.user_id)) {
+        std::istringstream iss(message.substr(8));
+        std::string type, name;
+        iss >> type >> name;
+        if (type == "function") {
+            for (size_t i = 0; i < functions.size(); ++i) {
+                if (std::get<2>(functions[i]) == name) {
+                    delete std::get<0>(functions[i]);
+                    dlclose(std::get<1>(functions[i]));
+
+                    auto u = load_function<processable>("./lib/functions/lib" +
+                                                        name + ".so");
+                    std::get<0>(functions[i]) = u.first;
+                    std::get<1>(functions[i]) = u.second;
+                    return false;
+                }
+            }
+            auto u = load_function<processable>("./lib/functions/lib" + name +
+                                                ".so");
+            functions.push_back(std::make_tuple(u.first, u.second, name));
+            return false;
+        }
+        else if (type == "event") {
+            for (size_t i = 0; i < events.size(); ++i) {
+                if (std::get<2>(events[i]) == name) {
+                    delete std::get<0>(events[i]);
+                    dlclose(std::get<1>(events[i]));
+
+                    auto u = load_function<eventprocess>("./lib/events/lib" +
+                                                         name + ".so");
+                    std::get<0>(events[i]) = u.first;
+                    std::get<1>(events[i]) = u.second;
+                    return false;
+                }
+            }
+            auto u =
+                load_function<eventprocess>("./lib/events/lib" + name + ".so");
+            events.push_back(std::make_tuple(u.first, u.second, name));
+            return false;
+        }
+        else {
+            cq_send("useage: bot.load [function|event] name", conf);
+            return false;
+        }
     }
     else
         return true;
@@ -236,7 +288,8 @@ void mybot::input_process(std::string *input)
     std::string post_type = J["post_type"].asString();
 
     if ((post_type == "request" || post_type == "notice") && bot_isopen) {
-        for (eventprocess *even : events) {
+        for (auto evenx : events) {
+            eventprocess *even = std::get<0>(evenx);
             if (even->check(this, J)) {
                 even->process(this, J);
             }
@@ -264,9 +317,9 @@ void mybot::input_process(std::string *input)
                 }
                 msg_meta conf = (msg_meta){message_type, user_id, group_id,
                                            message_id, this};
-                if(meta_func(messageStr, conf) && bot_isopen)
-                {
-                    for (processable *func : functions) {
+                if (meta_func(messageStr, conf) && bot_isopen) {
+                    for (auto funcx : functions) {
+                        processable *func = std::get<0>(funcx);
                         try {
                             if (func->is_support_messageArr()) {
                                 if (func->check(messageArr, conf)) {
@@ -318,32 +371,59 @@ void mybot::run()
         new Timer(std::chrono::milliseconds(500), this); // smallest time: 1s
     this->archive = new archivist();
 
-    functions.push_back(new AnimeImg());
-    functions.push_back(new auto114());
-    functions.push_back(new hhsh());
-    functions.push_back(new fudu());
-    functions.push_back(new forward_msg_gen());
-    functions.push_back(new r_color());
-    functions.push_back(new catmain());
-    functions.push_back(new ocr());
-    functions.push_back(new httpcats());
-    functions.push_back(new gpt3_5()); // Sorry but no keys
-    functions.push_back(new img());
-    functions.push_back(new recall());
-    // functions.push_back(new forwarder()); // Easy to get your account frozen.
-    functions.push_back(new gray_list());
-    functions.push_back(new original());
-    functions.push_back(new bili_decode());
-    functions.push_back(new gemini());
-    functions.push_back(new sdxl());
-    functions.push_back(new img_fun());
-    // functions.push_back(new NGgame());
-    functions.push_back(new informer());
+    try {
+        for (const auto &entry : fs::directory_iterator("./lib/functions/")) {
+            if (entry.is_regular_file() || entry.is_symlink()) {
+                std::string filename = entry.path().filename().string();
+                if (filename.size() > 3 &&
+                    filename.substr(filename.size() - 3) == ".so") {
+                    auto result = load_function<processable>(entry.path());
+                    if (result.first != nullptr) {
+                        if (filename.find("lib") == 0) {
+                            filename = filename.substr(3);
+                        }
+                        filename = filename.substr(filename.length() - 3);
+                        functions.push_back(std::make_tuple(
+                            result.first, result.second, filename));
+                        setlog(LOG::INFO, "Loaded function: " + filename);
+                    }
+                    else
+                        std::cerr << "Error while loading function:"
+                                  << filename;
+                }
+            }
+        }
+    }
+    catch (const fs::filesystem_error &ex) {
+        std::cerr << "Error accessing directory: " << ex.what() << std::endl;
+    }
 
-    events.push_back(new talkative());
-    events.push_back(new m_change());
-    events.push_back(new friendadd());
-    events.push_back(new poke());
+    try {
+        for (const auto &entry : fs::directory_iterator("./lib/events/")) {
+            if (entry.is_regular_file() || entry.is_symlink()) {
+                std::string filename = entry.path().filename().string();
+                if (filename.size() > 3 &&
+                    filename.substr(filename.size() - 3) == ".so") {
+                    auto result = load_function<eventprocess>(entry.path());
+                    if (result.first != nullptr) {
+                        if (filename.find("lib") == 0) {
+                            filename = filename.substr(3);
+                        }
+                        filename = filename.substr(filename.length() - 3);
+                        events.push_back(std::make_tuple(
+                            result.first, result.second, filename));
+                        setlog(LOG::INFO, "Loaded event: " + filename);
+                    }
+                    else
+                        std::cerr << "Error while loading function:"
+                                  << filename;
+                }
+            }
+        }
+    }
+    catch (const fs::filesystem_error &ex) {
+        std::cerr << "Error accessing directory: " << ex.what() << std::endl;
+    }
 
     this->init();
 
@@ -360,12 +440,16 @@ void mybot::run()
     this->start_server();
     this->mytimer->timer_stop();
 
-    for (processable *u : functions) {
-        delete u;
+    for (auto ux : functions) {
+        delete std::get<0>(ux);
+        dlclose(std::get<1>(ux));
     }
-    for (eventprocess *u : events) {
-        delete u;
+    functions.clear();
+    for (auto ux : events) {
+        delete std::get<0>(ux);
+        dlclose(std::get<1>(ux));
     }
+    events.clear();
 }
 
 void mybot::setlog(LOG type, std::string message)
@@ -397,4 +481,19 @@ void mybot::setlog(LOG type, std::string message)
     LOG_output[type].flush();
 }
 
-mybot::~mybot() { bot_is_on = false; }
+mybot::~mybot()
+{
+    bot_is_on = false;
+    this->mytimer->timer_stop();
+
+    for (auto ux : functions) {
+        delete std::get<0>(ux);
+        dlclose(std::get<1>(ux));
+    }
+    functions.clear();
+    for (auto ux : events) {
+        delete std::get<0>(ux);
+        dlclose(std::get<1>(ux));
+    }
+    events.clear();
+}

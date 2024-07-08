@@ -65,3 +65,7 @@ bool ocr::check(std::string message, const msg_meta &conf)
             in_queue[conf.user_id] == true);
 }
 std::string ocr::help() { return "图片ocr。 .ocr 图片"; }
+
+extern "C" processable* create() {
+    return new ocr();
+}

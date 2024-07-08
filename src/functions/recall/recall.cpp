@@ -27,3 +27,7 @@ bool recall::check(std::string message, const msg_meta &conf)
              is_group_op(conf.p, conf.group_id, conf.user_id)));
 }
 std::string recall::help() { return "撤回消息：回复某句话输入recall"; }
+
+extern "C" processable* create() {
+    return new recall();
+}

@@ -58,3 +58,7 @@ bool gray_list::check(std::string message, const msg_meta &conf){
 std::string gray_list::help(){
     return "群灰名单：使用 加入灰名单 @xxx 使用";
 }
+
+extern "C" processable* create() {
+    return new gray_list();
+}

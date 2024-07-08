@@ -298,3 +298,7 @@ std::string img::help() { return "美图： 美图 帮助 - 列出所有美图�
 void img::set_backup_files(archivist *p) {
     p->add_path("./resource/mt/", "resource");
 }
+
+extern "C" processable* create() {
+    return new img();
+}

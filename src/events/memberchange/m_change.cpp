@@ -50,3 +50,7 @@ bool m_change::check(bot *p, Json::Value J)
     return J["notice_type"].asString() == "group_decrease" ||
            J["notice_type"].asString() == "group_increase";
 }
+
+extern "C" eventprocess* create() {
+    return new m_change();
+}

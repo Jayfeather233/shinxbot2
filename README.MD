@@ -1,6 +1,6 @@
 # shinxBot2
 
-一个基于 ~~go-cqhttp~~ [Lagrange.Onebot](https://github.com/LagrangeDev/Lagrange.Core)(已迁移，如有bug提issue) 的机器人以及（轻微的（还没写））多机器人管理框架。
+一个基于 ~~go-cqhttp~~ [Lagrange.Onebot](https://github.com/LagrangeDev/Lagrange.Core) 的机器人以及（轻微的（还没写））多机器人管理框架。
 
 ~~做着玩的~~
 
@@ -56,6 +56,8 @@
 
 ./src/utils 一些工具
 
+./lib/functions/ & ./lib/events/: bot功能的动态链接库目录
+
 ### 如何运行这个机器人
 
 需要几个支持库：[libcurl](https://curl.se/libcurl/) + openssl-dev / [jsoncpp](https://github.com/open-source-parsers/jsoncpp) / [base64](https://github.com/tobiaslocker/base64) / [libzip](https://github.com/nih-at/libzip) / [Magick++]()
@@ -77,6 +79,8 @@ base64 作为子模块在 ./lib 下，请也一并 clone 它。
 
 需要先配置并启动 go-cqhttp。打开 "反向HTTP POST地址"，并设置你自己的接收端口。（一般在go-cqhttp目录下的config.yaml）
 
+在运行bot之前，请确保 `./lib/functions | ./lib/events` 里放入了功能的动态链接库，或者通过 `generate_cmake.py & make_all.sh` 来生成。
+
 linux: 运行 build.sh ，自动执行cmake和make编译，使用 start.sh 开始后台运行。主程序作为管理程序，会以子进程方式启动其他bot。
 
 windows：手动通过CMake编译，需要更改TCP连接的头文件（和可能的代码细微差别，包括不限于sleep,file:///）本人没有使用Windows编译过（
@@ -85,7 +89,7 @@ windows：手动通过CMake编译，需要更改TCP连接的头文件（和可�
 
 所有的bot应该继承`./src/interfaces/bot.h`里`class bot`。在`./config/port.txt`中加入你的发送与接收端口。在`./src/main.cpp`的main()中加入`add_new_bot(new yourbot(receive_port[id], send_port[id]));`
 
-可以直接复制`./src/bots`里的`mybot`，是一个已经接好gocq的类。
+可以直接复制`./src/bots`里的`mybot`，是一个已经接好Onebot11的类。
 
 ### 如何添加新功能
 
@@ -93,13 +97,13 @@ windows：手动通过CMake编译，需要更改TCP连接的头文件（和可�
 
 本节中functions和events可以互换，functions传参仅为消息相关，events传入事件的JSON数据，在收到聊天消息的时候调用 functions 里的方法，在其他提示性消息的时候用 events 的方法。
 
-1. ./src/functions 下新建目录并把代码放入，写一个类继承 `./src/interfaces/processable.h` 中的类并实现virtual方法（可以参考我其他功能的写法，一个简单示例是 `functions/getJapaneseImage/Anime_Img.cpp`）
+1. ./src/functions 下新建目录并把代码放入，写一个类继承 `./src/interfaces/processable.h` 中的类并实现virtual方法，并提供`create`方法得到功能`processable*`的指针（可以参考我其他功能的写法，一个简单示例是 `functions/getJapaneseImage/Anime_Img.cpp`）
 
 2. 继承的 virtual 方法里只要 check() 成功了就会执行 process() 方法
 
-3. ./src/functions/functions.h 中加入你的.h
+3. 在`generate_cmake.py`中有CMake模版，用其编译你的功能，自动生成动态链接库至`./lib/functions/`
 
-4. ./src/bots/mybot.cpp中 run 函数里加入 `functions.push_back(new your_name());`
+4. 启动bot。如果bot正在运行可以使用管理员账号（`op_list.json`）发送`bot.load [function|event] name` 加载。
 
 #### 开发提示
 
@@ -113,6 +117,6 @@ bash sender.sh "bot.help"
 
 ### TODO
 
-- [ ] 把所有的功能编译成动态库，方便更换和加载
+- [x] 把所有的功能编译成动态库，方便更换和加载
 
 - [ ] 实现bot间消息广播

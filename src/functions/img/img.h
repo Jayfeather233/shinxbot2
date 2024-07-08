@@ -30,3 +30,5 @@ public:
     std::string help();
     void set_backup_files(archivist *p);
 };
+
+extern "C" processable* create();

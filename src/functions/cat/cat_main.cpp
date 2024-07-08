@@ -98,6 +98,10 @@ void catmain::process(std::string message, const msg_meta &conf)
 }
 bool catmain::check(std::string message, const msg_meta &conf)
 {
-    return message.find("[cat]") == 0;
+    return message.find("&#91;cat&#93;") == 0;
 }
-std::string catmain::help() { return "online cat. [cat].help"; }
+std::string catmain::help() { return "online cat. &#91;cat&#93;.help"; }
+
+extern "C" processable* create() {
+    return new catmain();
+}

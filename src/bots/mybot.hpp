@@ -1,8 +1,10 @@
 #pragma once
 
-#include "events.h"
-#include "functions.h"
+// #include "events.h"
+// #include "functions.h"
+#include "eventprocess.h"
 #include "heartbeat.h"
+#include "processable.h"
 
 #include <fstream>
 #include <mutex>
@@ -17,8 +19,9 @@ private:
     std::mutex log_lock;
     tm last_getlog;
 
-    std::vector<processable *> functions;
-    std::vector<eventprocess *> events;
+    // pointer, handler, name
+    std::vector<std::tuple<processable *, void *, std::string>> functions;
+    std::vector<std::tuple<eventprocess *, void *, std::string>> events;
     std::set<uint64_t> op_list;
 
     bool bot_isopen = true;
@@ -49,7 +52,7 @@ private:
 
     /**
      * Handle some meta_event start with 'bot.'
-    */
+     */
     bool meta_func(std::string message, const msg_meta &conf);
 
 public:

@@ -14,3 +14,7 @@ bool talkative::check(bot *p, Json::Value J)
     return J.isMember("honor_type") &&
            J["honor_type"].asString() == "talkative";
 }
+
+extern "C" eventprocess* create() {
+    return new talkative();
+}

@@ -31,3 +31,7 @@ bool fudu::check(std::string message, const msg_meta &conf)
     return conf.message_type == "group" && conf.user_id != conf.p->get_botqq();
 }
 std::string fudu::help() { return ""; }
+
+extern "C" processable* create() {
+    return new fudu();
+}

@@ -17,3 +17,5 @@ public:
     // bool check(Json::Value message, const msg_meta &conf);
     std::string help();
 };
+
+extern "C" processable* create();

@@ -7,3 +7,5 @@ class sdxl : public processable {
     bool check(std::string message, const msg_meta &conf);
     std::string help();
 };
+
+extern "C" processable* create();

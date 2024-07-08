@@ -30,3 +30,7 @@ bool AnimeImg::check(std::string message, const msg_meta &conf)
     return message == "来点二次元";
 }
 std::string AnimeImg::help() { return "纸片人图片：来点二次元"; }
+
+extern "C" processable* create() {
+    return new AnimeImg();
+}

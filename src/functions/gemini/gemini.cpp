@@ -315,3 +315,6 @@ std::string gemini::help()
     return "gemini: MultiModal AI,\n\tuseage: .gem for text only,\n\t.gemvi "
            "for image with text";
 }
+extern "C" processable* create() {
+    return new gemini();
+}

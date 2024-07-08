@@ -237,3 +237,7 @@ void informer::set_callback(std::function<void(std::function<void(bot *p)>)> f)
 {
     f([this](bot *p) { this->check_inform(p); });
 }
+
+extern "C" processable* create() {
+    return new informer();
+}

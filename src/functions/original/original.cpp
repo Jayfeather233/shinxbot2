@@ -46,3 +46,7 @@ std::string original::help()
 {
     return "return the original text. send .original to begin.";
 }
+
+extern "C" processable* create() {
+    return new original();
+}

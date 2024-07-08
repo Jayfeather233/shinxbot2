@@ -167,3 +167,7 @@ bool img_fun::check(std::string message, const msg_meta &conf)
            is_input.find(conf.user_id) != is_input.end();
 }
 std::string img_fun::help() { return "图片处理。 img_fun.help 获得更多帮助。"; }
+
+extern "C" processable* create() {
+    return new img_fun();
+}
