@@ -7,7 +7,7 @@ template<typename T>
 std::pair<T *, void *> load_function(const std::string &dlname, const std::string &func = "create")
 {
     // Function pointer type for the create function
-    typedef processable *(*create_t)();
+    typedef T *(*create_t)();
     void *handle = dlopen(dlname.c_str(), RTLD_LAZY);
     if (!handle) {
         std::cerr << "Cannot open library: " << dlerror() << std::endl;
