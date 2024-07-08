@@ -135,12 +135,12 @@ void upload_file(bot *p, const std::filesystem::path &file,
         // cq_send(J.toStyledString(), "group", -1, group_id);
         J = string_to_json(p->cq_send("upload_group_file", J));
         if (J.isMember("msg")) {
-            p->cq_send(J.toStyledString(), (msg_meta){"group", 0, group_id, 0});
+            p->cq_send(J.toStyledString(), msg_meta("group", 0, group_id, 0));
         }
     }
     catch (...) {
         p->setlog(LOG::WARNING, "File upload failed.");
-        p->cq_send("File upload failed.", (msg_meta){"group", 0, group_id, 0});
+        p->cq_send("File upload failed.", msg_meta("group", 0, group_id, 0));
     }
 }
 

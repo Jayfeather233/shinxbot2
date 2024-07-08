@@ -382,7 +382,7 @@ void mybot::run()
                         if (filename.find("lib") == 0) {
                             filename = filename.substr(3);
                         }
-                        filename = filename.substr(filename.length() - 3);
+                        filename = filename.substr(0, filename.length() - 3);
                         functions.push_back(std::make_tuple(
                             result.first, result.second, filename));
                         setlog(LOG::INFO, "Loaded function: " + filename);
@@ -409,7 +409,7 @@ void mybot::run()
                         if (filename.find("lib") == 0) {
                             filename = filename.substr(3);
                         }
-                        filename = filename.substr(filename.length() - 3);
+                        filename = filename.substr(0, filename.length() - 3);
                         events.push_back(std::make_tuple(
                             result.first, result.second, filename));
                         setlog(LOG::INFO, "Loaded event: " + filename);

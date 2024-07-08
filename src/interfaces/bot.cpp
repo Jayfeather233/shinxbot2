@@ -1,6 +1,26 @@
 #include "bot.h"
 #include "utils.h"
 
+// msg_meta::msg_meta()
+//     : message_type(""), user_id(0), group_id(0), message_id(0), p(nullptr)
+// {
+// }
+msg_meta::msg_meta(const msg_meta &u)
+    : message_type(u.message_type), user_id(u.user_id), group_id(u.group_id),
+      message_id(u.message_id), p(u.p)
+{
+}
+msg_meta::msg_meta(const msg_meta &&u)
+    : message_type(u.message_type), user_id(u.user_id), group_id(u.group_id),
+      message_id(u.message_id), p(u.p)
+{
+}
+msg_meta::msg_meta(std::string mt, uint64_t uid, uint64_t gid, int64_t mid,
+                   bot *pp)
+    : message_type(mt), user_id(uid), group_id(gid), message_id(mid), p(pp)
+{
+}
+
 bot::bot(int recv_port, int send_port)
     : receive_port(recv_port), send_port(send_port)
 {

@@ -22,6 +22,10 @@ struct msg_meta {
     uint64_t group_id;
     int64_t message_id;
     bot *p;
+
+    msg_meta(const msg_meta &u);
+    msg_meta(const msg_meta &&u);
+    msg_meta(std::string mt="", uint64_t uid=0, uint64_t gid=0, int64_t mid=0, bot*pp=nullptr);
 };
 
 class bot {
