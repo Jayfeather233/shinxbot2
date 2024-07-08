@@ -77,8 +77,6 @@ maybe it will work
 
 base64 作为子模块在 ./lib 下，请也一并 clone 它。
 
-需要先配置并启动 go-cqhttp。打开 "反向HTTP POST地址"，并设置你自己的接收端口。（一般在go-cqhttp目录下的config.yaml）
-
 在运行bot之前，请确保 `./lib/functions | ./lib/events` 里放入了功能的动态链接库，或者通过 `generate_cmake.py & make_all.sh` 来生成。
 
 linux: 运行 build.sh ，自动执行cmake和make编译，使用 start.sh 开始后台运行。主程序作为管理程序，会以子进程方式启动其他bot。
