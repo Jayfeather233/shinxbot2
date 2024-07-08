@@ -240,15 +240,27 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
 
                     auto u = load_function<processable>("./lib/functions/lib" +
                                                         name + ".so");
-                    std::get<0>(functions[i]) = u.first;
-                    std::get<1>(functions[i]) = u.second;
+                    if (u.first != nullptr) {
+                        std::get<0>(functions[i]) = u.first;
+                        std::get<1>(functions[i]) = u.second;
+                        cq_send("reload " + name, conf);
+                    }
+                    else {
+                        functions.erase(functions.begin() + i);
+                        cq_send("load " + name + " failed", conf);
+                    }
                     return false;
                 }
             }
             auto u = load_function<processable>("./lib/functions/lib" + name +
                                                 ".so");
-            if(u.first != nullptr)
+            if (u.first != nullptr) {
                 functions.push_back(std::make_tuple(u.first, u.second, name));
+                cq_send("load " + name, conf);
+            }
+            else {
+                cq_send("load " + name + " failed", conf);
+            }
             return false;
         }
         else if (type == "event") {
@@ -259,21 +271,46 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
 
                     auto u = load_function<eventprocess>("./lib/events/lib" +
                                                          name + ".so");
-                    std::get<0>(events[i]) = u.first;
-                    std::get<1>(events[i]) = u.second;
+                    if (u.first != nullptr) {
+                        std::get<0>(events[i]) = u.first;
+                        std::get<1>(events[i]) = u.second;
+                        cq_send("reload " + name, conf);
+                    }
+                    else {
+                        events.erase(events.begin() + i);
+                        cq_send("load " + name + " failed", conf);
+                    }
                     return false;
                 }
             }
             auto u =
                 load_function<eventprocess>("./lib/events/lib" + name + ".so");
-            if(u.first != nullptr)
+            if (u.first != nullptr) {
                 events.push_back(std::make_tuple(u.first, u.second, name));
+                cq_send("load " + name, conf);
+            }
+            else {
+                cq_send("load " + name + " failed", conf);
+            }
             return false;
         }
         else {
             cq_send("useage: bot.load [function|event] name", conf);
             return false;
         }
+    }
+    else if (message == "bot.list_module") {
+        std::ostringstream oss;
+        oss << "functions:\n";
+        for (auto u : functions) {
+            oss << "  " << std::get<2>(u) << std::endl;
+        }
+        oss << "events:\n";
+        for (auto u : events) {
+            oss << "  " << std::get<2>(u) << std::endl;
+        }
+        cq_send(oss.str(), conf);
+        return false;
     }
     else
         return true;
