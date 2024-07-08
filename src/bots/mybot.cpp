@@ -247,7 +247,8 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
             }
             auto u = load_function<processable>("./lib/functions/lib" + name +
                                                 ".so");
-            functions.push_back(std::make_tuple(u.first, u.second, name));
+            if(u.first != nullptr)
+                functions.push_back(std::make_tuple(u.first, u.second, name));
             return false;
         }
         else if (type == "event") {
@@ -265,7 +266,8 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
             }
             auto u =
                 load_function<eventprocess>("./lib/events/lib" + name + ".so");
-            events.push_back(std::make_tuple(u.first, u.second, name));
+            if(u.first != nullptr)
+                events.push_back(std::make_tuple(u.first, u.second, name));
             return false;
         }
         else {
