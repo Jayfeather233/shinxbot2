@@ -312,6 +312,41 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
         cq_send(oss.str(), conf);
         return false;
     }
+    else if (message.find("bot.unload") == 0 && is_op(conf.user_id)) {
+        std::istringstream iss(message.substr(10));
+        std::string type, name;
+        iss >> type >> name;
+        if (type == "function") {
+            for (size_t i = 0; i < functions.size(); ++i) {
+                if (std::get<2>(functions[i]) == name) {
+                    delete std::get<0>(functions[i]);
+                    dlclose(std::get<1>(functions[i]));
+                    functions.erase(functions.begin() + i);
+                    cq_send("unload " + name, conf);
+                    return false;
+                }
+            }
+            cq_send(name + " not found", conf);
+            return false;
+        }
+        else if (type == "event") {
+            for (size_t i = 0; i < events.size(); ++i) {
+                if (std::get<2>(events[i]) == name) {
+                    delete std::get<0>(events[i]);
+                    dlclose(std::get<1>(events[i]));
+                    events.erase(events.begin() + i);
+                    cq_send("unload " + name, conf);
+                    return false;
+                }
+            }
+            cq_send(name + " not found", conf);
+            return false;
+        }
+        else {
+            cq_send("useage: bot.unload [function|event] name", conf);
+            return false;
+        }
+    }
     else
         return true;
 }
