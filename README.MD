@@ -102,6 +102,8 @@ git clone --recursive git@github.com:Jayfeather233/shinxbot2.git
 
 ### 添加功能
 
+可参考一个最小开发集：[shinxbot2_dev_module](https://github.com/Jayfeather233/shinxbot2_dev_module)
+
 以`class mybot`为例，functions传参仅为消息相关，events传入事件的JSON数据，在收到聊天消息的时候调用 functions 里的方法，在其他提示性消息的时候用 events 的方法。
 
 1. ./src/functions 下新建目录并把代码放入，写一个类继承 `./src/interfaces/processable.h` 中的类并实现virtual方法，并提供`create`方法得到功能`processable*`的指针（可以参考`functions/getJapaneseImage/Anime_Img.cpp`）
