@@ -60,12 +60,6 @@
 
 ### 如何运行这个机器人
 
-确保您的任何Onebot11标准后端正在运行，并有A为其上报端口，B为其api端口。
-
-Release中下载解压，运行./shinxbot，port行输入 A B。
-
-### 如何编译这个机器人
-
 需要几个支持库：[libcurl](https://curl.se/libcurl/) + openssl-dev / [jsoncpp](https://github.com/open-source-parsers/jsoncpp) / [base64](https://github.com/tobiaslocker/base64) / [libzip](https://github.com/nih-at/libzip) / [Magick++]()
 
 ```
@@ -80,6 +74,12 @@ Magick++:
     then refer to [Magick++ installing page](https://www.imagemagick.org/Magick++/Install.html) to manually install it. (for a higher version of 7)
 maybe it will work
 ```
+
+确保您的任何Onebot11标准后端正在运行，并有A为其上报端口，B为其api端口。（如果只是测试可以随意填）
+
+Release中下载解压，运行./shinxbot，port行输入 A B。
+
+### 如何编译这个机器人
 
 base64 作为子模块在 ./lib 下，请也一并 clone 它。
 
