@@ -1,0 +1,10 @@
+version: '1.0'
+services:
+  shinx-bot:
+    privileged: true
+    container_name: shinx-bot
+    build: .
+    volumes:
+      - .:/workspace
+    entrypoint: /workspace/entrypoint.sh
+    working_dir: /workspace
