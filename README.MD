@@ -55,6 +55,17 @@
 
 ### 运行Bot
 
+本项目依赖以下软件包：
+
+- libcurl
+- openssl-dev / libssl-dev
+- libjsoncpp
+- libzip
+- ImageMagick++ (version 7+)
+- libmagick++-dev
+
+无论哪种运行方法，请先安装依赖。具体安装方式可参考`entrypoint.sh`。
+
 以下提供3种运行的方法：
 
 1. 从Release中下载并解压，运行`shinxbot`
@@ -77,18 +88,7 @@
 git clone --recursive git@github.com:Jayfeather233/shinxbot2.git
 ```
 
-本项目依赖以下软件包：
-
-- libcurl
-- openssl-dev / libssl-dev
-- libjsoncpp
-- libzip
-- ImageMagick++ (version 7+)
-- libmagick++-dev
-
-具体安装方式可参考`entrypoint.sh`。
-
-- **Linux**: 执行自动编译脚本`build.sh`
+- **Linux**: 执行自动编译脚本`build.sh` （`build.sh main`构建所有（默认）；`build.sh simple`不重新构建libutils ）
 - **Windows**: 需要更改TCP连接头文件，以及包括但不限于sleep, file:///等操作系统层面差异（未经验证），推荐在容器中运行
 
 ### 添加Bot

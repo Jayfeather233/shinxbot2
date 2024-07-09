@@ -25,18 +25,16 @@ aux_source_directory(./src/meta_event META_SOURCES)
 aux_source_directory(./src MAIN_SOURCES)
 
 # Set the mode you want (e.g., Mode1 or Mode2)
-set(MODE "Mode" CACHE STRING "Build mode: main or test")
+set(MODE "main" CACHE STRING "Build mode: main or test")
 message(MODE="${MODE}")
 
 # Add all source files in the ./src directory to MAIN_SOURCES
 aux_source_directory(./src MAIN_SOURCES)
 
-# Exclude A.cpp in Mode1
-if(MODE STREQUAL "main")
+if(MODE STREQUAL "main" OR MODE STREQUAL "simple")
     list(REMOVE_ITEM MAIN_SOURCES ./src/test.cpp)
 endif()
 
-# Exclude B.cpp in Mode2
 if(MODE STREQUAL "test")
     list(REMOVE_ITEM MAIN_SOURCES ./src/main.cpp)
 endif()
@@ -51,13 +49,18 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fstandalone-debug")
 endif()
 
-add_library(utils SHARED ${UTIL_SOURCES} ${UTIL_META_SOURCES} ${INT_SOURCES})
+if(NOT (MODE STREQUAL "simple"))
+    add_library(utils SHARED ${UTIL_SOURCES} ${UTIL_META_SOURCES} ${INT_SOURCES})
+endif()
+link_directories(${CMAKE_SOURCE_DIR}/lib)
 add_executable(${PROJECT_NAME} ${BOT_SOURCES} ${META_SOURCES} ${MAIN_SOURCES} ${FUNC_SOURCES} ${EVEN_SOURCES})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     INSTALL_RPATH "\$ORIGIN/lib"
     BUILD_WITH_INSTALL_RPATH TRUE
 )
+
+set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-Wl,-rpath,./lib")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE utils)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${ImageMagick_LIBRARIES})
@@ -71,23 +74,3 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC -pthread)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC -lm)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC -ldl)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${OPENSSL_LIBRARIES})
-
-include(CMakeParseArguments)
-
-function(copy_original_files)
-    cmake_parse_arguments(ARG "" "DESTINATION" "FILES" ${ARGN})
-
-    foreach(file ${ARG_FILES})
-        get_filename_component(original_file "${file}" REALPATH)
-        file(COPY "${original_file}" DESTINATION "${ARG_DESTINATION}")
-    endforeach()
-endfunction()
-
-copy_original_files(
-    DESTINATION "${CMAKE_BINARY_DIR}/../lib"
-    FILES ${ImageMagick_LIBRARIES} ${JSONCPP_LIBRARIES} ${OPENSSL_LIBRARIES}
-)
-
-install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_BINARY_DIR}/../)
-install(FILES  DESTINATION ${CMAKE_BINARY_DIR}/../lib)
-# install(FILES ${ImageMagick_LIBRARIES} ${JSONCPP_LIBRARIES} zip curl jsoncpp thread m dl ${OPENSSL_LIBRARIES} DESTINATION ./lib)
