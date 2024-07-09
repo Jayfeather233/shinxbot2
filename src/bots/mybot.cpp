@@ -459,17 +459,19 @@ void mybot::run()
                         filename = filename.substr(0, filename.length() - 3);
                         functions.push_back(std::make_tuple(
                             result.first, result.second, filename));
-                        setlog(LOG::INFO, "Loaded function: " + filename);
+                        set_global_log(LOG::INFO,
+                                       "Loaded function: " + filename);
                     }
                     else
-                        std::cerr << "Error while loading function:"
-                                  << filename;
+                        set_global_log(LOG::ERROR,
+                                       "Error while loading function:" +
+                                           filename);
                 }
             }
         }
     }
     catch (const fs::filesystem_error &ex) {
-        std::cerr << "Error accessing directory: " << ex.what() << std::endl;
+        set_global_log(LOG::ERROR, std::string("Error accessing directory: ") + ex.what());
     }
 
     try {
@@ -489,14 +491,15 @@ void mybot::run()
                         setlog(LOG::INFO, "Loaded event: " + filename);
                     }
                     else
-                        std::cerr << "Error while loading function:"
-                                  << filename;
+                        set_global_log(LOG::ERROR,
+                                       "Error while loading function:" +
+                                           filename);
                 }
             }
         }
     }
     catch (const fs::filesystem_error &ex) {
-        std::cerr << "Error accessing directory: " << ex.what() << std::endl;
+        set_global_log(LOG::ERROR, std::string("Error accessing directory: ") + ex.what());
     }
 
     this->init();

@@ -1,16 +1,17 @@
-#include "processable.h"
 #include "eventprocess.h"
-#include <string>
+#include "processable.h"
 #include <dlfcn.h>
+#include <string>
 
-template<typename T>
-std::pair<T *, void *> load_function(const std::string &dlname, const std::string &func = "create")
+template <typename T>
+std::pair<T *, void *> load_function(const std::string &dlname,
+                                     const std::string &func = "create")
 {
     // Function pointer type for the create function
     typedef T *(*create_t)();
     void *handle = dlopen(dlname.c_str(), RTLD_LAZY);
     if (!handle) {
-        std::cerr << "Cannot open library: " << dlerror() << std::endl;
+        set_global_log(LOG::ERROR, "Cannot open library: " + dlerror());
         return std::make_pair(nullptr, nullptr);
     }
 
@@ -18,8 +19,8 @@ std::pair<T *, void *> load_function(const std::string &dlname, const std::strin
     create_t createx = (create_t)dlsym(handle, func.c_str());
     const char *dlsym_error = dlerror();
     if (dlsym_error) {
-        std::cerr << "Cannot load symbol 'create': " << dlsym_error
-                  << std::endl;
+        set_global_log(LOG::ERROR,
+                       "Cannot load symbol 'create': " + dlsym_error);
         dlclose(handle);
         return std::make_pair(nullptr, nullptr);
     }

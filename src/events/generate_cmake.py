@@ -13,7 +13,7 @@ include_directories("../../../lib/base64/include")
 
 aux_source_directory(. MAIN_SOURCES)
 
-add_library({CNAME} SHARED ${MAIN_SOURCES} ${UTIL_SOURCES} ${UTIL_META_SOURCES})
+add_library({CNAME} SHARED ${MAIN_SOURCES})
 target_link_libraries({CNAME} PRIVATE ${CMAKE_BINARY_DIR}/../../../../lib/libutils.so)
 
 add_definitions( -DMAGICKCORE_QUANTUM_DEPTH=16 )
