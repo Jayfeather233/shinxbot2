@@ -1,12 +1,8 @@
 # shinxBot2
 
-一个基于 ~~go-cqhttp~~ [Lagrange.Onebot](https://github.com/LagrangeDev/Lagrange.Core) 的机器人以及（轻微的（还没写））多机器人管理框架。
+一个基于[Lagrange.Onebot](https://github.com/LagrangeDev/Lagrange.Core)的(多)机器人管理框架，重构自[shinxBot](https://github.com/Jayfeather233/shinxBot)。
 
-~~做着玩的~~
-
-是我原来项目[shinxBot](https://github.com/Jayfeather233/shinxBot)的C++重构版，
-
-### 它能做什么？
+### 功能支持
 
 - 恶臭数字论证器，来源：[itorr](https://github.com/itorr/homo)
 
@@ -14,7 +10,7 @@
 
 - 首字母缩写识别，来源：[itorr](https://github.com/itorr/nbnhhsh)
 
-- 在群或私聊中生成一个假的转发信息。
+- 在群或私聊中生成一个假的转发信息
 
 - 来点色图：随机色卡
 
@@ -46,62 +42,67 @@
 
 - 管理多个bot，并（以后）可以通过广播传递消息
 
-### 关于源文件
+### 文件结构
 
-./src/functions 所有功能的代码
+````
+./src/functions		# 所有功能的代码
+./src/inc			# 功能头文件
+./src/interfaces	# 接口，所有功能继承这个类
+./src/utils			# 一些工具
+./lib/functions/	# bot功能的动态链接库目录
+./lib/events/ 		# bot功能的动态链接库目录
+````
 
-./src/inc 功能头文件
+### 运行Bot
 
-./src/interfaces 接口，所有功能继承这个类
+1. 从Release中下载并解压，运行`shinxbot`
 
-./src/utils 一些工具
+2. 克隆仓库，于根目录下执行`docker compose up -d`进行容器内自动配置并编译为可执行文件`./build/shinxbot`
 
-./lib/functions/ & ./lib/events/: bot功能的动态链接库目录
+   使用`docker exec -it shinx-bot bash`以进入容器终端，在容器内运行
 
-### 如何运行这个机器人
+3. 裸机编译后运行`./build/shinxbot`，详见下一节
 
-需要几个支持库：[libcurl](https://curl.se/libcurl/) + openssl-dev / [jsoncpp](https://github.com/open-source-parsers/jsoncpp) / [base64](https://github.com/tobiaslocker/base64) / [libzip](https://github.com/nih-at/libzip) / [Magick++]()
+运行前，请确保Onebot 11标准后端正在运行，运行`shinxbot`后port行请分别输入Onebot 11后端的上报端口及其API端口
 
+可以使用`start.sh`以后台形式运行shinxbot
+
+### 从源码编译
+
+由于包含`base64`子模块，克隆仓库请启用`--recursive`
+
+```sh
+git clone --recursive git@github.com:Jayfeather233/shinxbot2.git
 ```
-base64: please git clone them into ./lib
-libcurl: sudo apt-get install libcurl4-openssl-dev
-openssl: sudo apt-get install openssl-dev (or libssl-dev)
-jsoncpp: sudo apt-get install libjsoncpp-dev
-libzip: sudo apt-get install libzip-dev
-Magick++:
-    sudo apt-get install libmagick++-dev libmagick++-6.q16hdri-dev
-    then remove them (this step actually do dependency install),
-    then refer to [Magick++ installing page](https://www.imagemagick.org/Magick++/Install.html) to manually install it. (for a higher version of 7)
-maybe it will work
-```
 
-确保您的任何Onebot11标准后端正在运行，并有A为其上报端口，B为其api端口。（如果只是测试可以随意填）
+本项目依赖以下软件包：
 
-Release中下载解压，运行./shinxbot，port行输入 A B。
+- libcurl
+- openssl-dev / libssl-dev
+- libjsoncpp
+- libzip
+- ImageMagick++ (version 7+)
+- libmagick++-dev
 
-### 如何编译这个机器人
+具体安装方式可参考`entrypoint.sh`。
 
-base64 作为子模块在 ./lib 下，请也一并 clone 它。
+- **Linux**: 执行自动编译脚本`build.sh`
+- **Windows**: 需要更改TCP连接头文件，以及包括但不限于sleep, file:///等操作系统层面差异（未经验证），推荐在容器中运行
 
-在运行bot之前，请确保 `./lib/functions | ./lib/events` 里放入了功能的动态链接库，或者通过 `generate_cmake.py & make_all.sh` 来生成。
+### 添加Bot
 
-linux: 运行 build.sh ，自动执行cmake和make编译，使用 start.sh 开始后台运行。主程序作为管理程序，会以子进程方式启动其他bot。
+具体实现可以参考`./src/bots`中的`mybot`，是已经接好Onebot 11的类
 
-windows：手动通过CMake编译，需要更改TCP连接的头文件（和可能的代码细微差别，包括不限于sleep,file:///）本人没有使用Windows编译过（
+- 所有bot需要继承`./src/interfaces/bot.h`中的`bot`类
 
-### 如何添加新bot
+- 在`./config/port.txt`中写入发送/接收端口
+- 在`./src/main.cpp`的`main()`中加入`add_new_bot(new yourbot(receive_port[id], send_port[id]));`
 
-所有的bot应该继承`./src/interfaces/bot.h`里`class bot`。在`./config/port.txt`中加入你的发送与接收端口。在`./src/main.cpp`的main()中加入`add_new_bot(new yourbot(receive_port[id], send_port[id]));`
+### 添加功能
 
-可以直接复制`./src/bots`里的`mybot`，是一个已经接好Onebot11的类。
+以`class mybot`为例，functions传参仅为消息相关，events传入事件的JSON数据，在收到聊天消息的时候调用 functions 里的方法，在其他提示性消息的时候用 events 的方法。
 
-### 如何添加新功能
-
-仅限于class mybot，如果是其他类型bot，可以参考我的功能插件实现。
-
-本节中functions和events可以互换，functions传参仅为消息相关，events传入事件的JSON数据，在收到聊天消息的时候调用 functions 里的方法，在其他提示性消息的时候用 events 的方法。
-
-1. ./src/functions 下新建目录并把代码放入，写一个类继承 `./src/interfaces/processable.h` 中的类并实现virtual方法，并提供`create`方法得到功能`processable*`的指针（可以参考我其他功能的写法，一个简单示例是 `functions/getJapaneseImage/Anime_Img.cpp`）
+1. ./src/functions 下新建目录并把代码放入，写一个类继承 `./src/interfaces/processable.h` 中的类并实现virtual方法，并提供`create`方法得到功能`processable*`的指针（可以参考`functions/getJapaneseImage/Anime_Img.cpp`）
 
 2. 继承的 virtual 方法里只要 check() 成功了就会执行 process() 方法
 
@@ -109,18 +110,15 @@ windows：手动通过CMake编译，需要更改TCP连接的头文件（和可�
 
 4. 启动bot。如果bot正在运行可以使用管理员账号（`op_list.json`）发送`bot.load [function|event] name` 加载。
 
-#### 开发提示
+在运行bot之前，请确保 `./lib/functions | ./lib/events` 里放入了功能的动态链接库，或者通过 `generate_cmake.py & make_all.sh` 来生成。
+
+### 开发提示
 
 1. 如果使用clang,根目录下`.clang-format`为你提供了自动格式化设置
 
 2. `dev_tools`下的`sender.sh`可用于向shinxbot发送信息，`inspector`则截获shinxbot向go-cqhttp发送的数据。`inspector`不能与go-cqhttp同时运行。这两者在功能上等同于go-cqhttp，为无法运行go-cqhttp的开发者提供了便利。（你可能需要更改`inspector.cpp`与`sender.sh`中的相关路径指向`config`文件）
-例如：
+   例如：
+
 ```bash
 bash sender.sh "bot.help"
 ```
-
-### TODO
-
-- [x] 把所有的功能编译成动态库，方便更换和加载
-
-- [ ] 实现bot间消息广播
