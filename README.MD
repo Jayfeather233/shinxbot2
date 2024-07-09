@@ -60,6 +60,12 @@
 
 ### 如何运行这个机器人
 
+确保您的任何Onebot11标准后端正在运行，并有A为其上报端口，B为其api端口。
+
+Release中下载解压，运行./shinxbot，port行输入 A B。
+
+### 如何编译这个机器人
+
 需要几个支持库：[libcurl](https://curl.se/libcurl/) + openssl-dev / [jsoncpp](https://github.com/open-source-parsers/jsoncpp) / [base64](https://github.com/tobiaslocker/base64) / [libzip](https://github.com/nih-at/libzip) / [Magick++]()
 
 ```

@@ -48,9 +48,9 @@ int main()
         iport.close();
     }
     else {
-        std::cout << "Please input the send_port: (receive port in go-cqhttp):";
+        std::cout << "Please input the send_port: (receive port in Onebot11):";
         std::cin >> x;
-        std::cout << "Please input the receive_port: (send port in go-cqhttp):";
+        std::cout << "Please input the receive_port: (send port in Onebot11):";
         std::cin >> y;
         send_port.push_back(x);
         receive_port.push_back(y);
