@@ -52,7 +52,9 @@ void ocr::process(std::string message, const msg_meta &conf)
     }
     Json::Value J;
     J["image"] = cq_decode(message.substr(index, index2 - index));
-    J = string_to_json(conf.p->cq_send("ocr_image", J))["data"]["texts"];
+    J = string_to_json(conf.p->cq_send("ocr_image", J));
+    if(J["data"].isNull()) return;
+    J = J["data"]["texts"];
     std::string res = ocr_tostring(J);
     conf.p->cq_send(res, conf);
     conf.p->setlog(LOG::INFO, "OCR at group " + std::to_string(conf.group_id) +

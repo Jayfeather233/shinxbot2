@@ -24,6 +24,7 @@ no_cache2:
     std::string res = p->cq_send("get_stranger_info", input);
     input.clear();
     input = string_to_json(res);
+    if (input["data"].isNull()) return "";
     std::string name = input["data"]["nickname"].asString();
     stranger_name[p->get_botqq()][user_id] = name;
     return name;
@@ -152,8 +153,9 @@ bool is_group_op(const bot *p, const uint64_t &group_id,
     Json::Value J;
     J["group_id"] = group_id;
     J["user_id"] = user_id;
-    J = string_to_json(p->cq_send("get_group_member_info", J))["data"];
-    return J["role"].asString() != "member";
+    J = string_to_json(p->cq_send("get_group_member_info", J));
+    if(J["data"].isNull()) return false;
+    return J["data"]["role"].asString() != "member";
 }
 
 bool is_friend(const bot *p, const uint64_t &user_id)
