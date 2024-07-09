@@ -54,6 +54,11 @@ endif()
 add_library(utils SHARED ${UTIL_SOURCES} ${UTIL_META_SOURCES} ${INT_SOURCES})
 add_executable(${PROJECT_NAME} ${BOT_SOURCES} ${META_SOURCES} ${MAIN_SOURCES} ${FUNC_SOURCES} ${EVEN_SOURCES})
 
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    INSTALL_RPATH "\$ORIGIN/lib"
+    BUILD_WITH_INSTALL_RPATH TRUE
+)
+
 target_link_libraries(${PROJECT_NAME} PRIVATE utils)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${ImageMagick_LIBRARIES})
 
@@ -66,3 +71,23 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC -pthread)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC -lm)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC -ldl)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${OPENSSL_LIBRARIES})
+
+include(CMakeParseArguments)
+
+function(copy_original_files)
+    cmake_parse_arguments(ARG "" "DESTINATION" "FILES" ${ARGN})
+
+    foreach(file ${ARG_FILES})
+        get_filename_component(original_file "${file}" REALPATH)
+        file(COPY "${original_file}" DESTINATION "${ARG_DESTINATION}")
+    endforeach()
+endfunction()
+
+copy_original_files(
+    DESTINATION "${CMAKE_BINARY_DIR}/../lib"
+    FILES ${ImageMagick_LIBRARIES} ${JSONCPP_LIBRARIES} ${OPENSSL_LIBRARIES}
+)
+
+install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_BINARY_DIR}/../)
+install(FILES  DESTINATION ${CMAKE_BINARY_DIR}/../lib)
+# install(FILES ${ImageMagick_LIBRARIES} ${JSONCPP_LIBRARIES} zip curl jsoncpp thread m dl ${OPENSSL_LIBRARIES} DESTINATION ./lib)

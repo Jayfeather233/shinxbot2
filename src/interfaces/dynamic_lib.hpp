@@ -11,7 +11,7 @@ std::pair<T *, void *> load_function(const std::string &dlname,
     typedef T *(*create_t)();
     void *handle = dlopen(dlname.c_str(), RTLD_LAZY);
     if (!handle) {
-        set_global_log(LOG::ERROR, "Cannot open library: " + dlerror());
+        set_global_log(LOG::ERROR, std::string("Cannot open library: ") + dlerror());
         return std::make_pair(nullptr, nullptr);
     }
 
@@ -20,7 +20,7 @@ std::pair<T *, void *> load_function(const std::string &dlname,
     const char *dlsym_error = dlerror();
     if (dlsym_error) {
         set_global_log(LOG::ERROR,
-                       "Cannot load symbol 'create': " + dlsym_error);
+                       std::string("Cannot load symbol 'create': ") + dlsym_error);
         dlclose(handle);
         return std::make_pair(nullptr, nullptr);
     }

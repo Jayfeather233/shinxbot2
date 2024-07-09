@@ -12,3 +12,4 @@ done
 cd ./build
 cmake -DCMAKE_BUILD_TYPE=Release .. -DMODE="$1"
 make -j$(( $(nproc) - 1 ))
+cmake --install .

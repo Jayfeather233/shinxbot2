@@ -55,13 +55,15 @@
 
 ### 运行Bot
 
+以下提供3种运行的方法：
+
 1. 从Release中下载并解压，运行`shinxbot`
 
-2. 克隆仓库，于根目录下执行`docker compose up -d`进行容器内自动配置并编译为可执行文件`./build/shinxbot`
+2. 克隆仓库，于根目录下执行`docker compose up -d`进行容器内自动配置并编译为可执行文件`./shinxbot`
 
    使用`docker exec -it shinx-bot bash`以进入容器终端，在容器内运行
 
-3. 裸机编译后运行`./build/shinxbot`，详见下一节
+3. 裸机编译后运行`./shinxbot`，详见下一节
 
 运行前，请确保Onebot 11标准后端正在运行，运行`shinxbot`后port行请分别输入Onebot 11后端的上报端口及其API端口
 
