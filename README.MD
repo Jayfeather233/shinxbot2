@@ -18,15 +18,11 @@
 
 - cat image for http code。来源[httpcats](https://httpcats.com/)
 
-- 图片OCR (qq自带的那个)
-
 - 图片处理：对称、旋转、万花筒
 
 - openai的 `gpt-3.5-turbo` API支持
 
 - google的 `gemini-pro[-vision]` API支持，[url](https://ai.google.dev/docs)
-
-- StableDiffusion的 `SDXL-Turbo` API支持，[url](https://sdxlturbo.ai/)
 
 - 群友聊天截图保存功能（美图）
 
