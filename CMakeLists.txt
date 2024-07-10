@@ -53,7 +53,7 @@ if(NOT (MODE STREQUAL "simple"))
     add_library(utils SHARED ${UTIL_SOURCES} ${UTIL_META_SOURCES} ${INT_SOURCES})
 endif()
 link_directories(${CMAKE_SOURCE_DIR}/lib)
-add_executable(${PROJECT_NAME} ${BOT_SOURCES} ${META_SOURCES} ${MAIN_SOURCES} ${FUNC_SOURCES} ${EVEN_SOURCES})
+add_executable(${PROJECT_NAME} ${BOT_SOURCES} ${META_SOURCES} ${MAIN_SOURCES})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     INSTALL_RPATH "\$ORIGIN/lib"

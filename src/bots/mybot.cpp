@@ -230,68 +230,83 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
     }
     else if (message.find("bot.load") == 0 && is_op(conf.user_id)) {
         std::istringstream iss(message.substr(8));
+        std::ostringstream oss;
+        bool flg = true;
         std::string type, name;
-        iss >> type >> name;
+        iss >> type;
         if (type == "function") {
-            for (size_t i = 0; i < functions.size(); ++i) {
-                if (std::get<2>(functions[i]) == name) {
-                    delete std::get<0>(functions[i]);
-                    dlclose(std::get<1>(functions[i]));
+            while (iss >> name) {
+                for (size_t i = 0; i < functions.size(); ++i) {
+                    if (std::get<2>(functions[i]) == name) {
+                        delete std::get<0>(functions[i]);
+                        dlclose(std::get<1>(functions[i]));
 
-                    auto u = load_function<processable>("./lib/functions/lib" +
-                                                        name + ".so");
-                    if (u.first != nullptr) {
-                        std::get<0>(functions[i]) = u.first;
-                        std::get<1>(functions[i]) = u.second;
-                        cq_send("reload " + name, conf);
+                        auto u = load_function<processable>(
+                            "./lib/functions/lib" + name + ".so");
+                        if (u.first != nullptr) {
+                            std::get<0>(functions[i]) = u.first;
+                            std::get<1>(functions[i]) = u.second;
+                            oss << "reload " << name << std::endl;
+                        }
+                        else {
+                            functions.erase(functions.begin() + i);
+                            oss << "load " << name << " failed" << std::endl;
+                        }
+                        flg = false;
+                        break;
                     }
-                    else {
-                        functions.erase(functions.begin() + i);
-                        cq_send("load " + name + " failed", conf);
-                    }
-                    return false;
                 }
             }
-            auto u = load_function<processable>("./lib/functions/lib" + name +
-                                                ".so");
-            if (u.first != nullptr) {
-                functions.push_back(std::make_tuple(u.first, u.second, name));
-                cq_send("load " + name, conf);
+            if (flg) {
+                auto u = load_function<processable>("./lib/functions/lib" +
+                                                    name + ".so");
+                if (u.first != nullptr) {
+                    functions.push_back(
+                        std::make_tuple(u.first, u.second, name));
+                    oss << "load " << name << std::endl;
+                }
+                else {
+                    oss << "load " << name << " failed" << std::endl;
+                }
             }
-            else {
-                cq_send("load " + name + " failed", conf);
-            }
+            cq_send(trim(oss.str()), conf);
             return false;
         }
         else if (type == "event") {
-            for (size_t i = 0; i < events.size(); ++i) {
-                if (std::get<2>(events[i]) == name) {
-                    delete std::get<0>(events[i]);
-                    dlclose(std::get<1>(events[i]));
+            while (iss >> name) {
+                for (size_t i = 0; i < events.size(); ++i) {
+                    if (std::get<2>(events[i]) == name) {
+                        delete std::get<0>(events[i]);
+                        dlclose(std::get<1>(events[i]));
 
-                    auto u = load_function<eventprocess>("./lib/events/lib" +
-                                                         name + ".so");
-                    if (u.first != nullptr) {
-                        std::get<0>(events[i]) = u.first;
-                        std::get<1>(events[i]) = u.second;
-                        cq_send("reload " + name, conf);
+                        auto u = load_function<eventprocess>(
+                            "./lib/events/lib" + name + ".so");
+                        if (u.first != nullptr) {
+                            std::get<0>(events[i]) = u.first;
+                            std::get<1>(events[i]) = u.second;
+                            oss << "reload " << name << std::endl;
+                        }
+                        else {
+                            events.erase(events.begin() + i);
+                            oss << "load " << name << " failed" << std::endl;
+                        }
+                        flg = false;
+                        break;
                     }
-                    else {
-                        events.erase(events.begin() + i);
-                        cq_send("load " + name + " failed", conf);
-                    }
-                    return false;
                 }
             }
-            auto u =
-                load_function<eventprocess>("./lib/events/lib" + name + ".so");
-            if (u.first != nullptr) {
-                events.push_back(std::make_tuple(u.first, u.second, name));
-                cq_send("load " + name, conf);
+            if (flg) {
+                auto u = load_function<eventprocess>("./lib/events/lib" + name +
+                                                     ".so");
+                if (u.first != nullptr) {
+                    events.push_back(std::make_tuple(u.first, u.second, name));
+                    oss << "load " << name << std::endl;
+                }
+                else {
+                    oss << "load " << name << " failed" << std::endl;
+                }
             }
-            else {
-                cq_send("load " + name + " failed", conf);
-            }
+            cq_send(trim(oss.str()), conf);
             return false;
         }
         else {
@@ -314,32 +329,45 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
     }
     else if (message.find("bot.unload") == 0 && is_op(conf.user_id)) {
         std::istringstream iss(message.substr(10));
+        std::ostringstream oss;
         std::string type, name;
-        iss >> type >> name;
+        iss >> type;
         if (type == "function") {
-            for (size_t i = 0; i < functions.size(); ++i) {
-                if (std::get<2>(functions[i]) == name) {
-                    delete std::get<0>(functions[i]);
-                    dlclose(std::get<1>(functions[i]));
-                    functions.erase(functions.begin() + i);
-                    cq_send("unload " + name, conf);
-                    return false;
+            while (iss >> name) {
+                bool flg = true;
+                for (size_t i = 0; i < functions.size(); ++i) {
+                    if (std::get<2>(functions[i]) == name) {
+                        delete std::get<0>(functions[i]);
+                        dlclose(std::get<1>(functions[i]));
+                        functions.erase(functions.begin() + i);
+                        oss << "unload " << name << std::endl;
+                        flg = false;
+                        break;
+                    }
                 }
+                if (flg)
+                    oss << name << " not found" << std::endl;
             }
-            cq_send(name + " not found", conf);
+            cq_send(trim(oss.str()), conf);
             return false;
         }
         else if (type == "event") {
-            for (size_t i = 0; i < events.size(); ++i) {
-                if (std::get<2>(events[i]) == name) {
-                    delete std::get<0>(events[i]);
-                    dlclose(std::get<1>(events[i]));
-                    events.erase(events.begin() + i);
-                    cq_send("unload " + name, conf);
-                    return false;
+            while (iss >> name) {
+                bool flg = true;
+                for (size_t i = 0; i < events.size(); ++i) {
+                    if (std::get<2>(events[i]) == name) {
+                        delete std::get<0>(events[i]);
+                        dlclose(std::get<1>(events[i]));
+                        events.erase(events.begin() + i);
+                        oss << "unload " << name << std::endl;
+                        flg = false;
+                        break;
+                    }
                 }
+                if (flg)
+                    oss << name << " not found" << std::endl;
             }
-            cq_send(name + " not found", conf);
+            cq_send(trim(oss.str()), conf);
             return false;
         }
         else {
@@ -471,7 +499,8 @@ void mybot::run()
         }
     }
     catch (const fs::filesystem_error &ex) {
-        set_global_log(LOG::ERROR, std::string("Error accessing directory: ") + ex.what());
+        set_global_log(LOG::ERROR,
+                       std::string("Error accessing directory: ") + ex.what());
     }
 
     try {
@@ -499,7 +528,8 @@ void mybot::run()
         }
     }
     catch (const fs::filesystem_error &ex) {
-        set_global_log(LOG::ERROR, std::string("Error accessing directory: ") + ex.what());
+        set_global_log(LOG::ERROR,
+                       std::string("Error accessing directory: ") + ex.what());
     }
 
     this->init();
