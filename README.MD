@@ -89,7 +89,11 @@ git clone --recursive git@github.com:Jayfeather233/shinxbot2.git
 ```
 
 - **Linux**: 执行自动编译脚本`build.sh` （`build.sh main`构建所有（默认）；`build.sh simple`不重新构建libutils ）
-- **Windows**: 需要更改TCP连接头文件，以及包括但不限于sleep, file:///等操作系统层面差异（未经验证），推荐在容器中运行
+- **Windows**: 需要更改TCP连接头文件，以及包括但不限于 sleep, file:/// 等操作系统层面差异（未经验证），推荐在容器中运行
+
+注意：这仅仅只编译了bot的框架，具体功能还需编译 `./src/[functions|events]` 中的代码：
+
+如果需要编译所有功能，进入 `./src/[functions|events]`，运行 `python generate_cmake.py` 对每个功能生成模版 CMakeLists.txt，再运行脚本 `bash ./make_all.sh` 来编译所有功能。
 
 ### 添加Bot
 
@@ -103,6 +107,8 @@ git clone --recursive git@github.com:Jayfeather233/shinxbot2.git
 ### 添加功能
 
 可参考一个最小开发集：[shinxbot2_dev_module](https://github.com/Jayfeather233/shinxbot2_dev_module)
+
+如果在本仓库代码上开发，请确保已经用 `./build.sh` 生成了 `libutils.so`。
 
 以`class mybot`为例，functions传参仅为消息相关，events传入事件的JSON数据，在收到聊天消息的时候调用 functions 里的方法，在其他提示性消息的时候用 events 的方法。
 
