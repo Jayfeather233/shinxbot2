@@ -60,21 +60,21 @@ template <typename T> bool find_in_array(const Json::Value &Ja, const T &data)
 bool is_op(const bot *p, const uint64_t a);
 
 /**
- * send a message to go-cqhttp
+ * send a message to Onebot11
  * message_type can be "group" or "private"
  */
 std::string cq_send(const bot *p, const std::string &message,
                     const msg_meta &conf);
 /**
- * send a message to go-cqhttp
+ * send a message to Onebot11
  * end_point can be "send_msg", "set_friend_add_request"... that supported by
- * go-cq J is the value
+ * Onebot11 J is the value
  */
 std::string cq_send(const bot *p, const std::string &end_point,
                     const Json::Value &J);
 /**
- * get some info from go-cqhttp
- * end_point can be "get_login_info"... that supported by go-cq
+ * get some info from Onebot11
+ * end_point can be "get_login_info"... that supported by Onebot11
  */
 std::string cq_get(const bot *p, const std::string &end_point);
 /**

@@ -126,7 +126,7 @@ git clone --recursive git@github.com:Jayfeather233/shinxbot2.git
 
 1. 如果使用clang,根目录下`.clang-format`为你提供了自动格式化设置
 
-2. `dev_tools`下的`sender.sh`可用于向shinxbot发送信息，`inspector`则截获shinxbot向go-cqhttp发送的数据。`inspector`不能与go-cqhttp同时运行。这两者在功能上等同于go-cqhttp，为无法运行go-cqhttp的开发者提供了便利。（你可能需要更改`inspector.cpp`与`sender.sh`中的相关路径指向`config`文件）
+2. `dev_tools`下的`sender.sh`可用于向shinxbot发送信息，`inspector`则截获shinxbot向Onebot11发送的数据。`inspector`不能与Onebot11同时运行。这两者在功能上等同于Onebot11，为无法运行Onebot11的开发环境提供了便利。（你可能需要更改`inspector.cpp`与`sender.sh`中的相关路径指向`config`文件）
    例如：
 
 ```bash
