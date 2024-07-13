@@ -60,7 +60,7 @@
 - ImageMagick++ (version 7+)
 - libmagick++-dev
 
-无论哪种运行方法，请先安装依赖。具体安装方式可参考`entrypoint.sh`。
+除了使用docer运行，其他的运行方式请先安装依赖。具体安装方式可参考`entrypoint.sh`。
 
 以下提供3种运行的方法：
 
