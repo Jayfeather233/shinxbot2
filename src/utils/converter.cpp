@@ -29,6 +29,9 @@ void input_process(bot *p, std::string *input) { p->input_process(input); }
 
 std::string message_to_string(const Json::Value &J)
 {
+    if (J.isString()) {
+        return J.asString();
+    }
     if (J["type"].asString() == "text") {
         return cq_encode(J["data"]["text"].asString());
     }

@@ -141,14 +141,16 @@ void mybot::log_init()
 }
 
 void mybot::unload_func(std::tuple<processable *, void *, std::string> &f){
+    this->mytimer->remove_callback(std::get<2>(f));
+    this->archive->remove_path(std::get<2>(f));
     delete std::get<0>(f);
     dlclose(std::get<1>(f));
-    this->mytimer->remove_callback(std::get<2>(f));
 }
 void mybot::unload_func(std::tuple<eventprocess *, void *, std::string> &f){
+    this->mytimer->remove_callback(std::get<2>(f));
+    this->archive->remove_path(std::get<2>(f));
     delete std::get<0>(f);
     dlclose(std::get<1>(f));
-    this->mytimer->remove_callback(std::get<2>(f));
 }
 
 void mybot::init()
@@ -410,7 +412,12 @@ void mybot::input_process(std::string *input)
             if (J["message"].isArray()) {
                 messageArr = J["message"];
             }
-            else {
+            else if(J["message"].isString()){
+                Json::Value jj;
+                jj["type"] = "text";
+                jj["data"]["text"] = J["message"];
+                messageArr.append(jj);
+            } else {
                 messageArr.append(J["message"]);
             }
             std::string messageStr = messageArr_to_string(J["message"]);
