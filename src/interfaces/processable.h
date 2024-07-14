@@ -31,7 +31,7 @@ public:
     {
     }
     virtual void
-    set_backup_files(archivist *p)
+    set_backup_files(archivist *p, const std::string &name)
     {
     }
 };

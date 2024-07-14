@@ -28,7 +28,7 @@ public:
     void process(std::string message, const msg_meta &conf);
     bool check(std::string message, const msg_meta &conf);
     std::string help();
-    void set_backup_files(archivist *p);
+    void set_backup_files(archivist *p, const std::string &name);
 };
 
 extern "C" processable* create();

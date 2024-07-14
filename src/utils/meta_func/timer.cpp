@@ -5,8 +5,10 @@ void Timer::run()
     while (running.load()) {
         std::this_thread::sleep_for(interval);
         if (running.load()) {
-            for (auto f : this->callbacks) {
-                f(this->p);
+            for (auto u : this->callbacks) {
+                for(auto f : u.second){
+                    f(this->p);
+                }
             }
         }
     }
@@ -18,9 +20,12 @@ Timer::Timer(std::chrono::duration<double> dur, bot *p)
 }
 
 void Timer::set_interval(std::chrono::duration<double> dur) { interval = dur; }
-void Timer::add_callback(std::function<void(bot *p)> cb)
+void Timer::add_callback(const std::string &name, std::function<void(bot *p)> cb)
 {
-    this->callbacks.push_back(cb);
+    this->callbacks[name].push_back(cb);
+}
+void Timer::remove_callback(const std::string &name){
+    this->callbacks.erase(name);
 }
 
 void Timer::timer_start()

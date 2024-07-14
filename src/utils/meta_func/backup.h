@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <map>
 #include <vector>
 #include <zip.h>
 
@@ -10,8 +11,9 @@
 
 class archivist {
 private:
-    std::vector<
-        std::tuple<std::filesystem::path, std::filesystem::path, std::string>>
+    std::map<std::string,
+             std::vector<std::tuple<std::filesystem::path,
+                                    std::filesystem::path, std::string>>>
         arc_list; // pair<file, rele_path, passwd>
     std::string default_pwd;
 
@@ -36,9 +38,10 @@ public:
      * since all files were automatically added
      */
     void
-    add_path(const std::filesystem::path &path,
+    add_path(const std::string &name, const std::filesystem::path &path,
              const std::filesystem::path &rele_path = std::filesystem::path(),
-             const std::string passwd = "");
+             const std::string &passwd = "");
+    void remove_path(const std::string &name);
     bool make_archive(const std::filesystem::path &path);
     void set_default_pwd(const std::string &pwd);
 };

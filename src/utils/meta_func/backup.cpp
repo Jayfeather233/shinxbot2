@@ -2,11 +2,17 @@
 #include "utils.h"
 #include <zip.h>
 
-void archivist::add_path(const std::filesystem::path &path,
+void archivist::add_path(const std::string &name,
+                         const std::filesystem::path &path,
                          const std::filesystem::path &rele_path,
-                         const std::string passwd)
+                         const std::string &passwd)
 {
-    this->arc_list.emplace_back(path, rele_path, passwd);
+    this->arc_list[name].emplace_back(path, rele_path, passwd);
+}
+
+void archivist::remove_path(const std::string &name)
+{
+    this->arc_list.erase(name);
 }
 
 bool archivist::archive_add_file(zip_t *archive,
@@ -35,9 +41,9 @@ bool archivist::archive_add_file(zip_t *archive,
             set_global_log(LOG::ERROR, "backup file enc error");
             return false;
         }
-    } else {
-        int ret = zip_file_set_encryption(archive, ind, ZIP_EM_AES_256,
-                                          NULL);
+    }
+    else {
+        int ret = zip_file_set_encryption(archive, ind, ZIP_EM_AES_256, NULL);
         if (ret < 0) {
             set_global_log(LOG::ERROR, "backup file enc error");
             return false;
@@ -83,10 +89,12 @@ bool archivist::make_archive(const std::filesystem::path &path)
     }
     else {
         zip_set_default_password(archive, default_pwd.c_str());
-        for (const auto &[path, rele_path, passwd] : this->arc_list) {
-            if (!this->archive_add_path(archive, path, passwd, rele_path)) {
-                zip_close(archive);
-                return false;
+        for (const auto &f : this->arc_list) {
+            for (const auto &[path, rele_path, passwd] : f.second) {
+                if (!this->archive_add_path(archive, path, passwd, rele_path)) {
+                    zip_close(archive);
+                    return false;
+                }
             }
         }
         zip_close(archive);

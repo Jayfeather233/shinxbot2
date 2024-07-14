@@ -140,6 +140,17 @@ void mybot::log_init()
     LOG_output[2] = std::ofstream(oss.str() + "/erro.log", std::ios_base::app);
 }
 
+void mybot::unload_func(std::tuple<processable *, void *, std::string> &f){
+    delete std::get<0>(f);
+    dlclose(std::get<1>(f));
+    this->mytimer->remove_callback(std::get<2>(f));
+}
+void mybot::unload_func(std::tuple<eventprocess *, void *, std::string> &f){
+    delete std::get<0>(f);
+    dlclose(std::get<1>(f));
+    this->mytimer->remove_callback(std::get<2>(f));
+}
+
 void mybot::init()
 {
     for (;;) {
@@ -171,12 +182,12 @@ void mybot::init()
     recorder = new heartBeat(rec_list);
     for (auto px : functions) {
         processable *p = std::get<0>(px);
-        p->set_callback([this](std::function<void(bot * p)> func) {
-            this->mytimer->add_callback(func);
+        p->set_callback([&](std::function<void(bot * p)> func) {
+            this->mytimer->add_callback(std::get<2>(px), func);
         });
-        p->set_backup_files(this->archive);
+        p->set_backup_files(this->archive, std::get<2>(px));
     }
-    this->archive->add_path("./config");
+    this->archive->add_path("MAIN", "./config");
     this->archive->set_default_pwd(std::to_string(this->botqq));
 }
 
@@ -238,8 +249,7 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
             while (iss >> name) {
                 for (size_t i = 0; i < functions.size(); ++i) {
                     if (std::get<2>(functions[i]) == name) {
-                        delete std::get<0>(functions[i]);
-                        dlclose(std::get<1>(functions[i]));
+                        unload_func(functions[i]);
 
                         auto u = load_function<processable>(
                             "./lib/functions/lib" + name + ".so");
@@ -276,8 +286,7 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
             while (iss >> name) {
                 for (size_t i = 0; i < events.size(); ++i) {
                     if (std::get<2>(events[i]) == name) {
-                        delete std::get<0>(events[i]);
-                        dlclose(std::get<1>(events[i]));
+                        unload_func(events[i]);
 
                         auto u = load_function<eventprocess>(
                             "./lib/events/lib" + name + ".so");
@@ -337,8 +346,7 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
                 bool flg = true;
                 for (size_t i = 0; i < functions.size(); ++i) {
                     if (std::get<2>(functions[i]) == name) {
-                        delete std::get<0>(functions[i]);
-                        dlclose(std::get<1>(functions[i]));
+                        unload_func(functions[i]);
                         functions.erase(functions.begin() + i);
                         oss << "unload " << name << std::endl;
                         flg = false;
@@ -356,8 +364,7 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
                 bool flg = true;
                 for (size_t i = 0; i < events.size(); ++i) {
                     if (std::get<2>(events[i]) == name) {
-                        delete std::get<0>(events[i]);
-                        dlclose(std::get<1>(events[i]));
+                        unload_func(events[i]);
                         events.erase(events.begin() + i);
                         oss << "unload " << name << std::endl;
                         flg = false;

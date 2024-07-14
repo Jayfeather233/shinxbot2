@@ -54,6 +54,8 @@ private:
      * Handle some meta_event start with 'bot.'
      */
     bool meta_func(std::string message, const msg_meta &conf);
+    void unload_func(std::tuple<processable *, void *, std::string> &f);
+    void unload_func(std::tuple<eventprocess *, void *, std::string> &f);
 
 public:
     mybot(int recv_port, int send_port);
