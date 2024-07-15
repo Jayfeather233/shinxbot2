@@ -140,18 +140,29 @@ void mybot::log_init()
     LOG_output[2] = std::ofstream(oss.str() + "/erro.log", std::ios_base::app);
 }
 
-void mybot::unload_func(std::tuple<processable *, void *, std::string> &f){
+void mybot::unload_func(std::tuple<processable *, void *, std::string> &f)
+{
     this->mytimer->remove_callback(std::get<2>(f));
     this->archive->remove_path(std::get<2>(f));
     delete std::get<0>(f);
     dlclose(std::get<1>(f));
 }
-void mybot::unload_func(std::tuple<eventprocess *, void *, std::string> &f){
+void mybot::unload_func(std::tuple<eventprocess *, void *, std::string> &f)
+{
     this->mytimer->remove_callback(std::get<2>(f));
     this->archive->remove_path(std::get<2>(f));
     delete std::get<0>(f);
     dlclose(std::get<1>(f));
 }
+
+void mybot::init_func(const std::string &name, processable *p)
+{
+    p->set_callback([&](std::function<void(bot * p)> func) {
+        this->mytimer->add_callback(name, func);
+    });
+    p->set_backup_files(this->archive, name);
+}
+void mybot::init_func(const std::string &name, eventprocess *p) {}
 
 void mybot::init()
 {
@@ -183,11 +194,10 @@ void mybot::init()
 
     recorder = new heartBeat(rec_list);
     for (auto px : functions) {
-        processable *p = std::get<0>(px);
-        p->set_callback([&](std::function<void(bot * p)> func) {
-            this->mytimer->add_callback(std::get<2>(px), func);
-        });
-        p->set_backup_files(this->archive, std::get<2>(px));
+        init_func(std::get<2>(px), std::get<0>(px));
+    }
+    for (auto px : events) {
+        init_func(std::get<2>(px), std::get<0>(px));
     }
     this->archive->add_path("MAIN", "./config");
     this->archive->set_default_pwd(std::to_string(this->botqq));
@@ -258,6 +268,7 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
                         if (u.first != nullptr) {
                             std::get<0>(functions[i]) = u.first;
                             std::get<1>(functions[i]) = u.second;
+                            init_func(name, u.first);
                             oss << "reload " << name << std::endl;
                         }
                         else {
@@ -275,6 +286,7 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
                 if (u.first != nullptr) {
                     functions.push_back(
                         std::make_tuple(u.first, u.second, name));
+                    init_func(name, u.first);
                     oss << "load " << name << std::endl;
                 }
                 else {
@@ -295,6 +307,7 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
                         if (u.first != nullptr) {
                             std::get<0>(events[i]) = u.first;
                             std::get<1>(events[i]) = u.second;
+                            init_func(name, u.first);
                             oss << "reload " << name << std::endl;
                         }
                         else {
@@ -311,6 +324,7 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
                                                      ".so");
                 if (u.first != nullptr) {
                     events.push_back(std::make_tuple(u.first, u.second, name));
+                    init_func(name, u.first);
                     oss << "load " << name << std::endl;
                 }
                 else {
@@ -412,12 +426,13 @@ void mybot::input_process(std::string *input)
             if (J["message"].isArray()) {
                 messageArr = J["message"];
             }
-            else if(J["message"].isString()){
+            else if (J["message"].isString()) {
                 Json::Value jj;
                 jj["type"] = "text";
                 jj["data"]["text"] = J["message"];
                 messageArr.append(jj);
-            } else {
+            }
+            else {
                 messageArr.append(J["message"]);
             }
             std::string messageStr = messageArr_to_string(J["message"]);
