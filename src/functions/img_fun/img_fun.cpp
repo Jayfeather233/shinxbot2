@@ -1,4 +1,5 @@
 #include "img_fun.h"
+#include "image_utils.h"
 #include "processable.h"
 #include "utils.h"
 

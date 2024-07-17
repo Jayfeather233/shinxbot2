@@ -1,59 +1,5 @@
+#include "image_utils.h"
 #include "utils.h"
-
-#include <Magick++.h>
-#include <fstream>
-#include <iostream>
-#include <string>
-#include <sys/wait.h>
-
-void command_download(const std::string &httpAddress,
-                      const std::string &filePath, const std::string &fileName,
-                      const bool proxy)
-{
-    std::filesystem::path p(filePath);
-    if (!std::filesystem::exists(p)) {
-        std::filesystem::create_directories(p);
-    }
-    p /= fileName;
-    // std::cout<<p.string()<<std::endl;
-    std::string command = "curl -o " + p.string() + " ";
-    if (!proxy)
-        command += "--noproxy '*' ";
-    command += httpAddress + " > /dev/null 2>&1";
-    int ret = system(command.c_str());
-    if (ret) {
-        std::ostringstream oss;
-        oss << "download " << httpAddress << " to " << filePath << "/"
-            << fileName << " Proxy=" << proxy << "failed.";
-        set_global_log(LOG::ERROR, oss.str());
-    }
-}
-
-void download(const std::string &httpAddress, const std::string &filePath,
-              const std::string &fileName, const bool proxy)
-{
-    try {
-        std::string data = do_get(httpAddress, {}, proxy);
-        std::fstream ofile;
-        try {
-            ofile = openfile(filePath + "/" + fileName,
-                             std::ios::out | std::ios::binary);
-        }
-        catch (...) {
-            set_global_log(LOG::ERROR, "Cannot open file " + filePath + "/" +
-                                           fileName + " for download.");
-            return;
-        }
-        ofile << data;
-        ofile.flush();
-        ofile.close();
-    }
-    catch (const std::exception &e) {
-        set_global_log(LOG::ERROR, "At download from" + httpAddress + " to " +
-                                       filePath + "." + fileName +
-                                       ", Exception occurred: " + e.what());
-    }
-}
 
 void addRandomNoiseSingle(Magick::Image &img, int strength = 4)
 {
@@ -295,7 +241,7 @@ void kaleido(Magick::Image &img, int layers, int nums_per_layer,
              const Magick::Image las)
 {
     img.alphaChannel(MagickCore::AlphaChannelOption::SetAlphaChannel);
-    double ratio = img.columns() * img.rows() / 1000000;
+    double ratio = img.columns() * img.rows() / 250000;
     if (ratio > 1) {
         img.resize(Magick::Geometry(img.columns() / ratio, img.rows() / ratio));
         img.page(Magick::Geometry(0, 0, 0, 0));
@@ -367,7 +313,8 @@ void kaleido(std::vector<Magick::Image> &img, int layers, int nums_per_layer)
         im.backgroundColor(Magick::Color(0, 0, 0));
         im.trim();
         im.page(Magick::Geometry(0, 0, 0, 0));
+        Magick::Image las_td = im;
         kaleido(im, layers, nums_per_layer, las);
-        las = im;
+        las = las_td;
     }
 }

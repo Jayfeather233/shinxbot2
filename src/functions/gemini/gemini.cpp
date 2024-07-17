@@ -1,4 +1,5 @@
 #include "gemini.h"
+#include "image_utils.h"
 
 #include <fstream>
 
