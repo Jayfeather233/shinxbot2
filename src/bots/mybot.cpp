@@ -637,6 +637,9 @@ mybot::~mybot()
 {
     bot_is_on = false;
     this->mytimer->timer_stop();
+    delete this->mytimer;
+    delete this->archive;
+    delete this->recorder;
 
     for (auto ux : functions) {
         delete std::get<0>(ux);
