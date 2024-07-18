@@ -250,6 +250,13 @@ size_t NGGame::dead_cnt()
     return total_cnt() - alive_cnt();
 }
 
+NGGame::~NGGame()
+{
+    for (auto it : ng) {
+        delete it.second;
+    }
+}
+
 static std::map<uint64_t, NGGame> games;
 static msg_meta rep;
 

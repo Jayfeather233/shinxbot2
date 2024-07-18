@@ -4,18 +4,11 @@
 #include <map>
 #include <vector>
 
-enum gameState
-{
-    idle,
-    join,
-    init,
-    work
-};
+enum gameState { idle, join, init, work };
 
 typedef struct Player player_t;
 
-struct Player
-{
+struct Player {
     uint64_t id;
     player_t *pre;
     player_t *nex;
@@ -30,13 +23,12 @@ struct Player
     }
 };
 
-class NGGame
-{
-  private:
+class NGGame {
+private:
     gameState state;
     std::map<uint64_t, player_t *> ng;
 
-  public:
+public:
     // player action
     bool join(uint64_t user_id);
     bool set(uint64_t user_id, std::string word);
@@ -59,7 +51,6 @@ class NGGame
     std::string overall(const msg_meta &conf);
     std::vector<uint64_t> get_lazy();
 
-
     bool is_alive(uint64_t user_id);
     bool check_ng(std::string content, uint64_t user_id);
     bool check_end();
@@ -68,14 +59,15 @@ class NGGame
     size_t alive_cnt();
     size_t total_cnt();
     size_t dead_cnt();
+
+    ~NGGame();
 };
 
-class NGgame : public processable
-{
-  public:
+class NGgame : public processable {
+public:
     void process(std::string message, const msg_meta &conf);
     bool check(std::string message, const msg_meta &conf);
     std::string help();
 };
 
-extern "C" processable* create();
+extern "C" processable *create();

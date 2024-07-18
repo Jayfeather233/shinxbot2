@@ -118,6 +118,10 @@ git clone --recursive git@github.com:Jayfeather233/shinxbot2.git
 
 在运行bot之前，请确保 `./lib/functions | ./lib/events` 里放入了功能的动态链接库，或者通过 `generate_cmake.py & make_all.sh` 来生成。
 
+bot加载库时，会调用 `extern "C" processable *create()` 来得到功能指针。一般来说直接返回 `new YourFunc()` 即可。
+
+bot卸载库时，会调用 `extern "C" processable *close()` 来表明需要卸载库。请合理释放所有全局 `new` 得到的指针，除了 `new YourFunc()` 的指针。`class` 内部指针请用 `~YourClass()` 来释放。
+
 ### 开发提示
 
 1. 如果使用clang,根目录下`.clang-format`为你提供了自动格式化设置
