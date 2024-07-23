@@ -126,6 +126,8 @@ void birthday::check_date(bot *p)
             std::string todayBirthdays;
             std::string upcomingBirthdays;
             std::vector<mmdd> nearestBirthdays;
+            std::vector<mmdd> nearestBirthdays1;
+            std::vector<mmdd> nearestBirthdays2;
             for (const auto &b : bdays) {
                 if (b.mm == (localTime.tm_mon + 1) &&
                     b.dd == localTime.tm_mday) {
@@ -134,14 +136,24 @@ void birthday::check_date(bot *p)
                 else if (b.mm > localTime.tm_mon + 1 ||
                          (b.mm == localTime.tm_mon + 1 &&
                           b.dd > localTime.tm_mday)) {
-                    nearestBirthdays.push_back(b);
+                    nearestBirthdays1.push_back(b);
+                } else {
+                    nearestBirthdays2.push_back(b);
                 }
             }
 
-            std::sort(nearestBirthdays.begin(), nearestBirthdays.end(),
+            std::sort(nearestBirthdays1.begin(), nearestBirthdays1.end(),
                       [](const mmdd &a, const mmdd &b) {
                           return (a.mm < b.mm) || (a.mm == b.mm && a.dd < b.dd);
                       });
+            std::sort(nearestBirthdays2.begin(), nearestBirthdays2.end(),
+                      [](const mmdd &a, const mmdd &b) {
+                          return (a.mm < b.mm) || (a.mm == b.mm && a.dd < b.dd);
+                      });
+
+            nearestBirthdays.reserve(nearestBirthdays1.size() + nearestBirthdays2.size());
+            nearestBirthdays.insert(nearestBirthdays.end(), nearestBirthdays1.begin(), nearestBirthdays1.end());
+            nearestBirthdays.insert(nearestBirthdays.end(), nearestBirthdays2.begin(), nearestBirthdays2.end());
 
             if (!nearestBirthdays.empty()) {
                 for (int i = 0; i < std::min(3, (int)nearestBirthdays.size());
