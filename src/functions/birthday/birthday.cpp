@@ -55,6 +55,13 @@ void birthday::process(std::string message, const msg_meta &conf)
                             std::stoi(date.substr(2, 2))};
             if (check_valid_date(u)) {
                 birthdays[conf.group_id].push_back(u);
+
+                std::sort(birthdays[conf.group_id].begin(),
+                          birthdays[conf.group_id].end(),
+                          [](const mmdd &a, const mmdd &b) {
+                              return (a.mm < b.mm) ||
+                                     (a.mm == b.mm && a.dd < b.dd);
+                          });
                 conf.p->cq_send(fmt::format("加入 {} 的日期 {}", who, date),
                                 conf);
                 save();
@@ -63,14 +70,16 @@ void birthday::process(std::string message, const msg_meta &conf)
                 conf.p->cq_send("不是一个有效日期！", conf);
             }
         }
-        else if(!who.empty()){
+        else if (!who.empty()) {
             conf.p->cq_send("请使用 MMDD 日期格式", conf);
-        } else {
+        }
+        else {
             conf.p->cq_send("请输入事件描述", conf);
         }
     }
     else if (command == "date.del") {
-        if(!conf.p->is_op(conf.user_id) && !is_group_op(conf.p, conf.group_id, conf.user_id)){
+        if (!conf.p->is_op(conf.user_id) &&
+            !is_group_op(conf.p, conf.group_id, conf.user_id)) {
             conf.p->cq_send("只有管理员可以哦", conf);
             return;
         }
@@ -137,7 +146,8 @@ void birthday::check_date(bot *p)
                          (b.mm == localTime.tm_mon + 1 &&
                           b.dd > localTime.tm_mday)) {
                     nearestBirthdays1.push_back(b);
-                } else {
+                }
+                else {
                     nearestBirthdays2.push_back(b);
                 }
             }
@@ -151,9 +161,14 @@ void birthday::check_date(bot *p)
                           return (a.mm < b.mm) || (a.mm == b.mm && a.dd < b.dd);
                       });
 
-            nearestBirthdays.reserve(nearestBirthdays1.size() + nearestBirthdays2.size());
-            nearestBirthdays.insert(nearestBirthdays.end(), nearestBirthdays1.begin(), nearestBirthdays1.end());
-            nearestBirthdays.insert(nearestBirthdays.end(), nearestBirthdays2.begin(), nearestBirthdays2.end());
+            nearestBirthdays.reserve(nearestBirthdays1.size() +
+                                     nearestBirthdays2.size());
+            nearestBirthdays.insert(nearestBirthdays.end(),
+                                    nearestBirthdays1.begin(),
+                                    nearestBirthdays1.end());
+            nearestBirthdays.insert(nearestBirthdays.end(),
+                                    nearestBirthdays2.begin(),
+                                    nearestBirthdays2.end());
 
             if (!nearestBirthdays.empty()) {
                 for (int i = 0; i < std::min(3, (int)nearestBirthdays.size());
