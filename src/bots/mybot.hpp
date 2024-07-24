@@ -70,6 +70,8 @@ public:
     void run();
 
     void setlog(LOG type, std::string message);
+    
+    void cq_send_all_op(const std::string &message);
 
     ~mybot();
 };

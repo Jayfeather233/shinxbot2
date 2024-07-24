@@ -16,7 +16,7 @@ inline bool check_valid_date(const mmdd &u)
 }
 inline int date_between(const mmdd &a, const mmdd &b, const int year)
 {
-    if (a.mm < b.mm || (a.mm == b.mm && a.dd < b.dd)) {
+    if (a.mm > b.mm || (a.mm == b.mm && a.dd > b.dd)) {
         return date_between(a, (mmdd){"", 12, 31}, year) +
                date_between((mmdd){"", 1, 1}, b, year + 1) + 1;
     }
@@ -47,6 +47,7 @@ class birthday : public processable {
 private:
     std::map<uint64_t, std::vector<mmdd>> birthdays;
     bool has_sent = true;
+    void send_upcoming_msg(const std::tm &localTime, bot *p, int64_t group_idx = -1);
 
 public:
     birthday();

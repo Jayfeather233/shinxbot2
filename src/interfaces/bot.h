@@ -56,6 +56,8 @@ public:
      */
     virtual std::string cq_send(const std::string &message,
                                 const msg_meta &conf) const;
+    
+    virtual void cq_send_all_op(const std::string &message);
 
     /**
      * send(POST) to gocq (or any other you want)

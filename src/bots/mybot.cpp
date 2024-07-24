@@ -146,8 +146,9 @@ void close_dl(void *handle)
     close_t closex = (close_t)dlsym(handle, "close");
     const char *dlsym_error = dlerror();
     if (dlsym_error) {
-        set_global_log(LOG::WARNING, std::string("Cannot load symbol 'close': ") +
-                                       dlsym_error);
+        set_global_log(LOG::WARNING,
+                       std::string("Cannot load symbol 'close': ") +
+                           dlsym_error);
     }
     else {
         closex();
@@ -631,6 +632,15 @@ void mybot::setlog(LOG type, std::string message)
         std::cout << oss.str();
     LOG_output[type] << oss.str();
     LOG_output[type].flush();
+}
+
+void mybot::cq_send_all_op(const std::string &u)
+{
+    msg_meta conf = (msg_meta){"private", 0, 0, 0, this};
+    for (int64_t uid : op_list) {
+        conf.user_id = uid;
+        cq_send(u, conf);
+    }
 }
 
 mybot::~mybot()

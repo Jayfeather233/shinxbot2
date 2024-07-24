@@ -116,6 +116,12 @@ void birthday::process(std::string message, const msg_meta &conf)
         }
         conf.p->cq_send(list, conf);
     }
+    else if (command == "date.send") {
+        auto nowtime = std::chrono::system_clock::now();
+        std::time_t currentTime = std::chrono::system_clock::to_time_t(nowtime);
+        std::tm localTime = *std::localtime(&currentTime);
+        send_upcoming_msg(localTime, conf.p, conf.group_id);
+    }
     else {
         conf.p->cq_send(birth_help_msg, conf);
     }
@@ -125,6 +131,73 @@ bool birthday::check(std::string message, const msg_meta &conf)
     return (message.find("date.") == 0 && conf.message_type == "group");
 }
 std::string birthday::help() { return "日期提醒。 date.help"; }
+
+void birthday::send_upcoming_msg(const std::tm &localTime, bot *p,
+                                 int64_t group_idx)
+{
+    for (const auto &[group_id, bdays] : birthdays) {
+        if (group_idx != group_id && group_idx != -1)
+            continue;
+        msg_meta conf = (msg_meta){"group", 0, group_id, 0, p};
+        std::string todayBirthdays;
+        std::string upcomingBirthdays;
+        std::vector<mmdd> nearestBirthdays;
+        std::vector<mmdd> nearestBirthdays1;
+        std::vector<mmdd> nearestBirthdays2;
+        for (const auto &b : bdays) {
+            if (b.mm == (localTime.tm_mon + 1) && b.dd == localTime.tm_mday) {
+                todayBirthdays += fmt::format("{}！\n", b.name);
+            }
+            else if (b.mm > localTime.tm_mon + 1 ||
+                     (b.mm == localTime.tm_mon + 1 &&
+                      b.dd > localTime.tm_mday)) {
+                nearestBirthdays1.push_back(b);
+            }
+            else {
+                nearestBirthdays2.push_back(b);
+            }
+        }
+
+        std::sort(nearestBirthdays1.begin(), nearestBirthdays1.end(),
+                  [](const mmdd &a, const mmdd &b) {
+                      return (a.mm < b.mm) || (a.mm == b.mm && a.dd < b.dd);
+                  });
+        std::sort(nearestBirthdays2.begin(), nearestBirthdays2.end(),
+                  [](const mmdd &a, const mmdd &b) {
+                      return (a.mm < b.mm) || (a.mm == b.mm && a.dd < b.dd);
+                  });
+
+        nearestBirthdays.reserve(nearestBirthdays1.size() +
+                                 nearestBirthdays2.size());
+        nearestBirthdays.insert(nearestBirthdays.end(),
+                                nearestBirthdays1.begin(),
+                                nearestBirthdays1.end());
+        nearestBirthdays.insert(nearestBirthdays.end(),
+                                nearestBirthdays2.begin(),
+                                nearestBirthdays2.end());
+
+        if (!nearestBirthdays.empty()) {
+            for (int i = 0; i < std::min(3, (int)nearestBirthdays.size());
+                 ++i) {
+                upcomingBirthdays += fmt::format(
+                    "{}: {:02d}{:02d} 还有 {} 天！\n", nearestBirthdays[i].name,
+                    nearestBirthdays[i].mm, nearestBirthdays[i].dd,
+                    date_between(
+                        (mmdd){"", localTime.tm_mon + 1, localTime.tm_mday},
+                        nearestBirthdays[i], localTime.tm_year + 1900));
+            }
+        }
+
+        if (!todayBirthdays.empty()) {
+            p->cq_send("今天的特殊日子！\n" + todayBirthdays, conf);
+        }
+
+        if (!upcomingBirthdays.empty()) {
+            p->cq_send("接下来的日子：\n" + upcomingBirthdays, conf);
+        }
+    }
+}
+
 void birthday::check_date(bot *p)
 {
     auto nowtime = std::chrono::system_clock::now();
@@ -136,68 +209,7 @@ void birthday::check_date(bot *p)
     if (localTime.tm_hour == 0) {
         if (has_sent)
             return;
-
-        for (const auto &[group_id, bdays] : birthdays) {
-            msg_meta conf = (msg_meta){"group", 0, group_id, 0, p};
-            std::string todayBirthdays;
-            std::string upcomingBirthdays;
-            std::vector<mmdd> nearestBirthdays;
-            std::vector<mmdd> nearestBirthdays1;
-            std::vector<mmdd> nearestBirthdays2;
-            for (const auto &b : bdays) {
-                if (b.mm == (localTime.tm_mon + 1) &&
-                    b.dd == localTime.tm_mday) {
-                    todayBirthdays += fmt::format("{}！\n", b.name);
-                }
-                else if (b.mm > localTime.tm_mon + 1 ||
-                         (b.mm == localTime.tm_mon + 1 &&
-                          b.dd > localTime.tm_mday)) {
-                    nearestBirthdays1.push_back(b);
-                }
-                else {
-                    nearestBirthdays2.push_back(b);
-                }
-            }
-
-            std::sort(nearestBirthdays1.begin(), nearestBirthdays1.end(),
-                      [](const mmdd &a, const mmdd &b) {
-                          return (a.mm < b.mm) || (a.mm == b.mm && a.dd < b.dd);
-                      });
-            std::sort(nearestBirthdays2.begin(), nearestBirthdays2.end(),
-                      [](const mmdd &a, const mmdd &b) {
-                          return (a.mm < b.mm) || (a.mm == b.mm && a.dd < b.dd);
-                      });
-
-            nearestBirthdays.reserve(nearestBirthdays1.size() +
-                                     nearestBirthdays2.size());
-            nearestBirthdays.insert(nearestBirthdays.end(),
-                                    nearestBirthdays1.begin(),
-                                    nearestBirthdays1.end());
-            nearestBirthdays.insert(nearestBirthdays.end(),
-                                    nearestBirthdays2.begin(),
-                                    nearestBirthdays2.end());
-
-            if (!nearestBirthdays.empty()) {
-                for (int i = 0; i < std::min(3, (int)nearestBirthdays.size());
-                     ++i) {
-                    upcomingBirthdays += fmt::format(
-                        "{}: {:02d}{:02d} 还有 {} 天！\n",
-                        nearestBirthdays[i].name, nearestBirthdays[i].mm,
-                        nearestBirthdays[i].dd,
-                        date_between(
-                            (mmdd){"", localTime.tm_mon + 1, localTime.tm_mday},
-                            nearestBirthdays[i], localTime.tm_year + 1900));
-                }
-            }
-
-            if (!todayBirthdays.empty()) {
-                p->cq_send("今天的特殊日子！\n" + todayBirthdays, conf);
-            }
-
-            if (!upcomingBirthdays.empty()) {
-                p->cq_send("接下来的日子：\n" + upcomingBirthdays, conf);
-            }
-        }
+        send_upcoming_msg(localTime, p);
         has_sent = true;
     }
     else {
