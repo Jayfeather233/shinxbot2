@@ -140,6 +140,7 @@ void birthday::process(std::string message, const msg_meta &conf)
         iss >> tt;
         inform_interval.insert(tt);
         conf.p->cq_send(fmt::format("提示时长加入 {} 天", tt), conf);
+        save();
     } else if(command == "date.inf.del"){
         if (!conf.p->is_op(conf.user_id) &&
             !is_group_op(conf.p, conf.group_id, conf.user_id)) {
@@ -148,8 +149,9 @@ void birthday::process(std::string message, const msg_meta &conf)
         }
         int tt;
         iss >> tt;
-        inform_interval.insert(tt);
+        inform_interval.erase(tt);
         conf.p->cq_send(fmt::format("提示时长删除 {} 天", tt), conf);
+        save();
     } else if(command == "date.inf.list"){
         conf.p->cq_send(fmt::format("提示时长为 {} 天", fmt::join(inform_interval, ", ")), conf);
     } 
