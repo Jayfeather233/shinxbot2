@@ -36,6 +36,8 @@
 
 - 灰名单管理
 
+- 日期提醒，(inform. 为每周为单位，精确到分钟提醒，date. 为每年为单位，精确到天)
+
 - 管理多个bot，并（以后）可以通过广播传递消息
 
 ### 文件结构
@@ -59,6 +61,7 @@
 - libzip
 - ImageMagick++ (version 7+)
 - libmagick++-dev
+- libfmt-dev (version 8+)
 
 除了使用docer运行，其他的运行方式请先安装依赖。具体安装方式可参考`entrypoint.sh`。
 
@@ -69,6 +72,8 @@
 2. 克隆仓库，于根目录下执行`docker compose up -d`进行容器内自动配置并编译为可执行文件`./shinxbot`
 
    使用`docker exec -it shinx-bot bash`以进入容器终端，在容器内运行
+   
+   此方法没有编译功能，还需参照 **从源码编译** 章节编译功能。
 
 3. 裸机编译后运行`./shinxbot`，详见下一节
 
