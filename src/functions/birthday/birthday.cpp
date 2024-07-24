@@ -51,8 +51,15 @@ void birthday::process(std::string message, const msg_meta &conf)
         getline(iss, who);
         who = trim(who);
         if (date.size() == 4 && !who.empty()) {
-            mmdd u = (mmdd){who, std::stoi(date.substr(0, 2)),
-                            std::stoi(date.substr(2, 2))};
+            mmdd u;
+            try {
+                u = (mmdd){who, std::stoi(date.substr(0, 2)),
+                           std::stoi(date.substr(2, 2))};
+            }
+            catch (...) {
+                conf.p->cq_send("日期不是数字", conf);
+                return;
+            }
             if (check_valid_date(u)) {
                 birthdays[conf.group_id].push_back(u);
 
