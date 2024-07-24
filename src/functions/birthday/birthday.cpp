@@ -174,8 +174,12 @@ void birthday::check_date(bot *p)
                 for (int i = 0; i < std::min(3, (int)nearestBirthdays.size());
                      ++i) {
                     upcomingBirthdays += fmt::format(
-                        "{}: {:02d}{:02d}\n", nearestBirthdays[i].name,
-                        nearestBirthdays[i].mm, nearestBirthdays[i].dd);
+                        "{}: {:02d}{:02d} 还有 {} 天！\n",
+                        nearestBirthdays[i].name, nearestBirthdays[i].mm,
+                        nearestBirthdays[i].dd,
+                        date_between(
+                            (mmdd){"", localTime.tm_mon + 1, localTime.tm_mday},
+                            nearestBirthdays[i], localTime.tm_year + 1900));
                 }
             }
 

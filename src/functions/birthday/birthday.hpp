@@ -14,6 +14,25 @@ inline bool check_valid_date(const mmdd &u)
 {
     return (0 < u.mm && u.mm < 13 && 0 < u.dd && u.dd <= max_mmday[u.mm - 1]);
 }
+inline int date_between(const mmdd &a, const mmdd &b, const int year)
+{
+    if (a.mm < b.mm || (a.mm == b.mm && a.dd < b.dd)) {
+        return date_between(a, (mmdd){"", 12, 31}, year) +
+               date_between((mmdd){"", 1, 1}, b, year + 1) + 1;
+    }
+    else {
+        int ret = 0;
+        for (int i = a.mm; i < b.mm; i++) {
+            ret += max_mmday[i - 1];
+            if (i == 2 &&
+                !(year % 400 == 0 || (year % 4 == 0 && year % 100 != 0))) {
+                ret--;
+            }
+        }
+        ret += a.dd - b.dd;
+        return ret;
+    }
+}
 
 /*
 {
