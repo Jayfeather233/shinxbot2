@@ -1,6 +1,6 @@
 #include "utils.h"
 
-bool is_op(const bot *p, const uint64_t a) { return p->is_op(a); }
+bool is_op(const bot *p, const userid_t a) { return p->is_op(a); }
 
 std::string cq_send(const bot *p, const std::string &message,
                     const msg_meta &conf)
@@ -21,7 +21,7 @@ std::string cq_get(const bot *p, const std::string &end_point)
 
 void setlog(bot *p, LOG type, std::string message) { p->setlog(type, message); }
 
-uint64_t get_botqq(const bot *p) { return p->get_botqq(); }
+userid_t get_botqq(const bot *p) { return p->get_botqq(); }
 
 std::string get_local_path() { return std::filesystem::current_path(); }
 

@@ -30,3 +30,19 @@ void parse_json_to_set(const Json::Value &J, std::set<std::string> &mp)
         mp.insert(J[i].asString());
     }
 }
+
+Json::ArrayIndex json_array_find(const Json::Value &J, const uint64_t &data)
+{
+    Json::ArrayIndex sz = J.size();
+    for (Json::ArrayIndex i = 0; i < sz; i++) {
+        try {
+            if (J[i].asUInt64() == data) {
+                return i;
+            }
+        }
+        catch (...) { // Json::LogicError
+            continue;
+        }
+    }
+    return sz;
+}

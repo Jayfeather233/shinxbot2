@@ -14,8 +14,8 @@ bool poke::check(bot *p, Json::Value J)
     if (!J.isMember("group_id") || !J.isMember("sub_type") ||
         J["sub_type"].asString() != "poke")
         return false;
-    uint64_t target_id = J["target_id"].asUInt64();
-    uint64_t user_id = J["user_id"].asUInt64();
+    userid_t target_id = J["target_id"].asUInt64();
+    userid_t user_id = J["user_id"].asUInt64();
     if (target_id != p->get_botqq() || user_id == 1783241911 ||
         user_id == 1318920100)
         return false;

@@ -5,12 +5,12 @@
 #include <jsoncpp/json/json.h>
 #include <map>
 
-static std::map<uint64_t, std::map<uint64_t, std::string>> stranger_name;
+static std::map<userid_t, std::map<userid_t, std::string>> stranger_name;
 
-std::string get_stranger_name(const bot *p, uint64_t user_id)
+std::string get_stranger_name(const bot *p, userid_t user_id)
 {
     auto it = stranger_name.find(p->get_botqq());
-    std::map<uint64_t, std::string>::iterator it2;
+    std::map<userid_t, std::string>::iterator it2;
     if (it == stranger_name.end()) {
         goto no_cache2;
     }
@@ -30,15 +30,15 @@ no_cache2:
     return name;
 }
 
-static std::map<uint64_t, std::map<uint64_t, std::map<uint64_t, std::string>>>
+static std::map<userid_t, std::map<groupid_t, std::map<userid_t, std::string>>>
     group_member_name;
 
-std::string get_group_member_name(const bot *p, int64_t user_id,
-                                  int64_t group_id)
+std::string get_group_member_name(const bot *p, userid_t user_id,
+                                  groupid_t group_id)
 {
     auto it1 = group_member_name.find(p->get_botqq());
-    std::map<uint64_t, std::map<uint64_t, std::string>>::iterator it2;
-    std::map<uint64_t, std::string>::iterator it3;
+    std::map<groupid_t, std::map<userid_t, std::string>>::iterator it2;
+    std::map<userid_t, std::string>::iterator it3;
     if (it1 == group_member_name.end()) {
         goto no_cache;
     }
@@ -69,7 +69,7 @@ no_cache:
     return name;
 }
 
-std::string get_username(const bot *p, uint64_t user_id, uint64_t group_id)
+std::string get_username(const bot *p, userid_t user_id, groupid_t group_id)
 {
     if (group_id == 0) {
         return get_stranger_name(p, user_id);
@@ -79,7 +79,7 @@ std::string get_username(const bot *p, uint64_t user_id, uint64_t group_id)
     }
 }
 
-bool is_folder_exist(const bot *p, const uint64_t &group_id,
+bool is_folder_exist(const bot *p, const groupid_t &group_id,
                      const std::string &path)
 {
     Json::Value J;
@@ -95,7 +95,7 @@ bool is_folder_exist(const bot *p, const uint64_t &group_id,
     return false;
 }
 
-std::string get_folder_id(const bot *p, const uint64_t &group_id,
+std::string get_folder_id(const bot *p, const groupid_t &group_id,
                           const std::string &path)
 {
     Json::Value J;
@@ -115,7 +115,7 @@ std::string get_folder_id(const bot *p, const uint64_t &group_id,
  * file: reletive path
  */
 void upload_file(bot *p, const std::filesystem::path &file,
-                 const uint64_t &group_id, const std::string &path)
+                 const groupid_t &group_id, const std::string &path)
 {
     try {
         if (!is_folder_exist(p, group_id, path) &&
@@ -145,8 +145,8 @@ void upload_file(bot *p, const std::filesystem::path &file,
     }
 }
 
-bool is_group_op(const bot *p, const uint64_t &group_id,
-                 const uint64_t &user_id)
+bool is_group_op(const bot *p, const groupid_t &group_id,
+                 const userid_t &user_id)
 {
     if (group_id == 0)
         return false;
@@ -158,7 +158,7 @@ bool is_group_op(const bot *p, const uint64_t &group_id,
     return J["data"]["role"].asString() != "member";
 }
 
-bool is_friend(const bot *p, const uint64_t &user_id)
+bool is_friend(const bot *p, const userid_t &user_id)
 {
     Json::Value J = string_to_json(p->cq_get("get_friend_list"))["data"];
     Json::ArrayIndex sz = J.size();
@@ -170,7 +170,7 @@ bool is_friend(const bot *p, const uint64_t &user_id)
     return false;
 }
 
-void send_file_private(const bot *p, const uint64_t user_id,
+void send_file_private(const bot *p, const userid_t user_id,
                        const std::filesystem::path &path)
 {
     Json::Value J;

@@ -21,7 +21,7 @@ private:
     int affection;
     time_t lastVisitTime;
     Place location;
-    uint64_t _id;
+    userid_t _id;
     std::string pat();
     std::string feed();
     std::string water_f();
@@ -30,8 +30,8 @@ private:
     std::string move();
 
 public:
-    Cat(const std::string &name, uint64_t user_id);
-    Cat(uint64_t user_id = 0);
+    Cat(const std::string &name, userid_t user_id);
+    Cat(userid_t user_id = 0);
     std::string getinfo();
     std::string get_humanread_info();
     std::string intro();
@@ -44,7 +44,7 @@ public:
 class catmain : public processable {
 private:
     static Json::Value cat_text;
-    std::map<uint64_t, Cat> cat_map;
+    std::map<userid_t, Cat> cat_map;
     void save_map();
 
 public:

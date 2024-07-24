@@ -222,7 +222,7 @@ void mybot::init()
 
 mybot::mybot(int recv_port, int send_port) : bot(recv_port, send_port) {}
 
-bool mybot::is_op(const uint64_t a) const
+bool mybot::is_op(const userid_t a) const
 {
     return op_list.find(a) != op_list.end();
 }
@@ -456,7 +456,8 @@ void mybot::input_process(std::string *input)
             int64_t message_id = J["message_id"].asInt64();
             std::string message_type = J["message_type"].asString();
             if (message_type == "group" || message_type == "private") {
-                uint64_t user_id = 0, group_id = 0;
+                userid_t user_id = 0;
+                groupid_t group_id = 0;
                 if (J.isMember("group_id")) {
                     group_id = J["group_id"].asUInt64();
                 }
@@ -563,7 +564,7 @@ void mybot::run()
                         filename = filename.substr(0, filename.length() - 3);
                         events.push_back(std::make_tuple(
                             result.first, result.second, filename));
-                        setlog(LOG::INFO, "Loaded event: " + filename);
+                        // setlog(LOG::INFO, "Loaded event: " + filename);
                     }
                     else
                         set_global_log(LOG::ERROR,
@@ -580,13 +581,7 @@ void mybot::run()
 
     this->init();
 
-    msg_meta start_msg_conf;
-    start_msg_conf.message_type = "private";
-
-    for (uint64_t ops : op_list) {
-        start_msg_conf.user_id = ops;
-        this->cq_send("Love you!", start_msg_conf);
-    }
+    cq_send_all_op("Love you!");
     std::thread(&heartBeat::run, recorder).detach();
 
     this->mytimer->timer_start();
@@ -637,7 +632,7 @@ void mybot::setlog(LOG type, std::string message)
 void mybot::cq_send_all_op(const std::string &u)
 {
     msg_meta conf = (msg_meta){"private", 0, 0, 0, this};
-    for (uint64_t uid : op_list) {
+    for (userid_t uid : op_list) {
         conf.user_id = uid;
         cq_send(u, conf);
     }

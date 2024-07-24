@@ -2,6 +2,7 @@
 
 #include "processable.h"
 #include "utils.h"
+#include <set>
 
 struct mmdd {
     std::string name;
@@ -45,9 +46,10 @@ inline int date_between(const mmdd &a, const mmdd &b, const int year)
 */
 class birthday : public processable {
 private:
-    std::map<uint64_t, std::vector<mmdd>> birthdays;
+    std::set<int> inform_interval;
+    std::map<groupid_t, std::vector<mmdd>> birthdays;
     bool has_sent = true;
-    void send_upcoming_msg(const std::tm &localTime, bot *p, int64_t group_idx = 0);
+    void send_upcoming_msg(const std::tm &localTime, bot *p, groupid_t group_idx = 0);
 
 public:
     birthday();

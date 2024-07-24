@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <map>
-static std::map<uint64_t, bool> in_queue;
+static std::map<userid_t, bool> in_queue;
 
 std::string ocr::ocr_tostring(const Json::Value &J) {
     Json::ArrayIndex sz = J.size();

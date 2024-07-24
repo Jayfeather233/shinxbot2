@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <iostream>
 #include <map>
-static std::map<uint64_t, bool> in_queue;
+static std::map<userid_t, bool> in_queue;
 
 void original::process(std::string message, const msg_meta &conf)
 {

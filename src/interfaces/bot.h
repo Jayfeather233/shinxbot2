@@ -10,6 +10,9 @@ extern std::string LOG_name[];
 
 class bot;
 
+typedef uint64_t userid_t;
+typedef uint64_t groupid_t;
+
 /**
  * message_type: "group" or "private"
  * user_id & group_id
@@ -18,21 +21,21 @@ class bot;
  */
 struct msg_meta {
     std::string message_type;
-    uint64_t user_id;
-    uint64_t group_id;
+    userid_t user_id;
+    groupid_t group_id;
     int64_t message_id;
     bot *p;
 
     msg_meta(const msg_meta &u);
     msg_meta(const msg_meta &&u);
-    msg_meta(std::string mt="", uint64_t uid=0, uint64_t gid=0, int64_t mid=0, bot*pp=nullptr);
+    msg_meta(std::string mt="", userid_t uid=0, groupid_t gid=0, int64_t mid=0, bot*pp=nullptr);
 };
 
 class bot {
 protected:
     int receive_port, send_port;
 
-    uint64_t botqq;
+    userid_t botqq;
 
 public:
     bot() = delete;
@@ -49,7 +52,7 @@ public:
     /**
      * Is this user the bot's operator?
      */
-    virtual bool is_op(const uint64_t a) const;
+    virtual bool is_op(const userid_t a) const;
 
     /**
      * send(POST) to gocq (or any other you want)
@@ -78,7 +81,7 @@ public:
     /**
      * get mine qq. (or other id-like-thing)
      */
-    virtual uint64_t get_botqq() const;
+    virtual userid_t get_botqq() const;
 
     /**
      * receive a message, how to process

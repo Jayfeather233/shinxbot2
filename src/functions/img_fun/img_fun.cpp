@@ -23,7 +23,7 @@ void img_fun::process(std::string message, const msg_meta &conf)
     std::string fileurl;
     std::string filename;
     img_fun_type proc_type;
-    std::map<uint64_t, img_fun_type>::iterator it;
+    std::map<userid_t, img_fun_type>::iterator it;
     if (wmessage.find(L"对称") == 0) {
         char axis = 1;
         char order = 0;
@@ -83,7 +83,7 @@ void img_fun::process(std::string message, const msg_meta &conf)
     }
 
     if (wmessage.find(L"[CQ:at") != wmessage.npos) {
-        uint64_t userid = my_string2uint64(wmessage);
+        userid_t userid = my_string2uint64(wmessage);
         fileurl =
             "http://q1.qlogo.cn/g?b=qq&nk=" + std::to_string(userid) + "&s=160";
         filename = "qq" + std::to_string(userid);

@@ -4,7 +4,7 @@
 gray_list::gray_list(){
     Json::Value J = string_to_json( readfile("./config/g_list.json", "{}") );
     for(std::string group_id_s : J.getMemberNames()){
-        uint64_t group_id = my_string2uint64(group_id_s);
+        groupid_t group_id = my_string2uint64(group_id_s);
         g_list[group_id] = J[group_id_s];
     }
 }
@@ -19,7 +19,7 @@ void gray_list::save(){
 
 void gray_list::process(std::string message, const msg_meta &conf){
     message = trim(message);
-    uint64_t user_id = my_string2uint64(message);
+    userid_t user_id = my_string2uint64(message);
 
     std::string user_name = get_username(conf.p, user_id, conf.group_id);
     Json::ArrayIndex ind;

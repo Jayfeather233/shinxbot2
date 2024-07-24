@@ -2,9 +2,9 @@
 
 static std::string help_url = "https://demo.hedgedoc.org/zSOS-JMKSCey2E_4UjrrOQ?view";
 
-void send_msg_ng(bot *p, uint64_t group_id, uint64_t user_id, std::string content);
+void send_msg_ng(bot *p, groupid_t group_id, userid_t user_id, std::string content);
 
-bool NGGame::join(uint64_t user_id)
+bool NGGame::join(userid_t user_id)
 {
     if (ng.find(user_id) != ng.end())
     {
@@ -14,7 +14,7 @@ bool NGGame::join(uint64_t user_id)
     return true;
 }
 
-bool NGGame::set(uint64_t user_id, std::string word)
+bool NGGame::set(userid_t user_id, std::string word)
 {
     if (ng.find(user_id) == ng.end())
     {
@@ -24,7 +24,7 @@ bool NGGame::set(uint64_t user_id, std::string word)
     return true;
 }
 
-bool NGGame::lose(uint64_t user_id)
+bool NGGame::lose(userid_t user_id)
 {
     if (ng.find(user_id) == ng.end() || !ng[user_id]->alive)
     {
@@ -34,7 +34,7 @@ bool NGGame::lose(uint64_t user_id)
     return true;
 }
 
-bool NGGame::quit(uint64_t user_id)
+bool NGGame::quit(userid_t user_id)
 {
     if (ng.find(user_id) == ng.end())
     {
@@ -60,7 +60,7 @@ void NGGame::set_state(gameState next_state)
 
 void NGGame::link()
 {
-    std::vector<uint64_t> player_list;
+    std::vector<userid_t> player_list;
     for (auto it : ng)
     {
         player_list.push_back(it.first);
@@ -109,7 +109,7 @@ gameState NGGame::get_state()
     return state;
 }
 
-std::string NGGame::get_ng(uint64_t user_id)
+std::string NGGame::get_ng(userid_t user_id)
 {
     if (ng.find(user_id) == ng.end() || !ng[user_id])
     {
@@ -118,7 +118,7 @@ std::string NGGame::get_ng(uint64_t user_id)
     return ng[user_id]->word;
 }
 
-uint64_t NGGame::get_vic(uint64_t user_id)
+userid_t NGGame::get_vic(userid_t user_id)
 {
     if (ng.find(user_id) == ng.end() || !ng[user_id]->nex)
     {
@@ -127,7 +127,7 @@ uint64_t NGGame::get_vic(uint64_t user_id)
     return ng[user_id]->nex->id;
 }
 
-uint64_t NGGame::get_winner()
+userid_t NGGame::get_winner()
 {
     if (state == gameState::work)
     {
@@ -163,7 +163,7 @@ std::string NGGame::overall(const msg_meta &conf)
     return content;
 }
 
-std::string NGGame::get_info(uint64_t user_id, const msg_meta &conf)
+std::string NGGame::get_info(userid_t user_id, const msg_meta &conf)
 {
     std::string content = "";
     for (auto it : ng)
@@ -177,9 +177,9 @@ std::string NGGame::get_info(uint64_t user_id, const msg_meta &conf)
     return content;
 }
 
-std::vector<uint64_t> NGGame::get_lazy()
+std::vector<userid_t> NGGame::get_lazy()
 {
-    std::vector<uint64_t> lazy;
+    std::vector<userid_t> lazy;
     for (auto it : ng)
     {
         if (!it.second->word.compare(""))
@@ -203,7 +203,7 @@ size_t NGGame::ready_cnt()
     return cnt;
 }
 
-bool NGGame::is_alive(uint64_t user_id)
+bool NGGame::is_alive(userid_t user_id)
 {
     if (ng.find(user_id) == ng.end() || !ng[user_id]->alive)
     {
@@ -212,7 +212,7 @@ bool NGGame::is_alive(uint64_t user_id)
     return true;
 }
 
-bool NGGame::check_ng(std::string content, uint64_t user_id)
+bool NGGame::check_ng(std::string content, userid_t user_id)
 {
     if (state != gameState::work || ng.find(user_id) == ng.end() || !ng[user_id]->alive ||
         content.find(ng[user_id]->word) == std::string::npos)
@@ -257,10 +257,10 @@ NGGame::~NGGame()
     }
 }
 
-static std::map<uint64_t, NGGame> games;
+static std::map<groupid_t, NGGame> games;
 static msg_meta rep;
 
-void send_msg_ng(bot *p, uint64_t group_id, uint64_t user_id, std::string content)
+void send_msg_ng(bot *p, groupid_t group_id, userid_t user_id, std::string content)
 {
     rep.user_id = user_id;
     rep.group_id = group_id;
@@ -286,7 +286,7 @@ static std::string expand_at(std::string raw, const msg_meta &conf)
     size_t pos2 = res.find("]", pos1);
     while (pos1 != std::string::npos || pos2 != std::string::npos)
     {
-        uint64_t qq = extract_at(res);
+        userid_t qq = extract_at(res);
         if (qq)
         {
             res = res.substr(0, pos1) + "@" + get_username(conf.p, qq, conf.group_id) + res.substr(pos2 + 1);
@@ -460,7 +460,7 @@ void NGgame::process(std::string message, const msg_meta &conf)
         }
         else if ((message.find(prefix + "quit") != std::string::npos))
         {
-            uint64_t victim = extract_at(message.substr(message.find("quit")));
+            userid_t victim = extract_at(message.substr(message.find("quit")));
             victim = victim ? victim : uid;
             if (game.quit(victim))
             {
@@ -491,7 +491,7 @@ void NGgame::process(std::string message, const msg_meta &conf)
             auto &game = g.second;
             if (game.get_state() == gameState::init)
             {
-                uint64_t vic = game.get_vic(uid);
+                userid_t vic = game.get_vic(uid);
                 if (vic)
                 {
                     game.set(vic, message);

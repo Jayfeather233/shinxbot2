@@ -45,7 +45,7 @@ void img::save()
     writefile("./config/img.json", J.toStyledString());
 }
 
-void img::belong_to(std::string name, uint64_t group_id)
+void img::belong_to(std::string name, groupid_t group_id)
 {
     if (group_id == 0)
         return;
@@ -61,7 +61,7 @@ void img::belong_to(std::string name, uint64_t group_id)
     }
 }
 
-int img::add_image(std::string name, std::string image, uint64_t group_id)
+int img::add_image(std::string name, std::string image, groupid_t group_id)
 {
     int cnt = 0;
     size_t index = -1;

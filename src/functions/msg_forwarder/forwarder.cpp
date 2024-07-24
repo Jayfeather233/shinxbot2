@@ -14,10 +14,10 @@ forwarder::forwarder()
     Json::Value J = string_to_json(readfile("./config/forwarder.json", "[]"));
     for (Json::Value j : J) {
         point_t from, to;
-        from = std::make_pair<uint64_t, uint64_t>(
+        from = std::make_pair<groupid_t, userid_t>(
             j["from"]["group_id"].asUInt64(), j["from"]["user_id"].asUInt64());
-        to = std::make_pair<uint64_t, uint64_t>(j["to"]["group_id"].asUInt64(),
-                                                j["to"]["user_id"].asUInt64());
+        to = std::make_pair<groupid_t, userid_t>(j["to"]["group_id"].asUInt64(),
+                                                 j["to"]["user_id"].asUInt64());
         forward_set.insert(std::make_pair(from, to));
     }
 }

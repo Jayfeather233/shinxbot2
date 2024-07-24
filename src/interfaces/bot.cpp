@@ -15,7 +15,7 @@ msg_meta::msg_meta(const msg_meta &&u)
       message_id(u.message_id), p(u.p)
 {
 }
-msg_meta::msg_meta(std::string mt, uint64_t uid, uint64_t gid, int64_t mid,
+msg_meta::msg_meta(std::string mt, userid_t uid, groupid_t gid, int64_t mid,
                    bot *pp)
     : message_type(mt), user_id(uid), group_id(gid), message_id(mid), p(pp)
 {
@@ -26,7 +26,7 @@ bot::bot(int recv_port, int send_port)
 {
 }
 
-bool bot::is_op(const uint64_t a) const { return false; }
+bool bot::is_op(const userid_t a) const { return false; }
 
 std::string bot::cq_send(const std::string &message, const msg_meta &conf) const
 {
@@ -52,6 +52,6 @@ std::string bot::cq_get(const std::string &end_point) const
 
 void bot::setlog(LOG type, std::string message) {}
 
-uint64_t bot::get_botqq() const { return botqq; }
+userid_t bot::get_botqq() const { return botqq; }
 
 bot::~bot() {}

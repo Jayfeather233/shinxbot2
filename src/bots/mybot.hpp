@@ -22,7 +22,7 @@ private:
     // pointer, handler, name
     std::vector<std::tuple<processable *, void *, std::string>> functions;
     std::vector<std::tuple<eventprocess *, void *, std::string>> events;
-    std::set<uint64_t> op_list;
+    std::set<userid_t> op_list;
 
     bool bot_isopen = true;
 
@@ -63,7 +63,7 @@ private:
 public:
     mybot(int recv_port, int send_port);
 
-    bool is_op(const uint64_t a) const;
+    bool is_op(const userid_t a) const;
 
     void input_process(std::string *input);
 

@@ -1,5 +1,6 @@
 #include "birthday.hpp"
 #include <fmt/core.h>
+#include <fmt/ranges.h>
 
 static std::string birth_help_msg = "\
 date.add MMDD event\n\
@@ -11,10 +12,17 @@ birthday::birthday()
 {
     Json::Value Ja = string_to_json(readfile("./config/birthday.json", "{}"));
     for (const std::string &uid : Ja.getMemberNames()) {
-        uint64_t uuid = std::stoull(uid);
-        for (const auto &J : Ja[uid]) {
-            birthdays[uuid].push_back(
-                (mmdd){J["who"].asString(), J["mm"].asInt(), J["dd"].asInt()});
+        groupid_t uuid = std::stoull(uid);
+        if (uuid == 0) {
+            for (const auto &J : Ja[uid]) {
+                inform_interval.insert(J.asInt());
+            }
+        }
+        else {
+            for (const auto &J : Ja[uid]) {
+                birthdays[uuid].push_back((mmdd){
+                    J["who"].asString(), J["mm"].asInt(), J["dd"].asInt()});
+            }
         }
     }
 }
@@ -32,6 +40,7 @@ void birthday::save()
         }
         Jaa[std::to_string(it.first)] = Ja;
     }
+    Jaa["0"] = parse_set_to_json(inform_interval);
     writefile("./config/birthday.json", Jaa.toStyledString());
 }
 
@@ -121,7 +130,19 @@ void birthday::process(std::string message, const msg_meta &conf)
         std::time_t currentTime = std::chrono::system_clock::to_time_t(nowtime);
         std::tm localTime = *std::localtime(&currentTime);
         send_upcoming_msg(localTime, conf.p, conf.group_id);
-    }
+    } else if(command == "date.inf.add"){
+        int tt;
+        iss >> tt;
+        inform_interval.insert(tt);
+        conf.p->cq_send(fmt::format("提示时长加入 {} 天", tt), conf);
+    } else if(command == "date.inf.del"){
+        int tt;
+        iss >> tt;
+        inform_interval.insert(tt);
+        conf.p->cq_send(fmt::format("提示时长删除 {} 天", tt), conf);
+    } else if(command == "date.inf.list"){
+        conf.p->cq_send(fmt::format("提示时长为 {} 天", fmt::join(inform_interval, ", ")), conf);
+    } 
     else {
         conf.p->cq_send(birth_help_msg, conf);
     }
@@ -133,7 +154,7 @@ bool birthday::check(std::string message, const msg_meta &conf)
 std::string birthday::help() { return "日期提醒。 date.help"; }
 
 void birthday::send_upcoming_msg(const std::tm &localTime, bot *p,
-                                 int64_t group_idx)
+                                 groupid_t group_idx)
 {
     for (const auto &[group_id, bdays] : birthdays) {
         if (group_idx != group_id && group_idx != 0)
@@ -177,14 +198,16 @@ void birthday::send_upcoming_msg(const std::tm &localTime, bot *p,
                                 nearestBirthdays2.end());
 
         if (!nearestBirthdays.empty()) {
-            for (int i = 0; i < std::min(3, (int)nearestBirthdays.size());
-                 ++i) {
-                upcomingBirthdays += fmt::format(
-                    "{}: {:02d}{:02d} 还有 {} 天！\n", nearestBirthdays[i].name,
-                    nearestBirthdays[i].mm, nearestBirthdays[i].dd,
-                    date_between(
-                        (mmdd){"", localTime.tm_mon + 1, localTime.tm_mday},
-                        nearestBirthdays[i], localTime.tm_year + 1900));
+            for (int i = 0; i < nearestBirthdays.size(); ++i) {
+                int db = date_between(
+                    (mmdd){"", localTime.tm_mon + 1, localTime.tm_mday},
+                    nearestBirthdays[i], localTime.tm_year + 1900);
+                if (inform_interval.find(db) != inform_interval.end()) {
+                    upcomingBirthdays += fmt::format(
+                        "{}: {:02d}{:02d} 还有 {} 天！\n",
+                        nearestBirthdays[i].name, nearestBirthdays[i].mm,
+                        nearestBirthdays[i].dd, db);
+                }
             }
         }
 

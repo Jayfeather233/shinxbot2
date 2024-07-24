@@ -3,7 +3,7 @@
 #include <set>
 #include <utility>
 
-typedef std::pair<uint64_t, uint64_t> point_t;
+typedef std::pair<groupid_t, userid_t> point_t;
 
 class forwarder : public processable {
 private:
