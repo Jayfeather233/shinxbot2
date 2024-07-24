@@ -131,11 +131,21 @@ void birthday::process(std::string message, const msg_meta &conf)
         std::tm localTime = *std::localtime(&currentTime);
         send_upcoming_msg(localTime, conf.p, conf.group_id);
     } else if(command == "date.inf.add"){
+        if (!conf.p->is_op(conf.user_id) &&
+            !is_group_op(conf.p, conf.group_id, conf.user_id)) {
+            conf.p->cq_send("只有管理员可以哦", conf);
+            return;
+        }
         int tt;
         iss >> tt;
         inform_interval.insert(tt);
         conf.p->cq_send(fmt::format("提示时长加入 {} 天", tt), conf);
     } else if(command == "date.inf.del"){
+        if (!conf.p->is_op(conf.user_id) &&
+            !is_group_op(conf.p, conf.group_id, conf.user_id)) {
+            conf.p->cq_send("只有管理员可以哦", conf);
+            return;
+        }
         int tt;
         iss >> tt;
         inform_interval.insert(tt);
