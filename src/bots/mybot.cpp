@@ -637,7 +637,7 @@ void mybot::setlog(LOG type, std::string message)
 void mybot::cq_send_all_op(const std::string &u)
 {
     msg_meta conf = (msg_meta){"private", 0, 0, 0, this};
-    for (int64_t uid : op_list) {
+    for (uint64_t uid : op_list) {
         conf.user_id = uid;
         cq_send(u, conf);
     }

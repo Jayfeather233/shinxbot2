@@ -29,7 +29,7 @@ inline int date_between(const mmdd &a, const mmdd &b, const int year)
                 ret--;
             }
         }
-        ret += a.dd - b.dd;
+        ret += b.dd - a.dd;
         return ret;
     }
 }
@@ -47,7 +47,7 @@ class birthday : public processable {
 private:
     std::map<uint64_t, std::vector<mmdd>> birthdays;
     bool has_sent = true;
-    void send_upcoming_msg(const std::tm &localTime, bot *p, int64_t group_idx = -1);
+    void send_upcoming_msg(const std::tm &localTime, bot *p, int64_t group_idx = 0);
 
 public:
     birthday();

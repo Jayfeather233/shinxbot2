@@ -136,7 +136,7 @@ void birthday::send_upcoming_msg(const std::tm &localTime, bot *p,
                                  int64_t group_idx)
 {
     for (const auto &[group_id, bdays] : birthdays) {
-        if (group_idx != group_id && group_idx != -1)
+        if (group_idx != group_id && group_idx != 0)
             continue;
         msg_meta conf = (msg_meta){"group", 0, group_id, 0, p};
         std::string todayBirthdays;
