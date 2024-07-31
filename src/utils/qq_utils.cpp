@@ -5,20 +5,8 @@
 #include <jsoncpp/json/json.h>
 #include <map>
 
-static std::map<userid_t, std::map<userid_t, std::string>> stranger_name;
-
 std::string get_stranger_name(const bot *p, userid_t user_id)
 {
-    auto it = stranger_name.find(p->get_botqq());
-    std::map<userid_t, std::string>::iterator it2;
-    if (it == stranger_name.end()) {
-        goto no_cache2;
-    }
-    it2 = it->second.find(user_id);
-    if (it2 == it->second.end()) {
-        goto no_cache2;
-    }
-no_cache2:
     Json::Value input;
     input["user_id"] = user_id;
     std::string res = p->cq_send("get_stranger_info", input);
@@ -26,32 +14,12 @@ no_cache2:
     input = string_to_json(res);
     if (input["data"].isNull()) return "";
     std::string name = input["data"]["nickname"].asString();
-    stranger_name[p->get_botqq()][user_id] = name;
     return name;
 }
-
-static std::map<userid_t, std::map<groupid_t, std::map<userid_t, std::string>>>
-    group_member_name;
 
 std::string get_group_member_name(const bot *p, userid_t user_id,
                                   groupid_t group_id)
 {
-    auto it1 = group_member_name.find(p->get_botqq());
-    std::map<groupid_t, std::map<userid_t, std::string>>::iterator it2;
-    std::map<userid_t, std::string>::iterator it3;
-    if (it1 == group_member_name.end()) {
-        goto no_cache;
-    }
-    it2 = it1->second.find(group_id);
-    if (it2 == it1->second.end()) {
-        goto no_cache;
-    }
-    it3 = it2->second.find(user_id);
-    if (it3 == it2->second.end()) {
-        goto no_cache;
-    }
-    return it3->second;
-no_cache:
     Json::Value input;
     input["user_id"] = user_id;
     input["group_id"] = group_id;
@@ -65,7 +33,6 @@ no_cache:
         name = input["data"]["card"].asString().size() != 0
                    ? input["data"]["card"].asString()
                    : input["data"]["nickname"].asString();
-    group_member_name[p->get_botqq()][group_id][user_id] = name;
     return name;
 }
 
@@ -133,7 +100,7 @@ void upload_file(bot *p, const std::filesystem::path &file,
                         .string();
         J["name"] = file.filename().string();
         J["folder"] = id;
-        // cq_send(J.toStyledString(), "group", -1, group_id);
+        // cq_send(J.toStyledString(), "group", 0, group_id);
         J = string_to_json(p->cq_send("upload_group_file", J));
         if (J.isMember("msg")) {
             p->cq_send(J.toStyledString(), msg_meta("group", 0, group_id, 0));

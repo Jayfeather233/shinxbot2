@@ -31,7 +31,7 @@ std::string do_get(const std::string &httpaddr,
                    const bool proxy_flg = false);
 
 /**
- * get user's name (group name if group_id != -1)
+ * get user's name (group name if group_id != 0)
  */
 std::string get_username(const bot *p, userid_t user_id, groupid_t group_id);
 
