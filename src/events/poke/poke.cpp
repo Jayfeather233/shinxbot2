@@ -3,8 +3,12 @@
 
 void poke::process(bot *p, Json::Value J)
 {
-    p->cq_send("[CQ:poke,qq=" + std::to_string(J["user_id"].asUInt64()) + "]",
-            (msg_meta){"group", 0, J["group_id"].asUInt64(), 0});
+    // p->cq_send("[CQ:poke,qq=" + std::to_string(J["user_id"].asUInt64()) + "]",
+    //         (msg_meta){"group", 0, J["group_id"].asUInt64(), 0});
+    Json::Value Jx;
+    Jx["group_id"] = J["group_id"];
+    Jx["user_id"] = J["user_id"];
+    p->cq_send("group_poke", Jx);
     if (get_random(3) == 0)
         p->cq_send("别戳我TAT",
                 (msg_meta){"group", 0, J["group_id"].asUInt64(), 0});
