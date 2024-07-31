@@ -50,6 +50,7 @@ birthday.del who
 */
 void birthday::process(std::string message, const msg_meta &conf)
 {
+    std::unique_lock<std::mutex> lock(mutex_);
     std::istringstream iss(trim(message));
     std::string command;
     iss >> command;

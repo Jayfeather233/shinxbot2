@@ -3,6 +3,7 @@
 #include "processable.h"
 #include "utils.h"
 #include <set>
+#include <mutex>
 
 struct mmdd {
     std::string name;
@@ -48,6 +49,7 @@ class birthday : public processable {
 private:
     std::set<int> inform_interval;
     std::map<groupid_t, std::vector<mmdd>> birthdays;
+    std::mutex mutex_;
     bool has_sent = true;
     void send_upcoming_msg(const std::tm &localTime, bot *p, groupid_t group_idx = 0);
 
