@@ -564,7 +564,7 @@ void mybot::run()
                         filename = filename.substr(0, filename.length() - 3);
                         events.push_back(std::make_tuple(
                             result.first, result.second, filename));
-                        // setlog(LOG::INFO, "Loaded event: " + filename);
+                        setlog(LOG::INFO, "Loaded event: " + filename);
                     }
                     else
                         set_global_log(LOG::ERROR,

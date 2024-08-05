@@ -124,6 +124,8 @@ std::string do_get(const std::string &httpaddr,
         if (http_proxy) {
             curl_easy_setopt(curl_handle, CURLOPT_PROXY, http_proxy);
         }
+    } else {
+        curl_easy_setopt(curl_handle, CURLOPT_NOPROXY, "*");
     }
 
     // Set the callback function for receiving data from the HTTP response
