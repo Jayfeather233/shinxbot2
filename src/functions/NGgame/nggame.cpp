@@ -298,7 +298,7 @@ void NGgame::process(std::string message, const msg_meta &conf)
                 }
             }
         }
-        else // normal check
+        else if(game.get_state() == gameState::work) // normal check
         {
             std::string expanded_msg = expand_at(message, conf);
             if (game.check_ng(expanded_msg, uid)) {
