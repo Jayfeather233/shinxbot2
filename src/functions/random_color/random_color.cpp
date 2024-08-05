@@ -61,7 +61,7 @@ void r_color::process(std::string message, const msg_meta &conf)
         image.fontPointsize(32);
 
         // Set the text color
-        image.fillColor(dr+dg+db>=1.5 ? "black" : "white");
+        image.fillColor(dr + dg + db >= 1.5 ? "black" : "white");
 
         // Annotate (write) the text on the image
         image.annotate(name, Magick::Geometry(img_size, img_size, 0, 0),
@@ -90,6 +90,4 @@ bool r_color::check(std::string message, const msg_meta &conf)
 }
 std::string r_color::help() { return "来点色图：来点色图+#color_hex_code"; }
 
-extern "C" processable* create() {
-    return new r_color();
-}
+DECLARE_FACTORY_FUNCTIONS(r_color)

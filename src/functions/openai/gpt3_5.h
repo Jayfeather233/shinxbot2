@@ -31,4 +31,4 @@ public:
     std::string help();
 };
 
-extern "C" processable* create();
+DECLARE_FACTORY_FUNCTIONS_HEADER

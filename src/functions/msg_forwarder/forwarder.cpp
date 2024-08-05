@@ -169,4 +169,4 @@ bool forwarder::check(std::string message, const msg_meta &conf)
 }
 std::string forwarder::help() { return ""; }
 
-extern "C" processable *create() { return new forwarder(); }
+DECLARE_FACTORY_FUNCTIONS(forwarder)

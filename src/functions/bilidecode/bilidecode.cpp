@@ -205,6 +205,4 @@ bool bili_decode::check(std::string message, const msg_meta &conf)
     return true;
 }
 
-extern "C" processable* create() {
-    return new bili_decode();
-}
+DECLARE_FACTORY_FUNCTIONS(bili_decode)

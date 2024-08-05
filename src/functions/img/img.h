@@ -31,4 +31,4 @@ public:
     void set_backup_files(archivist *p, const std::string &name);
 };
 
-extern "C" processable* create();
+DECLARE_FACTORY_FUNCTIONS_HEADER

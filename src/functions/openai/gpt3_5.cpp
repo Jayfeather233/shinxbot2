@@ -376,6 +376,4 @@ bool gpt3_5::check(std::string message, const msg_meta &conf)
 }
 std::string gpt3_5::help() { return "Openai gpt3.5: start with .ai"; }
 
-extern "C" processable* create() {
-    return new gpt3_5();
-}
+DECLARE_FACTORY_FUNCTIONS(gpt3_5)

@@ -32,6 +32,4 @@ bool fudu::check(std::string message, const msg_meta &conf)
 }
 std::string fudu::help() { return ""; }
 
-extern "C" processable* create() {
-    return new fudu();
-}
+DECLARE_FACTORY_FUNCTIONS(fudu)

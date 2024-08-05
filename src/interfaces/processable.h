@@ -30,8 +30,19 @@ public:
     set_callback(std::function<void(std::function<void(bot *p)>)> f)
     {
     }
-    virtual void
-    set_backup_files(archivist *p, const std::string &name)
-    {
-    }
+    virtual void set_backup_files(archivist *p, const std::string &name) {}
 };
+
+#ifdef DECLARE_FACTORY_FUNCTIONS
+    #undef DECLARE_FACTORY_FUNCTIONS
+#endif
+#define DECLARE_FACTORY_FUNCTIONS(DerivedClass)                                \
+    extern "C" processable *create_t() { return new DerivedClass(); }          \
+    extern "C" void destroy_t(processable *p) { delete p; }
+
+#ifdef DECLARE_FACTORY_FUNCTIONS_HEADER
+    #undef DECLARE_FACTORY_FUNCTIONS_HEADER
+#endif
+#define DECLARE_FACTORY_FUNCTIONS_HEADER                                       \
+    extern "C" processable *create_t();                                        \
+    extern "C" void destroy_t(processable *);

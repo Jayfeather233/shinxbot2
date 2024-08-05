@@ -8,4 +8,4 @@ public:
     bool check(bot *p, Json::Value J);
 };
 
-extern "C" eventprocess* create();
+DECLARE_FACTORY_FUNCTIONS_HEADER

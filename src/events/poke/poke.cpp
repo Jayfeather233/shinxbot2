@@ -43,4 +43,4 @@ bool poke::check(bot *p, Json::Value J)
     return true;
 }
 
-extern "C" eventprocess *create() { return new poke(); }
+DECLARE_FACTORY_FUNCTIONS(poke)

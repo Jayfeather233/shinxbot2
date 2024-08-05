@@ -21,7 +21,8 @@ catmain::catmain()
     Json::Value user_list = string_to_json(ans);
     auto sz = user_list.size();
     for (Json::ArrayIndex i = 0; i < sz; ++i) {
-        cat_map[user_list[i].asUInt64()] = Cat((userid_t)user_list[i].asUInt64());
+        cat_map[user_list[i].asUInt64()] =
+            Cat((userid_t)user_list[i].asUInt64());
     }
 }
 
@@ -102,6 +103,4 @@ bool catmain::check(std::string message, const msg_meta &conf)
 }
 std::string catmain::help() { return "online cat. &#91;cat&#93;.help"; }
 
-extern "C" processable* create() {
-    return new catmain();
-}
+DECLARE_FACTORY_FUNCTIONS(catmain)

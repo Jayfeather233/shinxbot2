@@ -84,6 +84,4 @@ bool hhsh::check(std::string message, const msg_meta &conf)
 }
 std::string hhsh::help() { return "首字母缩写识别： hhsh+缩写"; }
 
-extern "C" processable* create() {
-    return new hhsh();
-}
+DECLARE_FACTORY_FUNCTIONS(hhsh)

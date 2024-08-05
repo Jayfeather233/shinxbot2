@@ -140,18 +140,20 @@ void mybot::log_init()
     LOG_output[2] = std::ofstream(oss.str() + "/erro.log", std::ios_base::app);
 }
 
-void close_dl(void *handle)
+template<typename T>
+void close_dl(void *handle, T *p)
 {
-    typedef void (*close_t)();
-    close_t closex = (close_t)dlsym(handle, "close");
+    typedef void (*close_t)(T *);
+    close_t closex = (close_t)dlsym(handle, "destroy_t");
     const char *dlsym_error = dlerror();
     if (dlsym_error) {
         set_global_log(LOG::WARNING,
-                       std::string("Cannot load symbol 'close': ") +
+                       std::string("Cannot load symbol 'destroy_t': ") +
                            dlsym_error);
+        delete p; // This is not always safe
     }
     else {
-        closex();
+        closex(p);
     }
     dlclose(handle);
 }
@@ -161,15 +163,13 @@ void mybot::unload_func(std::tuple<processable *, void *, std::string> &f)
     this->mytimer->remove_callback(std::get<2>(f));
     this->archive->remove_path(std::get<2>(f));
 
-    delete std::get<0>(f);
-    close_dl(std::get<1>(f));
+    close_dl(std::get<1>(f), std::get<0>(f));
 }
 void mybot::unload_func(std::tuple<eventprocess *, void *, std::string> &f)
 {
     this->mytimer->remove_callback(std::get<2>(f));
     this->archive->remove_path(std::get<2>(f));
-    delete std::get<0>(f);
-    close_dl(std::get<1>(f));
+    close_dl(std::get<1>(f), std::get<0>(f));
 }
 
 void mybot::init_func(const std::string &name, processable *p)

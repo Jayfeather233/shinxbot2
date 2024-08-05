@@ -88,6 +88,4 @@ bool auto114::check(std::string message, const msg_meta &conf)
 }
 std::string auto114::help() { return "恶臭数字论证器： homo+数字"; }
 
-extern "C" processable* create() {
-    return new auto114();
-}
+DECLARE_FACTORY_FUNCTIONS(auto114)

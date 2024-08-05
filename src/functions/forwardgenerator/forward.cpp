@@ -129,6 +129,4 @@ std::string forward_msg_gen::help()
     return "自动生成转发信息： 详细资料请输入 转发帮助";
 }
 
-extern "C" processable* create() {
-    return new forward_msg_gen();
-}
+DECLARE_FACTORY_FUNCTIONS(forward_msg_gen)

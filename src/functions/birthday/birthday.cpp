@@ -131,7 +131,8 @@ void birthday::process(std::string message, const msg_meta &conf)
         std::time_t currentTime = std::chrono::system_clock::to_time_t(nowtime);
         std::tm localTime = *std::localtime(&currentTime);
         send_upcoming_msg(localTime, conf.p, conf.group_id);
-    } else if(command == "date.inf.add"){
+    }
+    else if (command == "date.inf.add") {
         if (!conf.p->is_op(conf.user_id) &&
             !is_group_op(conf.p, conf.group_id, conf.user_id)) {
             conf.p->cq_send("只有管理员可以哦", conf);
@@ -142,7 +143,8 @@ void birthday::process(std::string message, const msg_meta &conf)
         inform_interval.insert(tt);
         conf.p->cq_send(fmt::format("提示时长加入 {} 天", tt), conf);
         save();
-    } else if(command == "date.inf.del"){
+    }
+    else if (command == "date.inf.del") {
         if (!conf.p->is_op(conf.user_id) &&
             !is_group_op(conf.p, conf.group_id, conf.user_id)) {
             conf.p->cq_send("只有管理员可以哦", conf);
@@ -153,9 +155,12 @@ void birthday::process(std::string message, const msg_meta &conf)
         inform_interval.erase(tt);
         conf.p->cq_send(fmt::format("提示时长删除 {} 天", tt), conf);
         save();
-    } else if(command == "date.inf.list"){
-        conf.p->cq_send(fmt::format("提示时长为 {} 天", fmt::join(inform_interval, ", ")), conf);
-    } 
+    }
+    else if (command == "date.inf.list") {
+        conf.p->cq_send(
+            fmt::format("提示时长为 {} 天", fmt::join(inform_interval, ", ")),
+            conf);
+    }
     else {
         conf.p->cq_send(birth_help_msg, conf);
     }
@@ -257,4 +262,4 @@ void birthday::set_callback(std::function<void(std::function<void(bot *p)>)> f)
 {
     f([this](bot *p) { this->check_date(p); });
 }
-extern "C" processable *create() { return new birthday(); }
+DECLARE_FACTORY_FUNCTIONS(birthday)

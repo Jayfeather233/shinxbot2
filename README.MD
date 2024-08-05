@@ -125,7 +125,7 @@ git clone --recursive git@github.com:Jayfeather233/shinxbot2.git
 
 bot加载库时，会调用 `extern "C" processable *create()` 来得到功能指针。一般来说直接返回 `new YourFunc()` 即可。
 
-bot卸载库时，会调用 `extern "C" processable *close()` 来表明需要卸载库。请合理释放所有全局 `new` 得到的指针，除了 `new YourFunc()` 的指针。`class` 内部指针请用 `~YourClass()` 来释放。
+bot卸载库时，会调用 `extern "C" processable *close(processable* p)` 来表明需要卸载库。请合理释放所有全局 `new` 得到的指针，包括参数 `p`。
 
 ### 开发提示
 

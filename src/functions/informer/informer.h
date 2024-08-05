@@ -32,4 +32,4 @@ public:
     void set_callback(std::function<void(std::function<void(bot *p)>)> f);
 };
 
-extern "C" processable* create();
+DECLARE_FACTORY_FUNCTIONS_HEADER

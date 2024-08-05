@@ -4,9 +4,13 @@
 #include <exception>
 #include <string>
 
+/**
+ * Load and create a class pointer using create function name `func`
+ * return: pair<class pointer, dl handler>
+ */
 template <typename T>
 std::pair<T *, void *> load_function(const std::string &dlname,
-                                     const std::string &func = "create")
+                                     const std::string &func = "create_t")
 {
     try {
         // Function pointer type for the create function
@@ -23,8 +27,7 @@ std::pair<T *, void *> load_function(const std::string &dlname,
         const char *dlsym_error = dlerror();
         if (dlsym_error) {
             set_global_log(LOG::ERROR,
-                           std::string("Cannot load symbol 'create': ") +
-                               dlsym_error);
+                           "Cannot load symbol " + func + ": " + dlsym_error);
             dlclose(handle);
             return std::make_pair(nullptr, nullptr);
         }
@@ -33,16 +36,21 @@ std::pair<T *, void *> load_function(const std::string &dlname,
         return std::make_pair(createx(), handle);
     }
     catch (char *e) {
-        set_global_log(LOG::ERROR, "Load " + dlname + " error. Throw an char*: " + e);
+        set_global_log(LOG::ERROR,
+                       "Load " + dlname + " error. Throw an char*: " + e);
     }
     catch (std::string e) {
-        set_global_log(LOG::ERROR, "Load " + dlname + " error. Throw an string: " + e);
+        set_global_log(LOG::ERROR,
+                       "Load " + dlname + " error. Throw an string: " + e);
     }
     catch (std::exception &e) {
-        set_global_log(LOG::ERROR, "Load " + dlname + " error. Throw an exception: " + e.what());
+        set_global_log(LOG::ERROR,
+                       "Load " + dlname +
+                           " error. Throw an exception: " + e.what());
     }
     catch (...) {
-        set_global_log(LOG::ERROR, "Load " + dlname + " error. Throw an unknown error");
+        set_global_log(LOG::ERROR,
+                       "Load " + dlname + " error. Throw an unknown error");
     }
     return std::make_pair(nullptr, nullptr);
 }

@@ -28,6 +28,4 @@ bool recall::check(std::string message, const msg_meta &conf)
 }
 std::string recall::help() { return "撤回消息：回复某句话输入recall"; }
 
-extern "C" processable* create() {
-    return new recall();
-}
+DECLARE_FACTORY_FUNCTIONS(recall)
