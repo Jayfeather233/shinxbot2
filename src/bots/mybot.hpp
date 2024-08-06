@@ -41,9 +41,9 @@ private:
     int start_server();
 
     /**
-     * Check if the log output stream should be updated
+     * refresh the log output stream should be updated
      */
-    void log_init();
+    void refresh_log_stream();
 
     /**
      * Get bot's qq and read op_list

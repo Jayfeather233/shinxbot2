@@ -137,3 +137,11 @@ bot卸载库时，会调用 `extern "C" processable *close(processable* p)` 来�
 ```bash
 bash sender.sh "bot.help"
 ```
+
+## License
+
+本项目使用 [LGPLv3](./LICENSE) 许可证。如果你对本项目代码做出修改，也应使用 LGPL 许可。
+
+### Add-on Policy
+
+对于只是单独写 function/event 的功能，未修改本项目的代码，可以使用任意许可。

@@ -113,7 +113,7 @@ int mybot::start_server()
     }
     return 0;
 }
-void mybot::log_init()
+void mybot::refresh_log_stream()
 {
     std::ostringstream oss;
     std::time_t nt =
@@ -121,7 +121,6 @@ void mybot::log_init()
     tm tt = *std::localtime(
         &nt); // No need to delete according to
               // [stackoverflow](https://stackoverflow.com/questions/64854691/do-i-need-to-delete-the-pointer-returned-by-stdlocaltime)
-              // (?)
 
     oss << "./log/" << botqq << "/" << tt.tm_year + 1900 << '_' << std::setw(2)
         << std::setfill('0') << tt.tm_mon + 1 << '_' << std::setw(2)
@@ -150,7 +149,7 @@ void close_dl(void *handle, T *p)
         set_global_log(LOG::WARNING,
                        std::string("Cannot load symbol 'destroy_t': ") +
                            dlsym_error);
-        delete p; // This is not always safe
+        // delete p; // This is not always safe
     }
     else {
         closex(p);
@@ -195,7 +194,7 @@ void mybot::init()
     }
     std::cout << "botqq:" << botqq << std::endl;
 
-    log_init();
+    refresh_log_stream();
 
     Json::Value J_op = string_to_json(readfile("./config/op_list.json", "[]"));
     parse_json_to_set(J_op, op_list);
@@ -612,7 +611,7 @@ void mybot::setlog(LOG type, std::string message)
           tt.tm_mon == last_getlog.tm_mon &&
           tt.tm_mday == last_getlog.tm_mday)) {
         last_getlog = tt;
-        this->log_init();
+        this->refresh_log_stream();
     }
 
     std::ostringstream oss;
