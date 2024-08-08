@@ -191,8 +191,8 @@ std::string gemini::generate_text(std::string message, uint64_t id)
     J["contents"] = history[0][id];
     shrink_prompt_size(id, 0);
     Json::Value res = string_to_json(do_post(
-        (std::string) "https://generativelanguage.googleapis.com/v1beta/models/"
-                      "gemini-1.5-pro-latest:generateContent?key=" +
+        (std::string) "https://generativelanguage.googleapis.com/v1/models/"
+                      "gemini-1.5-flash:generateContent?key=" +
             *nowkey,
         J, {}, true));
     next_key(nowkey);
