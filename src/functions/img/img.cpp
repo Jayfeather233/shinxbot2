@@ -276,6 +276,9 @@ void img::process(std::string message, const msg_meta &conf)
     }
     else {
         index = my_string2int64(indexs);
+        if(index == 0){
+            return;
+        }
     }
     index--;
     if (index < 0 || index >= it2->second) {
