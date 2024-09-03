@@ -57,42 +57,44 @@ void birthday::process(std::string message, const msg_meta &conf)
 
     if (command == "date.add") {
         std::string who, date;
-        iss >> date;
-        getline(iss, who);
-        who = trim(who);
-        if (date.size() == 4 && !who.empty()) {
-            mmdd u;
-            try {
-                u = (mmdd){who, std::stoi(date.substr(0, 2)),
-                           std::stoi(date.substr(2, 2))};
-            }
-            catch (...) {
-                conf.p->cq_send("日期不是数字", conf);
-                return;
-            }
-            if (check_valid_date(u)) {
-                birthdays[conf.group_id].push_back(u);
+        while(iss >> date){
+            getline(iss, who);
+            who = trim(who);
+            if (date.size() == 4 && !who.empty()) {
+                mmdd u;
+                try {
+                    u = (mmdd){who, std::stoi(date.substr(0, 2)),
+                            std::stoi(date.substr(2, 2))};
+                }
+                catch (...) {
+                    conf.p->cq_send(fmt::format("{} 日期不是数字", date), conf);
+                    continue;
+                }
+                if (check_valid_date(u)) {
+                    birthdays[conf.group_id].push_back(u);
 
-                std::sort(birthdays[conf.group_id].begin(),
-                          birthdays[conf.group_id].end(),
-                          [](const mmdd &a, const mmdd &b) {
-                              return (a.mm < b.mm) ||
-                                     (a.mm == b.mm && a.dd < b.dd);
-                          });
-                conf.p->cq_send(fmt::format("加入 {} 的日期 {}", who, date),
-                                conf);
-                save();
+                    std::sort(birthdays[conf.group_id].begin(),
+                            birthdays[conf.group_id].end(),
+                            [](const mmdd &a, const mmdd &b) {
+                                return (a.mm < b.mm) ||
+                                        (a.mm == b.mm && a.dd < b.dd);
+                            });
+                    conf.p->cq_send(fmt::format("加入 {} 的日期 {}", who, date),
+                                    conf);
+                    save();
+                }
+                else {
+                    conf.p->cq_send(fmt::format("{} 不是一个有效日期！", date), conf);
+                }
+            }
+            else if (!who.empty()) {
+                conf.p->cq_send(fmt::format("{} 请使用 MMDD 日期格式", date), conf);
             }
             else {
-                conf.p->cq_send("不是一个有效日期！", conf);
+                conf.p->cq_send(fmt::format("{} 请输入事件描述", date), conf);
             }
         }
-        else if (!who.empty()) {
-            conf.p->cq_send("请使用 MMDD 日期格式", conf);
-        }
-        else {
-            conf.p->cq_send("请输入事件描述", conf);
-        }
+        return;
     }
     else if (command == "date.del") {
         if (!conf.p->is_op(conf.user_id) &&
