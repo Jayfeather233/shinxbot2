@@ -57,6 +57,7 @@ void birthday::process(std::string message, const msg_meta &conf)
 
     if (command == "date.add") {
         std::string who, date;
+        std::ostringstream oss_output;
         while(iss >> date){
             getline(iss, who);
             who = trim(who);
@@ -67,7 +68,7 @@ void birthday::process(std::string message, const msg_meta &conf)
                             std::stoi(date.substr(2, 2))};
                 }
                 catch (...) {
-                    conf.p->cq_send(fmt::format("{} 日期不是数字", date), conf);
+                    oss_output << fmt::format("{} 日期不是数字\n", date);
                     continue;
                 }
                 if (check_valid_date(u)) {
@@ -79,21 +80,21 @@ void birthday::process(std::string message, const msg_meta &conf)
                                 return (a.mm < b.mm) ||
                                         (a.mm == b.mm && a.dd < b.dd);
                             });
-                    conf.p->cq_send(fmt::format("加入 {} 的日期 {}", who, date),
-                                    conf);
+                    oss_output << fmt::format("加入 {} 的日期 {}\n", who, date);
                     save();
                 }
                 else {
-                    conf.p->cq_send(fmt::format("{} 不是一个有效日期！", date), conf);
+                    oss_output << fmt::format("{} 不是一个有效日期！\n", date);
                 }
             }
             else if (!who.empty()) {
-                conf.p->cq_send(fmt::format("{} 请使用 MMDD 日期格式", date), conf);
+                oss_output << fmt::format("{} 请使用 MMDD 日期格式\n", date);
             }
             else {
-                conf.p->cq_send(fmt::format("{} 请输入事件描述", date), conf);
+                oss_output << fmt::format("{} 请输入事件描述\n", date);
             }
         }
+        conf.p->cq_send(trim(oss_output.str()), conf);
         return;
     }
     else if (command == "date.del") {

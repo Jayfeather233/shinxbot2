@@ -31,7 +31,7 @@ bool bot::is_op(const userid_t a) const { return false; }
 std::string bot::cq_send(const std::string &message, const msg_meta &conf) const
 {
     Json::Value input;
-    input["message"] = message;
+    input["message"] = trim(message);
     input["message_type"] = conf.message_type;
     input["group_id"] = conf.group_id;
     input["user_id"] = conf.user_id;
