@@ -256,6 +256,11 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
         tm tt = *localtime(&nt);
         std::ostringstream oss;
         oss << "./backup/" << std::put_time(&tt, "%Y-%m-%d_%H-%M-%S") << ".zip";
+
+        if (!fs::exists("./backup")){
+            fs::create_directories("./backup");
+        }
+
         this->archive->make_archive(oss.str());
 
         std::string filepa = std::filesystem::absolute(oss.str()).string();

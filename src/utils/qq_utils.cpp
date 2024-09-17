@@ -30,7 +30,7 @@ std::string get_group_member_name(const bot *p, userid_t user_id,
     if (input["data"].isNull())
         name = get_stranger_name(p, user_id);
     else
-        name = input["data"]["card"].asString().size() != 0
+        name = (!input["data"]["card"].isNull() && input["data"]["card"].asString().size() != 0)
                    ? input["data"]["card"].asString()
                    : input["data"]["nickname"].asString();
     return name;
