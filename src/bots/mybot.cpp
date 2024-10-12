@@ -33,7 +33,7 @@ void mybot::read_server_message(int new_socket)
             }
             buffer[valread] = 0;
             s_buffer += buffer;
-            if (valread == 0) {
+            if (valread < 1 || s_buffer.find("\r\n\r\n") != s_buffer.npos) {
                 break;
             }
         }
