@@ -8,8 +8,7 @@ struct img_fun_type{
         ROTATE,
         KALEIDO
     } type;
-    int para1;
-    int para2;
+    int32_t para1: 16, para2: 16;
 };
 
 class img_fun : public processable {

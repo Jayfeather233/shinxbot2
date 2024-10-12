@@ -6,9 +6,7 @@
 
 enum gameState { idle, join, init, work };
 
-typedef struct Player player_t;
-
-struct Player {
+typedef struct Player {
     userid_t id;
     player_t *pre;
     player_t *nex;
@@ -21,7 +19,7 @@ struct Player {
         word = "";
         alive = true;
     }
-};
+} player_t;
 
 class NGGame {
 private:

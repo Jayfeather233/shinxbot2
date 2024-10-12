@@ -33,7 +33,7 @@ void mybot::read_server_message(int new_socket)
             }
             buffer[valread] = 0;
             s_buffer += buffer;
-            if (valread < 4000) {
+            if (valread == 0) {
                 break;
             }
         }
