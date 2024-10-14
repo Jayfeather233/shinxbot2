@@ -69,13 +69,13 @@ void r_color::process(std::string message, const msg_meta &conf)
                        Magick::CenterGravity);
 
         // Save the image
-        image.write((std::string) "./resource/r_color/" + name + ".png");
+        image.write((std::string) "./resource/r_color/" + name.substr(1) + ".png");
     }
     catch (std::exception &error) {
         conf.p->setlog(LOG::ERROR, error.what());
     }
     
-    std::string enc_name = httplib::detail::encode_url(name);
+    std::string enc_name = httplib::detail::encode_url(name.substr(1));
 
     conf.p->cq_send(fmt::format("[CQ:image,file=file://{}/resource/r_color/{}.png,id=40000]", get_local_path(), enc_name),
                     conf);
