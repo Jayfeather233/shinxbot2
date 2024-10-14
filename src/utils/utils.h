@@ -28,6 +28,9 @@ std::string do_get(const std::string &httpaddr,
                    const std::map<std::string, std::string> &headers = {},
                    const bool proxy_flg = false);
 
+/**
+ * enc: if http encode httppath
+ */
 std::string do_post(const std::string &httpaddr, const std::string &httppath,
                     bool enc, const Json::Value &json_message,
                     const std::map<std::string, std::string> &headers = {},
