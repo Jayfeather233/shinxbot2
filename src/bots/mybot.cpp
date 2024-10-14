@@ -12,107 +12,133 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <thread>
+#include <httplib.h>
 
 namespace fs = std::filesystem;
 
-void mybot::read_server_message(int new_socket)
-{
-    char buffer[4096];
-    try {
-        std::string s_buffer;
-        int valread;
-        while (1) {
-            valread = read(new_socket, buffer, 4000);
-            if (valread < 0) {
-                break;
-            }
-            for (int i = 1; i < valread; ++i) {
-                if (buffer[i] == 'r' && buffer[i - 1] == '\\') {
-                    buffer[i] = 'n';
-                }
-            }
-            buffer[valread] = 0;
-            s_buffer += buffer;
-            if (valread < 1 || s_buffer.find("\r\n\r\n") != s_buffer.npos) {
-                break;
-            }
-        }
-        if (valread == -1) {
-            setlog(LOG::ERROR, "Error read message.");
-        }
+// void mybot::read_server_message(int new_socket)
+// {
+//     char buffer[4096];
+//     try {
+//         std::string s_buffer;
+//         int valread;
+//         while (1) {
+//             valread = read(new_socket, buffer, 4000);
+//             if (valread < 0) {
+//                 break;
+//             }
+//             for (int i = 1; i < valread; ++i) {
+//                 if (buffer[i] == 'r' && buffer[i - 1] == '\\') {
+//                     buffer[i] = 'n';
+//                 }
+//             }
+//             buffer[valread] = 0;
+//             s_buffer += buffer;
+//             if (valread < 1 || s_buffer.find("\r\n\r\n") != s_buffer.npos) {
+//                 break;
+//             }
+//         }
+//         if (valread == -1) {
+//             setlog(LOG::ERROR, "Error read message.");
+//         }
 
-        std::istringstream iss(s_buffer);
-        std::string msg, line;
-        bool flg = false;
-        while (std::getline(iss, line)) {
-            if (line[0] == '{') {
-                flg = true;
-            }
-            if (flg)
-                msg += line;
-        }
-        std::string *u = new std::string(msg);
-        std::thread(&mybot::input_process, this, u).detach();
+//         std::istringstream iss(s_buffer);
+//         std::string msg, line;
+//         bool flg = false;
+//         while (std::getline(iss, line)) {
+//             if (line[0] == '{') {
+//                 flg = true;
+//             }
+//             if (flg)
+//                 msg += line;
+//         }
+//         std::string *u = new std::string(msg);
+//         std::thread(&mybot::input_process, this, u).detach();
 
-        std::stringstream response_body;
-        response_body << "HTTP/1.1 200 OK\r\n"
-                         "Content-Length: 0\r\n"
-                         "Content-Type: application/json\r\n\r\n";
-        std::string response = response_body.str();
-        const char *response_cstr = response.c_str();
-        send(new_socket, response_cstr, strlen(response_cstr), 0);
-    }
-    catch (...) {
-    }
-    close(new_socket);
+//         std::stringstream response_body;
+//         response_body << "HTTP/1.1 200 OK\r\n"
+//                          "Content-Length: 0\r\n"
+//                          "Content-Type: application/json\r\n\r\n";
+//         std::string response = response_body.str();
+//         const char *response_cstr = response.c_str();
+//         send(new_socket, response_cstr, strlen(response_cstr), 0);
+//     }
+//     catch (...) {
+//     }
+//     close(new_socket);
+// }
+
+// int mybot::start_server()
+// {
+//     int server_fd, new_socket;
+//     struct sockaddr_in address;
+//     int addrlen = sizeof(address);
+
+//     // Create server socket
+//     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+//         setlog(LOG::ERROR, "Error creating socket");
+//         return 1;
+//     }
+
+//     // Set socket options
+//     int opt = 1;
+//     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
+//                    sizeof(opt))) {
+//         setlog(LOG::ERROR, "Error setting socket options");
+//         return 1;
+//     }
+
+//     // Set server address and bind to socket
+//     address.sin_family = AF_INET;
+//     address.sin_addr.s_addr = INADDR_ANY;
+//     address.sin_port = htons(receive_port);
+//     if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
+//         setlog(LOG::ERROR, "Error binding to socket");
+//         return 1;
+//     }
+
+//     // Listen for incoming connections
+//     if (listen(server_fd, 3) < 0) {
+//         setlog(LOG::ERROR, "Error listening for connections");
+//         return 1;
+//     }
+
+//     // Accept incoming connections and handle requests
+//     while (bot_is_on) {
+//         if ((new_socket = accept(server_fd, (struct sockaddr *)&address,
+//                                  (socklen_t *)&addrlen)) < 0) {
+//             setlog(LOG::ERROR, "Error accepting connection");
+//             continue;
+//         }
+//         read_server_message(new_socket);
+//     }
+//     return 0;
+// }
+
+
+void mybot::read_server_message(int new_socket){}
+int mybot::start_server() {
+    httplib::Server svr;
+
+    // Define the route to handle incoming requests
+    svr.Post("/", [&](const httplib::Request& req, httplib::Response& res) {
+        // You can access the body of the POST request here
+        std::string s_buffer = req.body;
+
+        // Start a new thread to process the input message
+        std::thread([this, s_buffer]() {
+            std::string* u = new std::string(s_buffer);
+            input_process(u);
+        }).detach();
+
+        // Send an HTTP 200 response
+        res.set_content("{}", "application/json");  // Empty JSON response
+    });
+
+    std::cout << "Server is starting on port 8080..." << std::endl;
+    return svr.listen("0.0.0.0", 8080);  // Listen on all interfaces, port 8080
 }
 
-int mybot::start_server()
-{
-    int server_fd, new_socket;
-    struct sockaddr_in address;
-    int addrlen = sizeof(address);
-
-    // Create server socket
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-        setlog(LOG::ERROR, "Error creating socket");
-        return 1;
-    }
-
-    // Set socket options
-    int opt = 1;
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
-                   sizeof(opt))) {
-        setlog(LOG::ERROR, "Error setting socket options");
-        return 1;
-    }
-
-    // Set server address and bind to socket
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(receive_port);
-    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
-        setlog(LOG::ERROR, "Error binding to socket");
-        return 1;
-    }
-
-    // Listen for incoming connections
-    if (listen(server_fd, 3) < 0) {
-        setlog(LOG::ERROR, "Error listening for connections");
-        return 1;
-    }
-
-    // Accept incoming connections and handle requests
-    while (bot_is_on) {
-        if ((new_socket = accept(server_fd, (struct sockaddr *)&address,
-                                 (socklen_t *)&addrlen)) < 0) {
-            setlog(LOG::ERROR, "Error accepting connection");
-            continue;
-        }
-        read_server_message(new_socket);
-    }
-    return 0;
-}
 void mybot::refresh_log_stream()
 {
     std::ostringstream oss;

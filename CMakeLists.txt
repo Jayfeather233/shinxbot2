@@ -18,6 +18,7 @@ include_directories("./src/meta_event")
 include_directories("./src/bots")
 include_directories("./src/interfaces")
 include_directories("./lib/base64/include")
+include_directories("./lib/cpp-httplib")
 
 aux_source_directory(./src/utils UTIL_SOURCES)
 aux_source_directory(./src/utils/meta_func UTIL_META_SOURCES)
