@@ -126,7 +126,7 @@ const std::string help_msg =
 
 gemini::gemini()
 {
-    if (!std::filesystem::exists("./config/gemini.json")) {
+    if (!fs::exists("./config/gemini.json")) {
         std::cout << "Please config your gemini key in gemini.json (and "
                      "restart) OR see gemini_example.json"
                   << std::endl;

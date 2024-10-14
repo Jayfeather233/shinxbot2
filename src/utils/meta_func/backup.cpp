@@ -3,8 +3,8 @@
 #include <zip.h>
 
 void archivist::add_path(const std::string &name,
-                         const std::filesystem::path &path,
-                         const std::filesystem::path &rele_path,
+                         const fs::path &path,
+                         const fs::path &rele_path,
                          const std::string &passwd)
 {
     this->arc_list[name].emplace_back(path, rele_path, passwd);
@@ -16,9 +16,9 @@ void archivist::remove_path(const std::string &name)
 }
 
 bool archivist::archive_add_file(zip_t *archive,
-                                 const std::filesystem::path &path,
+                                 const fs::path &path,
                                  const std::string &passwd,
-                                 const std::filesystem::path &rele_path)
+                                 const fs::path &rele_path)
 {
     zip_source_t *source =
         zip_source_file(archive, path.c_str(), 0, ZIP_LENGTH_TO_END);
@@ -52,11 +52,11 @@ bool archivist::archive_add_file(zip_t *archive,
     return true;
 }
 bool archivist::archive_add_dir(zip_t *archive,
-                                const std::filesystem::path &path,
+                                const fs::path &path,
                                 const std::string &passwd,
-                                const std::filesystem::path &rele_path)
+                                const fs::path &rele_path)
 {
-    for (const auto &entry : std::filesystem::directory_iterator(path)) {
+    for (const auto &entry : fs::directory_iterator(path)) {
         if (!archive_add_path(archive, entry.path(), passwd,
                               rele_path / path.filename())) {
             return false;
@@ -65,14 +65,14 @@ bool archivist::archive_add_dir(zip_t *archive,
     return true;
 }
 bool archivist::archive_add_path(zip_t *archive,
-                                 const std::filesystem::path &path,
+                                 const fs::path &path,
                                  const std::string &passwd,
-                                 const std::filesystem::path &rele_path)
+                                 const fs::path &rele_path)
 {
-    if (std::filesystem::is_directory(path)) {
+    if (fs::is_directory(path)) {
         return this->archive_add_dir(archive, path, passwd, rele_path);
     }
-    else if (std::filesystem::is_regular_file(path)) {
+    else if (fs::is_regular_file(path)) {
         return this->archive_add_file(archive, path, passwd, rele_path);
     }
     else {
@@ -80,7 +80,7 @@ bool archivist::archive_add_path(zip_t *archive,
     }
 }
 
-bool archivist::make_archive(const std::filesystem::path &path)
+bool archivist::make_archive(const fs::path &path)
 {
     zip_t *archive = zip_open(path.c_str(), ZIP_CREATE | ZIP_TRUNCATE, nullptr);
     if (archive == NULL) {

@@ -12,25 +12,25 @@
 class archivist {
 private:
     std::map<std::string,
-             std::vector<std::tuple<std::filesystem::path,
-                                    std::filesystem::path, std::string>>>
+             std::vector<std::tuple<fs::path,
+                                    fs::path, std::string>>>
         arc_list; // pair<file, rele_path, passwd>
     std::string default_pwd;
 
     bool archive_add_path(
-        zip_t *archive, const std::filesystem::path &path,
+        zip_t *archive, const fs::path &path,
         const std::string &passwd,
-        const std::filesystem::path &rele_path = std::filesystem::path());
+        const fs::path &rele_path = fs::path());
 
     bool archive_add_dir(
-        zip_t *archive, const std::filesystem::path &path,
+        zip_t *archive, const fs::path &path,
         const std::string &passwd,
-        const std::filesystem::path &rele_path = std::filesystem::path());
+        const fs::path &rele_path = fs::path());
 
     bool archive_add_file(
-        zip_t *archive, const std::filesystem::path &path,
+        zip_t *archive, const fs::path &path,
         const std::string &passwd,
-        const std::filesystem::path &rele_path = std::filesystem::path());
+        const fs::path &rele_path = fs::path());
 
 public:
     /**
@@ -38,10 +38,10 @@ public:
      * since all files were automatically added
      */
     void
-    add_path(const std::string &name, const std::filesystem::path &path,
-             const std::filesystem::path &rele_path = std::filesystem::path(),
+    add_path(const std::string &name, const fs::path &path,
+             const fs::path &rele_path = fs::path(),
              const std::string &passwd = "");
     void remove_path(const std::string &name);
-    bool make_archive(const std::filesystem::path &path);
+    bool make_archive(const fs::path &path);
     void set_default_pwd(const std::string &pwd);
 };

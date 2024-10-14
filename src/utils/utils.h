@@ -3,13 +3,15 @@
 #include "bot.h"
 #include "meta_func/backup.h"
 #include "meta_func/timer.h"
-#include <curl/curl.h>
 #include <filesystem>
 #include <jsoncpp/json/json.h>
 #include <locale>
 #include <map>
 #include <set>
 #include <string>
+#include <fmt/core.h>
+
+namespace fs = std::filesystem;
 
 /**
  * do a http post with a json body.
@@ -133,25 +135,25 @@ int get_random(int maxi = 65536);
  * download a image from a http address.
  * save it into "filePath/fileName"
  */
-void download(const std::string &httpAddr, const std::string &filePath,
+void download(const std::string &httpAddr, const fs::path &filePath,
               const std::string &fileName, const bool proxy = false);
 
 /**
  * read string from file
  */
-std::string readfile(const std::string &file_path,
+std::string readfile(const fs::path &file_path,
                      const std::string &default_content = "");
 
 /**
  * write string to file
  */
-void writefile(const std::string file_path, const std::string &content,
+void writefile(const fs::path file_path, const std::string &content,
                bool is_append = false);
 
 /**
  * open a file
  */
-std::fstream openfile(const std::string file_path,
+std::fstream openfile(const fs::path file_path,
                       const std::ios_base::openmode mode);
 
 /**
@@ -211,7 +213,7 @@ Json::ArrayIndex json_array_find(const Json::Value &J, const uint64_t &data);
  * upload a file to group/folder.
  * file: reletive path
  */
-void upload_file(bot *p, const std::filesystem::path &file,
+void upload_file(bot *p, const fs::path &file,
                  const groupid_t &group_id, const std::string &path);
 
 /**
@@ -261,4 +263,4 @@ Json::Value string_to_messageArr(const std::string &s);
 std::string get_stranger_name(const bot *p, userid_t user_id);
 
 void send_file_private(const bot *p, const userid_t user_id,
-                       const std::filesystem::path &path);
+                       const fs::path &path);

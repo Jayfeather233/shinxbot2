@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <sys/wait.h>
+#include <httplib.h>
 
 #include <Magick++.h>
 
@@ -71,18 +72,14 @@ void r_color::process(std::string message, const msg_meta &conf)
         image.write((std::string) "./resource/r_color/" + name + ".png");
     }
     catch (std::exception &error) {
-        set_global_log(LOG::ERROR, error.what());
+        conf.p->setlog(LOG::ERROR, error.what());
     }
+    
+    std::string enc_name = httplib::detail::encode_url(name);
 
-    char *c_name = curl_easy_escape(nullptr, name.c_str(), name.length());
-
-    conf.p->cq_send("[CQ:image,file=file://" + get_local_path() +
-                        "/resource/r_color/" + c_name + ".png,id=40000]",
+    conf.p->cq_send(fmt::format("[CQ:image,file=file://{}/resource/r_color/{}.png,id=40000]", get_local_path(), enc_name),
                     conf);
-    curl_free(c_name);
-    conf.p->setlog(LOG::INFO, "r_color at group " +
-                                  std::to_string(conf.group_id) + " by " +
-                                  std::to_string(conf.user_id));
+    conf.p->setlog(LOG::INFO, fmt::format("r_color at group {} by {}", conf.group_id, conf.user_id));
 }
 bool r_color::check(std::string message, const msg_meta &conf)
 {

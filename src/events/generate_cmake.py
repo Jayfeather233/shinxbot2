@@ -10,6 +10,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../../../../lib/events)
 
 # Include directories
+find_package(fmt REQUIRED)
+include_directories(${fmt_INCLUDE_DIRS})
 include_directories("../../utils")
 include_directories("../../interfaces")
 include_directories("../../../lib/base64/include")
@@ -23,6 +25,7 @@ include_directories(${ImageMagick_INCLUDE_DIRS})
 
 add_library({CNAME} SHARED ${MAIN_SOURCES} ${UTIL_SOURCES} ${UTIL_META_SOURCES})
 target_link_libraries({CNAME} PRIVATE ${CMAKE_BINARY_DIR}/../../../../lib/libutils.so)
+target_link_libraries({CNAME} PRIVATE fmt::fmt)
 """
 
 def generate_cmake(cname, directory):

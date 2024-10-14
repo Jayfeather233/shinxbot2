@@ -81,7 +81,7 @@ std::string get_folder_id(const bot *p, const groupid_t &group_id,
 /**
  * file: reletive path
  */
-void upload_file(bot *p, const std::filesystem::path &file,
+void upload_file(bot *p, const fs::path &file,
                  const groupid_t &group_id, const std::string &path)
 {
     try {
@@ -95,7 +95,7 @@ void upload_file(bot *p, const std::filesystem::path &file,
         std::string id = get_folder_id(p, group_id, path);
         Json::Value J;
         J["group_id"] = group_id;
-        J["file"] = (std::filesystem::current_path() / file)
+        J["file"] = (fs::current_path() / file)
                         .lexically_normal()
                         .string();
         J["name"] = file.filename().string();
@@ -138,7 +138,7 @@ bool is_friend(const bot *p, const userid_t &user_id)
 }
 
 void send_file_private(const bot *p, const userid_t user_id,
-                       const std::filesystem::path &path)
+                       const fs::path &path)
 {
     Json::Value J;
     J["user_id"] = user_id;

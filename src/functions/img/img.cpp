@@ -88,16 +88,16 @@ int img::add_image(std::string name, std::string image, groupid_t group_id)
 
 void img::del_all(std::string name)
 {
-    std::filesystem::remove_all("./resource/mt/" + name);
+    fs::remove_all("./resource/mt/" + name);
     images[name] = 0;
     save();
 }
 void img::del_single(std::string name, int index)
 {
     std::string prefix = "./resource/mt/" + name + "/";
-    std::filesystem::remove(prefix + std::to_string(index));
+    fs::remove(prefix + std::to_string(index));
     for (uint64_t i = index + 1; i < images[name]; i++) {
-        std::filesystem::rename(prefix + std::to_string(i),
+        fs::rename(prefix + std::to_string(i),
                                 prefix + std::to_string(i - 1));
     }
     images[name]--;

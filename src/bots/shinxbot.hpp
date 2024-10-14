@@ -1,7 +1,5 @@
 #pragma once
 
-// #include "events.h"
-// #include "functions.h"
 #include "eventprocess.h"
 #include "heartbeat.h"
 #include "processable.h"
@@ -11,7 +9,7 @@
 #include <unistd.h>
 #include <vector>
 
-class mybot : public bot {
+class shinxbot : public bot {
 private:
     bool bot_is_on = true;
 
@@ -61,7 +59,8 @@ private:
     void init_func(const std::string &name, eventprocess *p);
 
 public:
-    mybot(int recv_port, int send_port);
+    shinxbot(int recv_port, int send_port);
+    shinxbot(const Json::Value &J);
 
     bool is_op(const userid_t a) const;
 
@@ -73,5 +72,5 @@ public:
     
     void cq_send_all_op(const std::string &message);
 
-    ~mybot();
+    ~shinxbot();
 };

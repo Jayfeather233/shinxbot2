@@ -1,6 +1,6 @@
 # shinxBot2
 
-一个基于[Lagrange.Onebot](https://github.com/LagrangeDev/Lagrange.Core)的(多)机器人管理框架，重构自[shinxBot](https://github.com/Jayfeather233/shinxBot)。
+一个基于[Lagrange.Onebot](https://github.com/LagrangeDev/Lagrange.Core)的机器人框架，重构自[shinxBot](https://github.com/Jayfeather233/shinxBot)。
 
 ### 功能支持
 
@@ -38,8 +38,6 @@
 
 - 日期提醒，(inform. 为每周为单位，精确到分钟提醒，date. 为每年为单位，精确到天)
 
-- 管理多个bot，并（以后）可以通过广播传递消息
-
 ### 文件结构
 
 ````
@@ -55,7 +53,6 @@
 
 本项目依赖以下软件包：
 
-- libcurl
 - openssl-dev / libssl-dev
 - libjsoncpp
 - libzip
@@ -96,14 +93,15 @@ git clone --recursive git@github.com:Jayfeather233/shinxbot2.git
 
 如果需要编译所有功能，进入 `./src/[functions|events]`，运行 `python generate_cmake.py` 对每个功能生成模版 CMakeLists.txt，再运行脚本 `bash ./make_all.sh` 来编译所有功能。
 
-### 添加Bot
+### 接入其他Bot后端
 
-具体实现可以参考`./src/bots`中的`mybot`，是已经接好Onebot 11的类
+不支持一个程序中加入多个bot，请新clone一份
 
-- 所有bot需要继承`./src/interfaces/bot.h`中的`bot`类
+具体实现可以参考`./src/bots`中的`shinxbot`，是已经接好Onebot 11的类
 
-- 在`./config/port.txt`中写入发送/接收端口
-- 在`./src/main.cpp`的`main()`中加入`add_new_bot(new yourbot(receive_port[id], send_port[id]));`
+- bot需要继承`./src/interfaces/bot.h`中的`bot`类
+
+- 在`./config/port.txt`中写入新bot发送/接收端口
 
 ### 添加功能
 
@@ -111,7 +109,7 @@ git clone --recursive git@github.com:Jayfeather233/shinxbot2.git
 
 如果在本仓库代码上开发，请确保已经用 `./build.sh` 生成了 `libutils.so`。
 
-以`class mybot`为例，functions传参仅为消息相关，events传入事件的JSON数据，在收到聊天消息的时候调用 functions 里的方法，在其他提示性消息的时候用 events 的方法。
+以`class shinxbot`为例，functions传参仅为消息相关，events传入事件的JSON数据，在收到聊天消息的时候调用 functions 里的方法，在其他提示性消息的时候用 events 的方法。
 
 1. ./src/functions 下新建目录并把代码放入，写一个类继承 `./src/interfaces/processable.h` 中的类并实现virtual方法，并提供`create`方法得到功能`processable*`的指针（可以参考`functions/getJapaneseImage/Anime_Img.cpp`）
 

@@ -23,7 +23,7 @@ void setlog(bot *p, LOG type, std::string message) { p->setlog(type, message); }
 
 userid_t get_botqq(const bot *p) { return p->get_botqq(); }
 
-std::string get_local_path() { return std::filesystem::current_path(); }
+std::string get_local_path() { return fs::current_path(); }
 
 void input_process(bot *p, std::string *input) { p->input_process(input); }
 

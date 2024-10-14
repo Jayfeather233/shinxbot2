@@ -5,24 +5,24 @@
 #include <iostream>
 #include <jsoncpp/json/json.h>
 
-std::fstream openfile(const std::string file_path,
+std::fstream openfile(const fs::path file_path,
                       const std::ios_base::openmode mode)
 {
-    if (!std::filesystem::exists(file_path)) {
-        std::filesystem::path path(file_path);
-        std::filesystem::create_directories(path.parent_path());
+    if (!fs::exists(file_path)) {
+        fs::path path(file_path);
+        fs::create_directories(path.parent_path());
     }
     std::fstream file(file_path, mode);
     if (file.is_open()) {
         return file;
     }
     else {
-        set_global_log(LOG::ERROR, "Cannot open file: " + file_path);
-        throw(file_path + ": open file failed").c_str();
+        set_global_log(LOG::ERROR, "Cannot open file: " + file_path.string());
+        throw(file_path.string() + ": open file failed").c_str();
     }
 }
 
-std::string readfile(const std::string &file_path,
+std::string readfile(const fs::path &file_path,
                      const std::string &default_content)
 {
     std::ifstream afile;
@@ -51,7 +51,7 @@ std::string readfile(const std::string &file_path,
     }
 }
 
-void writefile(const std::string file_path, const std::string &content,
+void writefile(const fs::path file_path, const std::string &content,
                bool is_append)
 {
     std::fstream ofile;
@@ -69,9 +69,9 @@ void command_download(const std::string &httpAddress,
                       const std::string &filePath, const std::string &fileName,
                       const bool proxy)
 {
-    std::filesystem::path p(filePath);
-    if (!std::filesystem::exists(p)) {
-        std::filesystem::create_directories(p);
+    fs::path p(filePath);
+    if (!fs::exists(p)) {
+        fs::create_directories(p);
     }
     p /= fileName;
     // std::cout<<p.string()<<std::endl;
@@ -88,19 +88,20 @@ void command_download(const std::string &httpAddress,
     }
 }
 
-void download(const std::string &httpAddress, const std::string &filePath,
+void download(const std::string &httpAddress, const fs::path &filePath,
               const std::string &fileName, const bool proxy)
 {
     try {
         std::string data = do_get(httpAddress, {}, proxy);
         std::fstream ofile;
         try {
-            ofile = openfile(filePath + "/" + fileName,
-                             std::ios::out | std::ios::binary);
+            ofile =
+                openfile(filePath / fileName, std::ios::out | std::ios::binary);
         }
         catch (...) {
-            set_global_log(LOG::ERROR, "Cannot open file " + filePath + "/" +
-                                           fileName + " for download.");
+            set_global_log(LOG::ERROR, "Cannot open file " +
+                                           (filePath / fileName).string() +
+                                           " for download.");
             return;
         }
         ofile << data;
@@ -109,7 +110,7 @@ void download(const std::string &httpAddress, const std::string &filePath,
     }
     catch (const std::exception &e) {
         set_global_log(LOG::ERROR, "At download from" + httpAddress + " to " +
-                                       filePath + "." + fileName +
+                                       (filePath / fileName).string() +
                                        ", Exception occurred: " + e.what());
     }
 }

@@ -18,6 +18,7 @@ void recall::process(std::string message, const msg_meta &conf)
     Json::Value J;
     J["message_id"] = fn * cnt;
     conf.p->cq_send("delete_msg", J);
+    conf.p->setlog(LOG::INFO, fmt::format("recall msg by {}", conf.user_id));
 }
 bool recall::check(std::string message, const msg_meta &conf)
 {

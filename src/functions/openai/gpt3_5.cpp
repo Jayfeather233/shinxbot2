@@ -35,7 +35,7 @@ std::mutex gptlock[MAX_KEYS];
 
 gpt3_5::gpt3_5()
 {
-    if (!std::filesystem::exists("./config/openai.json")) {
+    if (!fs::exists("./config/openai.json")) {
         std::cout << "Please config your openai key in openai.json (and "
                      "restart) OR see openai_example.json"
                   << std::endl;
@@ -82,9 +82,9 @@ gpt3_5::gpt3_5()
     is_open = true;
     key_cycle = 0;
 
-    if (std::filesystem::exists("./config/gpt3_5")) {
-        std::filesystem::path gpt_files = "./config/gpt3_5";
-        std::filesystem::directory_iterator di(gpt_files);
+    if (fs::exists("./config/gpt3_5")) {
+        fs::path gpt_files = "./config/gpt3_5";
+        fs::directory_iterator di(gpt_files);
         for (auto &entry : di) {
             if (entry.is_regular_file()) {
                 std::istringstream iss(entry.path().filename().string());

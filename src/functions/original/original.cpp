@@ -22,14 +22,15 @@ void original::process(std::string message, const msg_meta &conf)
     else {
         in_queue[conf.user_id] = false;
         std::string response;
-        for (const char &ch : message) {
-            if (ch == '[')
-                response += "&#91;";
-            else if (ch == ']')
-                response += "&#93;";
-            else
-                response += ch;
-        }
+        // for (const char &ch : message) {
+        //     if (ch == '[')
+        //         response += "&#91;";
+        //     else if (ch == ']')
+        //         response += "&#93;";
+        //     else
+        //         response += ch;
+        // }
+        response = cq_encode(message);
         conf.p->cq_send(response, conf);
         conf.p->setlog(LOG::INFO, "original at group " +
                                       std::to_string(conf.group_id) + " by " +

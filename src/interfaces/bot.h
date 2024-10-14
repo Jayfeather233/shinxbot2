@@ -4,6 +4,9 @@
 
 #include <iostream>
 #include <jsoncpp/json/json.h>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 enum LOG { INFO = 0, WARNING = 1, ERROR = 2 };
 extern std::string LOG_name[];

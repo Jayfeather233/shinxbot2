@@ -1,4 +1,4 @@
-#include "mybot.hpp"
+#include "shinxbot.hpp"
 #include "dynamic_lib.hpp"
 
 #include <algorithm>
@@ -13,158 +13,51 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <thread>
+#include <fmt/core.h>
 
-namespace fs = std::filesystem;
+namespace fs = fs;
 
-// void mybot::read_server_message(int new_socket)
-// {
-//     char buffer[4096];
-//     try {
-//         std::string s_buffer;
-//         int valread;
-//         while (1) {
-//             valread = read(new_socket, buffer, 4000);
-//             if (valread < 0) {
-//                 break;
-//             }
-//             for (int i = 1; i < valread; ++i) {
-//                 if (buffer[i] == 'r' && buffer[i - 1] == '\\') {
-//                     buffer[i] = 'n';
-//                 }
-//             }
-//             buffer[valread] = 0;
-//             s_buffer += buffer;
-//             if (valread < 1 || s_buffer.find("\r\n\r\n") != s_buffer.npos) {
-//                 break;
-//             }
-//         }
-//         if (valread == -1) {
-//             setlog(LOG::ERROR, "Error read message.");
-//         }
-
-//         std::istringstream iss(s_buffer);
-//         std::string msg, line;
-//         bool flg = false;
-//         while (std::getline(iss, line)) {
-//             if (line[0] == '{') {
-//                 flg = true;
-//             }
-//             if (flg)
-//                 msg += line;
-//         }
-//         std::string *u = new std::string(msg);
-//         std::thread(&mybot::input_process, this, u).detach();
-
-//         std::stringstream response_body;
-//         response_body << "HTTP/1.1 200 OK\r\n"
-//                          "Content-Length: 0\r\n"
-//                          "Content-Type: application/json\r\n\r\n";
-//         std::string response = response_body.str();
-//         const char *response_cstr = response.c_str();
-//         send(new_socket, response_cstr, strlen(response_cstr), 0);
-//     }
-//     catch (...) {
-//     }
-//     close(new_socket);
-// }
-
-// int mybot::start_server()
-// {
-//     int server_fd, new_socket;
-//     struct sockaddr_in address;
-//     int addrlen = sizeof(address);
-
-//     // Create server socket
-//     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-//         setlog(LOG::ERROR, "Error creating socket");
-//         return 1;
-//     }
-
-//     // Set socket options
-//     int opt = 1;
-//     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
-//                    sizeof(opt))) {
-//         setlog(LOG::ERROR, "Error setting socket options");
-//         return 1;
-//     }
-
-//     // Set server address and bind to socket
-//     address.sin_family = AF_INET;
-//     address.sin_addr.s_addr = INADDR_ANY;
-//     address.sin_port = htons(receive_port);
-//     if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
-//         setlog(LOG::ERROR, "Error binding to socket");
-//         return 1;
-//     }
-
-//     // Listen for incoming connections
-//     if (listen(server_fd, 3) < 0) {
-//         setlog(LOG::ERROR, "Error listening for connections");
-//         return 1;
-//     }
-
-//     // Accept incoming connections and handle requests
-//     while (bot_is_on) {
-//         if ((new_socket = accept(server_fd, (struct sockaddr *)&address,
-//                                  (socklen_t *)&addrlen)) < 0) {
-//             setlog(LOG::ERROR, "Error accepting connection");
-//             continue;
-//         }
-//         read_server_message(new_socket);
-//     }
-//     return 0;
-// }
-
-void mybot::read_server_message(int new_socket) {}
-int mybot::start_server()
+void shinxbot::read_server_message(int new_socket) {}
+int shinxbot::start_server()
 {
     httplib::Server svr;
 
-    // Define the route to handle incoming requests
     svr.Post("/", [&](const httplib::Request &req, httplib::Response &res) {
-        // You can access the body of the POST request here
         std::string s_buffer = req.body;
-
-        // Start a new thread to process the input message
         std::thread([this, s_buffer]() {
             std::string *u = new std::string(s_buffer);
             input_process(u);
         }).detach();
 
-        // Send an HTTP 200 response
-        res.set_content("{}", "application/json"); // Empty JSON response
+        res.set_content("{}", "application/json");
     });
 
-    std::cout << "Server is starting on port " << receive_port << "..."
-              << std::endl;
-    return svr.listen("0.0.0.0",
-                      receive_port); // Listen on all interfaces, port 8080
+    fmt::print("Server is starting on port {}...", receive_port);
+    return svr.listen("0.0.0.0", receive_port);
 }
 
-void mybot::refresh_log_stream()
+void shinxbot::refresh_log_stream()
 {
-    std::ostringstream oss;
-    std::time_t nt =
-        std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    tm tt = *std::localtime(
-        &nt); // No need to delete according to
-              // [stackoverflow](https://stackoverflow.com/questions/64854691/do-i-need-to-delete-the-pointer-returned-by-stdlocaltime)
+    std::time_t nt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    tm tt = *std::localtime(&nt);
 
-    oss << "./log/" << botqq << "/" << tt.tm_year + 1900 << '_' << std::setw(2)
-        << std::setfill('0') << tt.tm_mon + 1 << '_' << std::setw(2)
-        << std::setfill('0') << tt.tm_mday;
+    std::string formatted_log = fmt::format("./log/{}/{:04}_{:02}_{:02}", 
+                                            botqq, 
+                                            tt.tm_year + 1900, 
+                                            tt.tm_mon + 1, 
+                                            tt.tm_mday);
 
-    if (!std::filesystem::exists(oss.str().c_str())) {
-        std::filesystem::create_directories(oss.str().c_str());
+    if (!fs::exists(formatted_log.c_str())) {
+        fs::create_directories(formatted_log.c_str());
     }
     for (int i = 0; i < 3; i++) {
         if (LOG_output[i].is_open()) {
             LOG_output[i].close();
         }
     }
-    LOG_output[0] = std::ofstream(oss.str() + "/info.log", std::ios_base::app);
-    LOG_output[1] = std::ofstream(oss.str() + "/warn.log", std::ios_base::app);
-    LOG_output[2] = std::ofstream(oss.str() + "/erro.log", std::ios_base::app);
+    LOG_output[0] = std::ofstream(formatted_log + "/info.log", std::ios_base::app);
+    LOG_output[1] = std::ofstream(formatted_log + "/warn.log", std::ios_base::app);
+    LOG_output[2] = std::ofstream(formatted_log + "/erro.log", std::ios_base::app);
 }
 
 template <typename T> void close_dl(void *handle, T *p)
@@ -184,30 +77,30 @@ template <typename T> void close_dl(void *handle, T *p)
     dlclose(handle);
 }
 
-void mybot::unload_func(std::tuple<processable *, void *, std::string> &f)
+void shinxbot::unload_func(std::tuple<processable *, void *, std::string> &f)
 {
     this->mytimer->remove_callback(std::get<2>(f));
     this->archive->remove_path(std::get<2>(f));
 
     close_dl(std::get<1>(f), std::get<0>(f));
 }
-void mybot::unload_func(std::tuple<eventprocess *, void *, std::string> &f)
+void shinxbot::unload_func(std::tuple<eventprocess *, void *, std::string> &f)
 {
     this->mytimer->remove_callback(std::get<2>(f));
     this->archive->remove_path(std::get<2>(f));
     close_dl(std::get<1>(f), std::get<0>(f));
 }
 
-void mybot::init_func(const std::string &name, processable *p)
+void shinxbot::init_func(const std::string &name, processable *p)
 {
     p->set_callback([&](std::function<void(bot * p)> func) {
         this->mytimer->add_callback(name, func);
     });
     p->set_backup_files(this->archive, name);
 }
-void mybot::init_func(const std::string &name, eventprocess *p) {}
+void shinxbot::init_func(const std::string &name, eventprocess *p) {}
 
-void mybot::init()
+void shinxbot::init()
 {
     for (;;) {
         try {
@@ -246,14 +139,15 @@ void mybot::init()
     this->archive->set_default_pwd(std::to_string(this->botqq));
 }
 
-mybot::mybot(int recv_port, int send_port) : bot(recv_port, send_port) {}
+shinxbot::shinxbot(int recv_port, int send_port) : bot(recv_port, send_port) {}
+shinxbot::shinxbot(const Json::Value &J) : bot(J["recv_port"].asInt(), J["send_port"].asInt()) {}
 
-bool mybot::is_op(const userid_t a) const
+bool shinxbot::is_op(const userid_t a) const
 {
     return op_list.find(a) != op_list.end();
 }
 
-bool mybot::meta_func(std::string message, const msg_meta &conf)
+bool shinxbot::meta_func(std::string message, const msg_meta &conf)
 {
     if (message == "bot.help") {
         std::string help_message;
@@ -290,7 +184,7 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
 
         this->archive->make_archive(oss.str());
 
-        std::string filepa = std::filesystem::absolute(oss.str()).string();
+        std::string filepa = fs::absolute(oss.str()).string();
         if (conf.message_type == "private") {
             send_file_private(conf.p, conf.user_id, filepa);
         }
@@ -450,7 +344,7 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
         return true;
 }
 
-void mybot::input_process(std::string *input)
+void shinxbot::input_process(std::string *input)
 {
     if (*input == "") {
         delete input;
@@ -545,7 +439,7 @@ void mybot::input_process(std::string *input)
     }
 }
 
-void mybot::run()
+void shinxbot::run()
 {
     this->mytimer =
         new Timer(std::chrono::milliseconds(500), this); // smallest time: 1s
@@ -631,7 +525,7 @@ void mybot::run()
     events.clear();
 }
 
-void mybot::setlog(LOG type, std::string message)
+void shinxbot::setlog(LOG type, std::string message)
 {
     std::lock_guard<std::mutex> lock(log_lock);
 
@@ -646,21 +540,19 @@ void mybot::setlog(LOG type, std::string message)
         this->refresh_log_stream();
     }
 
-    std::ostringstream oss;
-    oss << "[" << std::setw(2) << std::setfill('0') << tt.tm_hour << ":"
-        << std::setw(2) << std::setfill('0') << tt.tm_min << ":" << std::setw(2)
-        << std::setfill('0') << tt.tm_sec << "][" << LOG_name[type] << "] "
-        << message << std::endl;
+    std::string formatted_message =
+        fmt::format("[{:02}:{:02}:{:02}][{}] {}\n", tt.tm_hour, tt.tm_min,
+                    tt.tm_sec, LOG_name[type], message);
 
     if (type == LOG::ERROR)
-        std::cerr << oss.str();
+        fmt::print(stderr, formatted_message);
     else
-        std::cout << oss.str();
-    LOG_output[type] << oss.str();
+        fmt::print(formatted_message);
+    LOG_output[type] << formatted_message;
     LOG_output[type].flush();
 }
 
-void mybot::cq_send_all_op(const std::string &u)
+void shinxbot::cq_send_all_op(const std::string &u)
 {
     msg_meta conf = (msg_meta){"private", 0, 0, 0, this};
     for (userid_t uid : op_list) {
@@ -669,7 +561,7 @@ void mybot::cq_send_all_op(const std::string &u)
     }
 }
 
-mybot::~mybot()
+shinxbot::~shinxbot()
 {
     bot_is_on = false;
     this->mytimer->timer_stop();
