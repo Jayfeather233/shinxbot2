@@ -92,7 +92,8 @@ void download(const std::string &httpAddress, const fs::path &filePath,
               const std::string &fileName, const bool proxy)
 {
     try {
-        std::string data = do_get(httpAddress, {}, proxy);
+        auto ret = split_http_addr(httpAddress);
+        std::string data = do_get(ret.first, ret.second, {}, proxy);
         std::fstream ofile;
         try {
             ofile =

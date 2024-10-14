@@ -4,13 +4,13 @@
 #include "meta_func/backup.h"
 #include "meta_func/timer.h"
 #include <filesystem>
+#include <fmt/core.h>
 #include <jsoncpp/json/json.h>
 #include <locale>
 #include <map>
+#include <random>
 #include <set>
 #include <string>
-#include <fmt/core.h>
-#include <random>
 
 namespace fs = std::filesystem;
 
@@ -24,14 +24,40 @@ std::string do_post(const std::string &httpaddr,
                     const std::map<std::string, std::string> &headers = {},
                     const bool proxy_flg = false);
 
-/**
- * do a http get.
- * basic headers will automatically included,
- * you can add your own headers through map<>headers
- */
 std::string do_get(const std::string &httpaddr,
                    const std::map<std::string, std::string> &headers = {},
                    const bool proxy_flg = false);
+
+std::string do_post(const std::string &httpaddr, const std::string &httppath,
+                    const Json::Value &json_message,
+                    const std::map<std::string, std::string> &headers = {},
+                    const bool proxy_flg = false);
+
+std::string do_get(const std::string &httpaddr, const std::string &httppath,
+                   const std::map<std::string, std::string> &headers = {},
+                   const bool proxy_flg = false);
+
+std::string do_post(const std::string &httpaddr, int port,
+                    const Json::Value &json_message,
+                    const std::map<std::string, std::string> &headers = {},
+                    const bool proxy_flg = false);
+
+std::string do_get(const std::string &httpaddr, int port,
+                   const std::map<std::string, std::string> &headers = {},
+                   const bool proxy_flg = false);
+
+std::string do_post(const std::string &httpaddr, int port,
+                    const std::string &httppath,
+                    const Json::Value &json_message,
+                    const std::map<std::string, std::string> &headers = {},
+                    const bool proxy_flg = false);
+
+std::string do_get(const std::string &httpaddr, int port,
+                   const std::string &httppath,
+                   const std::map<std::string, std::string> &headers = {},
+                   const bool proxy_flg = false);
+
+std::pair<std::string, std::string> split_http_addr(const std::string addr);
 
 /**
  * get user's name (group name if group_id != 0)
@@ -215,8 +241,8 @@ Json::ArrayIndex json_array_find(const Json::Value &J, const uint64_t &data);
  * upload a file to group/folder.
  * file: reletive path
  */
-void upload_file(bot *p, const fs::path &file,
-                 const groupid_t &group_id, const std::string &path);
+void upload_file(bot *p, const fs::path &file, const groupid_t &group_id,
+                 const std::string &path);
 
 /**
  * Get the folder id in a group

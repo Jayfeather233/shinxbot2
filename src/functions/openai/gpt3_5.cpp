@@ -304,8 +304,8 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     J["temperature"] = 0.7;
     J["max_tokens"] = MAX_REPLY;
     try {
-        J = string_to_json(do_post("https://api.openai.com/v1/chat/completions",
-                                   J,
+        J = string_to_json(do_post("https://api.openai.com",
+                                   "/v1/chat/completions", J,
                                    {{"Content-Type", "application/json"},
                                     {"Authorization", "Bearer " + key[keyid]}},
                                    true));
