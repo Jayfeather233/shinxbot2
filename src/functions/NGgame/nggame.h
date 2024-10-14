@@ -8,8 +8,8 @@ enum gameState { idle, join, init, work };
 
 typedef struct Player {
     userid_t id;
-    player_t *pre;
-    player_t *nex;
+    Player *pre;
+    Player *nex;
     std::string word;
     bool alive;
     Player(userid_t user_id)

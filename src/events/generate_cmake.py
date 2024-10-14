@@ -15,6 +15,7 @@ include_directories(${fmt_INCLUDE_DIRS})
 include_directories("../../utils")
 include_directories("../../interfaces")
 include_directories("../../../lib/base64/include")
+include_directories("../../../lib/cpp-httplib")
 
 aux_source_directory(. MAIN_SOURCES)
 
