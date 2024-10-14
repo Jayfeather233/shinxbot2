@@ -89,20 +89,22 @@ std::string do_get(const std::string &httpaddr,
 }
 
 std::string do_post(const std::string &httpaddr, const std::string &httppath,
-                    const Json::Value &json_message,
+                    bool enc, const Json::Value &json_message,
                     const std::map<std::string, std::string> &headers,
                     const bool proxy_flg)
 {
     auto cli = httplib::Client(httpaddr);
+    cli.set_url_encode(enc);
     return do_http_request(cli, httpaddr, httppath, headers, proxy_flg,
                            http_req_method::POST, json_message);
 }
 
 std::string do_get(const std::string &httpaddr, const std::string &httppath,
-                   const std::map<std::string, std::string> &headers,
+                   bool enc, const std::map<std::string, std::string> &headers,
                    const bool proxy_flg)
 {
     auto cli = httplib::Client(httpaddr);
+    cli.set_url_encode(enc);
     return do_http_request(cli, httpaddr, httppath, headers, proxy_flg,
                            http_req_method::GET);
 }
@@ -128,23 +130,25 @@ std::string do_get(const std::string &httpaddr, int port,
 }
 
 std::string do_post(const std::string &httpaddr, int port,
-                    const std::string &httppath,
+                    const std::string &httppath, bool enc,
                     const Json::Value &json_message,
                     const std::map<std::string, std::string> &headers,
                     const bool proxy_flg)
 {
     auto cli = httplib::Client(httpaddr, port);
+    cli.set_url_encode(enc);
     return do_http_request(cli, fmt::format("{}:{}", httpaddr, port), httppath,
                            headers, proxy_flg, http_req_method::POST,
                            json_message);
 }
 
 std::string do_get(const std::string &httpaddr, int port,
-                   const std::string &httppath,
+                   const std::string &httppath, bool enc,
                    const std::map<std::string, std::string> &headers,
                    const bool proxy_flg)
 {
     auto cli = httplib::Client(httpaddr, port);
+    cli.set_url_encode(enc);
     return do_http_request(cli, fmt::format("{}:{}", httpaddr, port), httppath,
                            headers, proxy_flg, http_req_method::GET);
 }

@@ -163,9 +163,10 @@ size_t gemini::get_tokens(const Json::Value &history)
 {
     Json::Value qes;
     qes["content"] = history;
-    qes = string_to_json(do_post(
-        (std::string) "https://generativelanguage.googleapis.com",
-        "/v1beta/models/gemini-pro:countTokens?key=" + *nowkey, qes, {}, true));
+    qes = string_to_json(
+        do_post((std::string) "https://generativelanguage.googleapis.com",
+                "/v1beta/models/gemini-pro:countTokens?key=" + *nowkey, false,
+                qes, {}, true));
     return qes["totalTokens"].as<size_t>();
 }
 
@@ -190,8 +191,8 @@ std::string gemini::generate_text(std::string message, uint64_t id)
     shrink_prompt_size(id, 0);
     Json::Value res = string_to_json(
         do_post((std::string) "https://generativelanguage.googleapis.com",
-                "/v1/models/gemini-1.5-flash:generateContent?key=" + *nowkey, J,
-                {}, true));
+                "/v1/models/gemini-1.5-flash:generateContent?key=" + *nowkey,
+                false, J, {}, true));
     next_key(nowkey);
     std::string str_ans;
     if (res.isMember("error")) {
@@ -251,8 +252,8 @@ std::string gemini::generate_image(std::string message, uint64_t id)
     // shrink_prompt_size(id, 1);
     Json::Value res = string_to_json(do_post(
         (std::string) "https://generativelanguage.googleapis.com",
-        "/v1beta/models/gemini-pro-vision:generateContent?key=" + *nowkey, Q,
-        {}, true));
+        "/v1beta/models/gemini-pro-vision:generateContent?key=" + *nowkey,
+        false, Q, {}, true));
     next_key(nowkey);
     std::string str_ans;
     if (res.isMember("error")) {

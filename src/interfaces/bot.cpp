@@ -41,13 +41,14 @@ std::string bot::cq_send(const std::string &message, const msg_meta &conf) const
 std::string bot::cq_send(const std::string &end_point,
                          const Json::Value &J) const
 {
-    return do_post((std::string)"127.0.0.1", send_port, (std::string)"/" + end_point,
-                   J);
+    return do_post((std::string) "127.0.0.1", send_port,
+                   (std::string) "/" + end_point, false, J);
 }
 
 std::string bot::cq_get(const std::string &end_point) const
 {
-    return do_get((std::string)"127.0.0.1", send_port, (std::string)"/" + end_point);
+    return do_get((std::string) "127.0.0.1", send_port,
+                  (std::string) "/" + end_point, false);
 }
 
 void bot::setlog(LOG type, std::string message) {}

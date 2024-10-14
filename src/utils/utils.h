@@ -29,11 +29,12 @@ std::string do_get(const std::string &httpaddr,
                    const bool proxy_flg = false);
 
 std::string do_post(const std::string &httpaddr, const std::string &httppath,
-                    const Json::Value &json_message,
+                    bool enc, const Json::Value &json_message,
                     const std::map<std::string, std::string> &headers = {},
                     const bool proxy_flg = false);
 
 std::string do_get(const std::string &httpaddr, const std::string &httppath,
+                   bool enc,
                    const std::map<std::string, std::string> &headers = {},
                    const bool proxy_flg = false);
 
@@ -47,13 +48,13 @@ std::string do_get(const std::string &httpaddr, int port,
                    const bool proxy_flg = false);
 
 std::string do_post(const std::string &httpaddr, int port,
-                    const std::string &httppath,
+                    const std::string &httppath, bool enc,
                     const Json::Value &json_message,
                     const std::map<std::string, std::string> &headers = {},
                     const bool proxy_flg = false);
 
 std::string do_get(const std::string &httpaddr, int port,
-                   const std::string &httppath,
+                   const std::string &httppath, bool enc,
                    const std::map<std::string, std::string> &headers = {},
                    const bool proxy_flg = false);
 
