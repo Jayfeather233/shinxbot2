@@ -9,6 +9,10 @@ static std::random_device os_seed;
 static const u32 seed = os_seed();
 static engine generator = engine(seed);
 
+engine get_engine(){
+    return generator;
+}
+
 int get_random(int maxi)
 {
     std::uniform_int_distribution<u32> uni_dis =

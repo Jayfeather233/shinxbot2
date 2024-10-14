@@ -59,7 +59,7 @@ void NGGame::link()
         player_list.push_back(it.first);
     }
     srand(time(0));
-    std::random_shuffle(player_list.begin(), player_list.end());
+    std::shuffle(player_list.begin(), player_list.end(), get_engine());
     for (size_t i = 0; i < player_list.size(); i++) {
         ng[player_list[i]]->nex = ng[player_list[(i + 1) % player_list.size()]];
         ng[player_list[(i + 1) % player_list.size()]]->pre = ng[player_list[i]];

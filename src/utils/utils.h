@@ -10,6 +10,7 @@
 #include <set>
 #include <string>
 #include <fmt/core.h>
+#include <random>
 
 namespace fs = std::filesystem;
 
@@ -130,6 +131,7 @@ uint64_t my_string2uint64(const std::string &s);
  * get a random number [0, maxi)
  */
 int get_random(int maxi = 65536);
+std::mt19937 get_engine();
 
 /**
  * download a image from a http address.
