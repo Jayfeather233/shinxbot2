@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <csignal>
 #include <filesystem>
+#include <httplib.h>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -12,7 +13,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <thread>
-#include <httplib.h>
 
 namespace fs = std::filesystem;
 
@@ -115,28 +115,30 @@ namespace fs = std::filesystem;
 //     return 0;
 // }
 
-
-void mybot::read_server_message(int new_socket){}
-int mybot::start_server() {
+void mybot::read_server_message(int new_socket) {}
+int mybot::start_server()
+{
     httplib::Server svr;
 
     // Define the route to handle incoming requests
-    svr.Post("/", [&](const httplib::Request& req, httplib::Response& res) {
+    svr.Post("/", [&](const httplib::Request &req, httplib::Response &res) {
         // You can access the body of the POST request here
         std::string s_buffer = req.body;
 
         // Start a new thread to process the input message
         std::thread([this, s_buffer]() {
-            std::string* u = new std::string(s_buffer);
+            std::string *u = new std::string(s_buffer);
             input_process(u);
         }).detach();
 
         // Send an HTTP 200 response
-        res.set_content("{}", "application/json");  // Empty JSON response
+        res.set_content("{}", "application/json"); // Empty JSON response
     });
 
-    std::cout << "Server is starting on port 8080..." << std::endl;
-    return svr.listen("0.0.0.0", 8080);  // Listen on all interfaces, port 8080
+    std::cout << "Server is starting on port " << receive_port << "..."
+              << std::endl;
+    return svr.listen("0.0.0.0",
+                      receive_port); // Listen on all interfaces, port 8080
 }
 
 void mybot::refresh_log_stream()
@@ -165,8 +167,7 @@ void mybot::refresh_log_stream()
     LOG_output[2] = std::ofstream(oss.str() + "/erro.log", std::ios_base::app);
 }
 
-template<typename T>
-void close_dl(void *handle, T *p)
+template <typename T> void close_dl(void *handle, T *p)
 {
     typedef void (*close_t)(T *);
     close_t closex = (close_t)dlsym(handle, "destroy_t");
@@ -283,7 +284,7 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
         std::ostringstream oss;
         oss << "./backup/" << std::put_time(&tt, "%Y-%m-%d_%H-%M-%S") << ".zip";
 
-        if (!fs::exists("./backup")){
+        if (!fs::exists("./backup")) {
             fs::create_directories("./backup");
         }
 
