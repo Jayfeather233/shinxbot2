@@ -44,9 +44,9 @@ std::string do_http_request(const std::string &httpaddr,
     // Perform the POST request
     httplib::Result res =
         hrm == http_req_method::POST
-            ? client.Post("/", httplib_headers, json_message.toStyledString(),
+            ? client.Post("", httplib_headers, json_message.toStyledString(),
                           "application/json")
-            : client.Get("/", httplib_headers);
+            : client.Get("", httplib_headers);
 
     if (!res || res->status != 200) {
         auto err = res.error();
