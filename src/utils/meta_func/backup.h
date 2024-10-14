@@ -9,6 +9,8 @@
 #define ZIP_LENGTH_TO_END -1
 #endif
 
+namespace fs = std::filesystem;
+
 class archivist {
 private:
     std::map<std::string,

@@ -27,7 +27,6 @@ void bot_run(bot *u){
 
 int main()
 {
-    curl_global_init(CURL_GLOBAL_ALL);
     Magick::InitializeMagick("shinxBot");
     signal(SIGPIPE, SIG_IGN);
     signal(SIGALRM, SIG_IGN);
@@ -60,7 +59,6 @@ int main()
     delete bots;
 
     Magick::TerminateMagick();
-    curl_global_cleanup();
 
     return 0;
 }
