@@ -5,9 +5,15 @@ project({CNAME})
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_INSTALL_RPATH "./lib")
 
 # Set the output directory for libraries
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../../../../lib/events)
+
+SET(CMAKE_SKIP_BUILD_RPATH  TRUE)
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+SET(CMAKE_INSTALL_RPATH "")
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
 
 # Include directories
 find_package(fmt REQUIRED)
@@ -27,6 +33,11 @@ include_directories(${ImageMagick_INCLUDE_DIRS})
 add_library({CNAME} SHARED ${MAIN_SOURCES} ${UTIL_SOURCES} ${UTIL_META_SOURCES})
 target_link_libraries({CNAME} PRIVATE ${CMAKE_BINARY_DIR}/../../../../lib/libutils.so)
 target_link_libraries({CNAME} PRIVATE fmt::fmt)
+set_target_properties({CNAME} PROPERTIES
+    INSTALL_RPATH "./lib"
+)
+set_target_properties({CNAME} PROPERTIES LINK_FLAGS "-Wl,-rpath,./lib/")
+
 """
 
 def generate_cmake(cname, directory):
