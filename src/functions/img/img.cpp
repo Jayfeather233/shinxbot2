@@ -97,8 +97,7 @@ void img::del_single(std::string name, int index)
     std::string prefix = "./resource/mt/" + name + "/";
     fs::remove(prefix + std::to_string(index));
     for (uint64_t i = index + 1; i < images[name]; i++) {
-        fs::rename(prefix + std::to_string(i),
-                                prefix + std::to_string(i - 1));
+        fs::rename(prefix + std::to_string(i), prefix + std::to_string(i - 1));
     }
     images[name]--;
     save();
@@ -270,13 +269,22 @@ void img::process(std::string message, const msg_meta &conf)
     }
     if (it2 == images.end() || it2->second == 0)
         return;
+    if (indexs == "all") {
+        std::ostringstream oss;
+        for (size_t i = 0; i < it2->second; ++i) {
+            oss << "[CQ:image,file=file://" << get_local_path()
+                << "/resource/mt/" << name << "/" << i << ",id=40000] ";
+        }
+        conf.p->cq_send(oss.str(), conf);
+        return;
+    }
     int64_t index;
     if (indexs.length() < 1) {
         index = get_random(it2->second) + 1;
     }
     else {
         index = my_string2int64(indexs);
-        if(index == 0){
+        if (index == 0) {
             return;
         }
     }

@@ -3,6 +3,12 @@ cmake_minimum_required(VERSION 3.11)
 project(shinxbot)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../lib)
 
+set(CMAKE_INSTALL_RPATH "./lib")
+SET(CMAKE_SKIP_BUILD_RPATH  TRUE)
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+SET(CMAKE_INSTALL_RPATH "")
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
+
 add_definitions(-DUSE_OPENSSL)
 add_definitions(-DCPPHTTPLIB_OPENSSL_SUPPORT)
 add_definitions( -DMAGICKCORE_QUANTUM_DEPTH=16 )
@@ -59,13 +65,6 @@ endif()
 link_directories(${CMAKE_SOURCE_DIR}/lib)
 add_executable(${PROJECT_NAME} ${BOT_SOURCES} ${META_SOURCES} ${MAIN_SOURCES})
 
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    INSTALL_RPATH "\$ORIGIN/lib"
-    BUILD_WITH_INSTALL_RPATH TRUE
-)
-
-set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-Wl,-rpath,./lib")
-
 target_link_libraries(${PROJECT_NAME} PRIVATE utils)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${ImageMagick_LIBRARIES})
 
@@ -78,3 +77,7 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC -lm)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC -ldl)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${OPENSSL_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} PUBLIC fmt::fmt)
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    INSTALL_RPATH "./lib"
+)
+set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-Wl,-rpath,./lib/")
