@@ -1,81 +1,41 @@
 # shinxBot2
 
-一个基于[Lagrange.Onebot](https://github.com/LagrangeDev/Lagrange.Core)的(多)机器人管理框架，重构自[shinxBot](https://github.com/Jayfeather233/shinxBot)。
+A (multi) bot management framework for Tencent QQ, based on [Lagrange.Onebot](https://github.com/LagrangeDev/Lagrange.Core), restructured from [shinxBot](https://github.com/Jayfeather233/shinxBot).
 
-### 功能支持
+[Documents](./README.md)/[文档](./README_ZH.md)
 
-- 恶臭数字论证器，来源：[itorr](https://github.com/itorr/homo)
+### File Structure
 
-- 来点二次元。来源：[dmoe](https://www.dmoe.cc)
+```plaintext
+./src/functions        # Code for all features
+./src/inc              # Header files for functions
+./src/interfaces       # Interfaces, all functions inherit this class
+./src/utils            # Various utilities
+./lib/functions/       # Dynamic library directory for bot functions
+./lib/events/         # Dynamic library directory for bot events
+```
 
-- 首字母缩写识别，来源：[itorr](https://github.com/itorr/nbnhhsh)
+### Running the Bot
 
-- 在群或私聊中生成一个假的转发信息
+1. Download and extract from Release, then run `shinxbot`.
+2. Clone the repository and execute `docker compose up -d` in the root directory for automatic configuration and compilation into the executable `./build/shinxbot`.
 
-- 来点色图：随机色卡
+   Use `docker exec -it shinx-bot bash` to enter the container terminal and run inside the container.
+3. After compiling on bare metal, run `./build/shinxbot`, see the next section for details.
 
-- 赛博养猫（与 gpt3.5 共同创作）
+Before running, ensure the Onebot 11 standard backend is running, and input the reporting port and API port for the Onebot 11 backend after running `shinxbot`.
 
-- cat image for http code。来源[httpcats](https://httpcats.com/)
+You can use `start.sh` to run shinxbot in the background.
 
-- 图片OCR (qq自带的那个)
+### Compiling from Source
 
-- 图片处理：对称、旋转、万花筒
-
-- openai的 `gpt-3.5-turbo` API支持
-
-- google的 `gemini-pro[-vision]` API支持，[url](https://ai.google.dev/docs)
-
-- StableDiffusion的 `SDXL-Turbo` API支持，[url](https://sdxlturbo.ai/)
-
-- 群友聊天截图保存功能（美图）
-
-- 龙王提醒
-
-- 群成员变动提醒
-
-- 人云亦云（复读）
-
-- 不同群聊，私聊的消息互相转发
-
-- 灰名单管理
-
-- 管理多个bot，并（以后）可以通过广播传递消息
-
-### 文件结构
-
-````
-./src/functions		# 所有功能的代码
-./src/inc			# 功能头文件
-./src/interfaces	# 接口，所有功能继承这个类
-./src/utils			# 一些工具
-./lib/functions/	# bot功能的动态链接库目录
-./lib/events/ 		# bot功能的动态链接库目录
-````
-
-### 运行Bot
-
-1. 从Release中下载并解压，运行`shinxbot`
-
-2. 克隆仓库，于根目录下执行`docker compose up -d`进行容器内自动配置并编译为可执行文件`./build/shinxbot`
-
-   使用`docker exec -it shinx-bot bash`以进入容器终端，在容器内运行
-
-3. 裸机编译后运行`./build/shinxbot`，详见下一节
-
-运行前，请确保Onebot 11标准后端正在运行，运行`shinxbot`后port行请分别输入Onebot 11后端的上报端口及其API端口
-
-可以使用`start.sh`以后台形式运行shinxbot
-
-### 从源码编译
-
-由于包含`base64`子模块，克隆仓库请启用`--recursive`
+Since it includes the `base64` submodule, please enable `--recursive` when cloning the repository.
 
 ```sh
 git clone --recursive git@github.com:Jayfeather233/shinxbot2.git
 ```
 
-本项目依赖以下软件包：
+This project depends on the following packages:
 
 - libcurl
 - openssl-dev / libssl-dev
@@ -84,40 +44,58 @@ git clone --recursive git@github.com:Jayfeather233/shinxbot2.git
 - ImageMagick++ (version 7+)
 - libmagick++-dev
 
-具体安装方式可参考`entrypoint.sh`。
+Refer to `entrypoint.sh` for specific installation methods.
 
-- **Linux**: 执行自动编译脚本`build.sh`
-- **Windows**: 需要更改TCP连接头文件，以及包括但不限于sleep, file:///等操作系统层面差异（未经验证），推荐在容器中运行
+- **Linux**: Execute the automatic compilation script `build.sh`
+- **Windows**: You need to change TCP connection headers and handle OS-level differences such as sleep, file:///, etc. (not verified), recommended to run in a container.
 
-### 添加Bot
+### Adding a Bot
 
-具体实现可以参考`./src/bots`中的`mybot`，是已经接好Onebot 11的类
+You can refer to `mybot` in `./src/bots`, which is a class already connected to Onebot 11.
 
-- 所有bot需要继承`./src/interfaces/bot.h`中的`bot`类
+- All bots must inherit from the `bot` class in `./src/interfaces/bot.h`.
+- Write the sending/receiving ports in `./config/port.txt`.
+- Add `add_new_bot(new yourbot(receive_port[id], send_port[id]));` in `main()` of `./src/main.cpp`.
 
-- 在`./config/port.txt`中写入发送/接收端口
-- 在`./src/main.cpp`的`main()`中加入`add_new_bot(new yourbot(receive_port[id], send_port[id]));`
+### Adding Features
 
-### 添加功能
+Using `class mybot` as an example, the function parameters only relate to messages, and the events accept JSON data. Call methods from functions when receiving chat messages and use methods from events for other prompt messages.
 
-以`class mybot`为例，functions传参仅为消息相关，events传入事件的JSON数据，在收到聊天消息的时候调用 functions 里的方法，在其他提示性消息的时候用 events 的方法。
+1. Create a new directory in `./src/functions`, place your code there, write a class that inherits from the class in `./src/interfaces/processable.h`, implement the virtual methods, and provide a `create` method to obtain a pointer of type `processable*` (see `functions/getJapaneseImage/Anime_Img.cpp` for reference).
+2. If the check() method in the inherited virtual method succeeds, the process() method will be executed.
+3. A CMake template is provided in `generate_cmake.py` to compile your functionality, automatically generating the dynamic library in `./lib/functions/`.
+4. Start the bot. If the bot is running, you can use the admin account (from `op_list.json`) to send `bot.load [function|event] name` to load it.
 
-1. ./src/functions 下新建目录并把代码放入，写一个类继承 `./src/interfaces/processable.h` 中的类并实现virtual方法，并提供`create`方法得到功能`processable*`的指针（可以参考`functions/getJapaneseImage/Anime_Img.cpp`）
+Before running the bot, ensure that the dynamic libraries for functions are placed in `./lib/functions | ./lib/events`, or generate them using `generate_cmake.py & make_all.sh`.
 
-2. 继承的 virtual 方法里只要 check() 成功了就会执行 process() 方法
+### Features Supported
 
-3. 在`generate_cmake.py`中有CMake模版，用其编译你的功能，自动生成动态链接库至`./lib/functions/`
+- Stinky Number Argument Validator, from: [itorr](https://github.com/itorr/homo)
+- Random Anime Images. Source: [dmoe](https://www.dmoe.cc)
+- What's this short for?, from: [itorr](https://github.com/itorr/nbnhhsh)
+- Generate fake forwarding messages in group or private chats
+- Random Color Palette
+- Cyber Cat Raising (co-created with GPT-3.5)
+- Cat image for HTTP code. Source: [httpcats](https://httpcats.com/)
+- Image OCR (embedded with QQ)
+- Image Processing: Symmetry, Rotation, Kaleidoscope
+- OpenAI's `gpt-3.5-turbo` API support
+- Google's `gemini-pro[-vision]` API support, [url](https://ai.google.dev/docs)
+- StableDiffusion's `SDXL-Turbo` API support, [url](https://sdxlturbo.ai/)
+- Memes storage
+- Most Active User Reminders
+- Group member change notifications
+- Echo
+- Forward messages between different group chats and private chats
+- Graylist Management
+- Manage multiple bots, with future capability to broadcast messages
 
-4. 启动bot。如果bot正在运行可以使用管理员账号（`op_list.json`）发送`bot.load [function|event] name` 加载。
+### Tips for Development
 
-在运行bot之前，请确保 `./lib/functions | ./lib/events` 里放入了功能的动态链接库，或者通过 `generate_cmake.py & make_all.sh` 来生成。
+1. If using clang, the `.clang-format` file in the root directory provides automatic formatting settings.
+2. `sender.sh` in `dev_tools` can be used to send messages to shinxbot, while `inspector` captures data sent from shinxbot to go-cqhttp. `inspector` cannot run simultaneously with go-cqhttp. Both serve as equivalents to go-cqhttp, providing convenience for developers unable to run it. (You may need to modify paths in `inspector.cpp` and `sender.sh` to point to the `config` file.)
 
-### 开发提示
-
-1. 如果使用clang,根目录下`.clang-format`为你提供了自动格式化设置
-
-2. `dev_tools`下的`sender.sh`可用于向shinxbot发送信息，`inspector`则截获shinxbot向go-cqhttp发送的数据。`inspector`不能与go-cqhttp同时运行。这两者在功能上等同于go-cqhttp，为无法运行go-cqhttp的开发者提供了便利。（你可能需要更改`inspector.cpp`与`sender.sh`中的相关路径指向`config`文件）
-   例如：
+For example:
 
 ```bash
 bash sender.sh "bot.help"
