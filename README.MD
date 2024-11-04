@@ -1,6 +1,6 @@
 # shinxBot2
 
-A (multi) bot management framework for Tencent QQ, based on [Lagrange.Onebot](https://github.com/LagrangeDev/Lagrange.Core), restructured from [shinxBot](https://github.com/Jayfeather233/shinxBot).
+A bot framework based on [Lagrange.Onebot](https://github.com/LagrangeDev/Lagrange.Core), restructured from [shinxBot](https://github.com/Jayfeather233/shinxBot).
 
 [Documents](./README.md)/[文档](./README_ZH.md)
 
@@ -12,18 +12,35 @@ A (multi) bot management framework for Tencent QQ, based on [Lagrange.Onebot](ht
 ./src/interfaces       # Interfaces, all functions inherit this class
 ./src/utils            # Various utilities
 ./lib/functions/       # Dynamic library directory for bot functions
-./lib/events/         # Dynamic library directory for bot events
+./lib/events/          # Dynamic library directory for bot events
 ```
 
 ### Running the Bot
 
+This project depends on the following packages:
+
+- openssl-dev / libssl-dev
+- libjsoncpp
+- libzip
+- ImageMagick++ (version 7+)
+- libmagick++-dev
+- libfmt-dev (version 8+)
+
+For methods other than running with Docker, please install dependencies first. For specific installation methods, refer to `entrypoint.sh`.
+
+Here are three ways to run the bot (direct execution is not recommended due to potential version inconsistencies of dependency libraries):
+
 1. Download and extract from Release, then run `shinxbot`.
-2. Clone the repository and execute `docker compose up -d` in the root directory for automatic configuration and compilation into the executable `./build/shinxbot`.
+
+2. Clone the repository and execute `docker compose up -d` in the root directory for automatic configuration and compilation into the executable `./shinxbot`.
 
    Use `docker exec -it shinx-bot bash` to enter the container terminal and run inside the container.
-3. After compiling on bare metal, run `./build/shinxbot`, see the next section for details.
+   
+   This method does not compile functions; refer to the **Compiling from Source** section to compile features.
 
-Before running, ensure the Onebot 11 standard backend is running, and input the reporting port and API port for the Onebot 11 backend after running `shinxbot`.
+3. After compiling on bare metal, run `./shinxbot`. See the next section for details.
+
+Before running, ensure the Onebot 11 standard backend is running. After running `shinxbot`, input the reporting port and API port for the Onebot 11 backend.
 
 You can use `start.sh` to run shinxbot in the background.
 
@@ -35,31 +52,29 @@ Since it includes the `base64` submodule, please enable `--recursive` when cloni
 git clone --recursive git@github.com:Jayfeather233/shinxbot2.git
 ```
 
-This project depends on the following packages:
+- **Linux**: Execute the automatic compilation script `build.sh` (`build.sh main` builds everything by default; `build.sh simple` skips rebuilding libutils).
+- **Windows**: You need to change TCP connection headers and handle OS-level differences such as sleep, file:///, etc. (not verified); running in a container is recommended.
 
-- libcurl
-- openssl-dev / libssl-dev
-- libjsoncpp
-- libzip
-- ImageMagick++ (version 7+)
-- libmagick++-dev
+Note: This only compiles the bot framework. Specific features must be compiled from the code in `./src/[functions|events]`:
 
-Refer to `entrypoint.sh` for specific installation methods.
+To compile all features, navigate to `./src/[functions|events]`, run `python generate_cmake.py` to generate CMakeLists.txt templates for each feature, and then run `bash ./make_all.sh` to compile all features.
 
-- **Linux**: Execute the automatic compilation script `build.sh`
-- **Windows**: You need to change TCP connection headers and handle OS-level differences such as sleep, file:///, etc. (not verified), recommended to run in a container.
+### Connecting Other Bot Backends
 
-### Adding a Bot
+It is not supported to add multiple bots in one program; please clone another copy.
 
-You can refer to `mybot` in `./src/bots`, which is a class already connected to Onebot 11.
+You can refer to `shinxbot` in `./src/bots`, which is a class already connected to Onebot 11.
 
-- All bots must inherit from the `bot` class in `./src/interfaces/bot.h`.
-- Write the sending/receiving ports in `./config/port.txt`.
-- Add `add_new_bot(new yourbot(receive_port[id], send_port[id]));` in `main()` of `./src/main.cpp`.
+- The bot must inherit from the `bot` class in `./src/interfaces/bot.h`.
+- Write the new bot's sending/receiving ports in `./config/port.txt`.
 
 ### Adding Features
 
-Using `class mybot` as an example, the function parameters only relate to messages, and the events accept JSON data. Call methods from functions when receiving chat messages and use methods from events for other prompt messages.
+You can refer to a minimal development module: [shinxbot2_dev_module](https://github.com/Jayfeather233/shinxbot2_dev_module).
+
+If developing on the code from this repository, ensure you have generated `libutils.so` with `./build.sh`.
+
+Using `class shinxbot` as an example, function parameters are only related to messages, and events accept JSON data. Call methods from functions when receiving chat messages and use methods from events for other prompt messages.
 
 1. Create a new directory in `./src/functions`, place your code there, write a class that inherits from the class in `./src/interfaces/processable.h`, implement the virtual methods, and provide a `create` method to obtain a pointer of type `processable*` (see `functions/getJapaneseImage/Anime_Img.cpp` for reference).
 2. If the check() method in the inherited virtual method succeeds, the process() method will be executed.
@@ -67,6 +82,10 @@ Using `class mybot` as an example, the function parameters only relate to messag
 4. Start the bot. If the bot is running, you can use the admin account (from `op_list.json`) to send `bot.load [function|event] name` to load it.
 
 Before running the bot, ensure that the dynamic libraries for functions are placed in `./lib/functions | ./lib/events`, or generate them using `generate_cmake.py & make_all.sh`.
+
+When the bot loads a library, it will call `extern "C" processable *create()` to obtain the function pointer. Generally, just returning `new YourFunc()` is sufficient.
+
+When the bot unloads a library, it will call `extern "C" processable *close(processable* p)` to indicate that the library needs to be unloaded. Please properly release all globally `new` obtained pointers, including the parameter `p`.
 
 ### Features Supported
 
@@ -93,10 +112,18 @@ Before running the bot, ensure that the dynamic libraries for functions are plac
 ### Tips for Development
 
 1. If using clang, the `.clang-format` file in the root directory provides automatic formatting settings.
-2. `sender.sh` in `dev_tools` can be used to send messages to shinxbot, while `inspector` captures data sent from shinxbot to go-cqhttp. `inspector` cannot run simultaneously with go-cqhttp. Both serve as equivalents to go-cqhttp, providing convenience for developers unable to run it. (You may need to modify paths in `inspector.cpp` and `sender.sh` to point to the `config` file.)
-
-For example:
+2. `sender.sh` in `dev_tools` can be used to send messages to shinxbot, while `inspector` captures data sent from shinxbot to Onebot 11. `inspector` cannot run simultaneously with Onebot 11. Both serve as equivalents to Onebot 11, providing convenience for developers unable to run it. (You may need to modify paths in `inspector.cpp` and `sender.sh` to point to the `config` file.)
+   
+   For example:
 
 ```bash
 bash sender.sh "bot.help"
 ```
+
+## License
+
+This project is licensed under the [LGPLv3](./LICENSE). If you modify the code of this project, you should also use the LGPL license.
+
+### Add-on Policy
+
+For functionalities that simply write a function/event without modifying the code of this project, any license may be used.
