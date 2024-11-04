@@ -1,22 +1,24 @@
 #include "bot.h"
-#include <ctime>
 #include <chrono>
+#include <ctime>
 #include <iomanip>
 #include <iostream>
+#include <fmt/core.h>
 
 std::string LOG_name[3] = {"INFO", "WARNING", "ERROR"};
 
-void set_global_log(LOG type, std::string message){
+void set_global_log(LOG type, std::string message)
+{
     std::time_t nt =
         std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    tm tt = *localtime(&nt);
-    std::ostringstream oss;
-    oss << "[" << std::setw(2) << std::setfill('0') << tt.tm_hour << ":"
-        << std::setw(2) << std::setfill('0') << tt.tm_min << ":" << std::setw(2)
-        << std::setfill('0') << tt.tm_sec << "][" << LOG_name[type] << "] "
-        << message << std::endl;
+    tm tt = *std::localtime(&nt);
+
+    std::string formatted_message =
+        fmt::format("[{:02}:{:02}:{:02}][{}] {}\n", tt.tm_hour, tt.tm_min,
+                    tt.tm_sec, LOG_name[type], message);
+
     if (type == LOG::ERROR)
-        std::cerr << oss.str();
+        fmt::print(stderr, formatted_message);
     else
-        std::cout << oss.str();
+        fmt::print(formatted_message);
 }

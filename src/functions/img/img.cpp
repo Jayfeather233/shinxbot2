@@ -45,7 +45,7 @@ void img::save()
     writefile("./config/img.json", J.toStyledString());
 }
 
-void img::belong_to(std::string name, uint64_t group_id)
+void img::belong_to(std::string name, groupid_t group_id)
 {
     if (group_id == 0)
         return;
@@ -61,7 +61,7 @@ void img::belong_to(std::string name, uint64_t group_id)
     }
 }
 
-int img::add_image(std::string name, std::string image, uint64_t group_id)
+int img::add_image(std::string name, std::string image, groupid_t group_id)
 {
     int cnt = 0;
     size_t index = -1;
@@ -88,17 +88,16 @@ int img::add_image(std::string name, std::string image, uint64_t group_id)
 
 void img::del_all(std::string name)
 {
-    std::filesystem::remove_all("./resource/mt/" + name);
+    fs::remove_all("./resource/mt/" + name);
     images[name] = 0;
     save();
 }
 void img::del_single(std::string name, int index)
 {
     std::string prefix = "./resource/mt/" + name + "/";
-    std::filesystem::remove(prefix + std::to_string(index));
+    fs::remove(prefix + std::to_string(index));
     for (uint64_t i = index + 1; i < images[name]; i++) {
-        std::filesystem::rename(prefix + std::to_string(i),
-                                prefix + std::to_string(i - 1));
+        fs::rename(prefix + std::to_string(i), prefix + std::to_string(i - 1));
     }
     images[name]--;
     save();
@@ -270,12 +269,24 @@ void img::process(std::string message, const msg_meta &conf)
     }
     if (it2 == images.end() || it2->second == 0)
         return;
+    if (indexs == "all") {
+        std::ostringstream oss;
+        for (size_t i = 0; i < it2->second; ++i) {
+            oss << "[CQ:image,file=file://" << get_local_path()
+                << "/resource/mt/" << name << "/" << i << ",id=40000] ";
+        }
+        conf.p->cq_send(oss.str(), conf);
+        return;
+    }
     int64_t index;
     if (indexs.length() < 1) {
         index = get_random(it2->second) + 1;
     }
     else {
         index = my_string2int64(indexs);
+        if (index == 0) {
+            return;
+        }
     }
     index--;
     if (index < 0 || index >= it2->second) {
@@ -295,10 +306,9 @@ void img::process(std::string message, const msg_meta &conf)
 bool img::check(std::string message, const msg_meta &conf) { return true; }
 std::string img::help() { return "美图： 美图 帮助 - 列出所有美图命令"; }
 
-void img::set_backup_files(archivist *p) {
-    p->add_path("./resource/mt/", "resource");
+void img::set_backup_files(archivist *p, const std::string &name)
+{
+    p->add_path(name, "./resource/mt/", "resource");
 }
 
-extern "C" processable* create() {
-    return new img();
-}
+DECLARE_FACTORY_FUNCTIONS(img)

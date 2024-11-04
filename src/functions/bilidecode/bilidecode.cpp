@@ -85,13 +85,13 @@ bool bili_decode::check(Json::Value message, const msg_meta &conf)
 Json::Value bili_decode::get_raw_info(uint64_t aid)
 {
     return string_to_json(
-        do_get("https://api.bilibili.com/x/web-interface/view?aid=" +
-               std::to_string(aid)));
+        do_get("https://api.bilibili.com",
+               "/x/web-interface/view?aid=" + std::to_string(aid), false));
 }
 Json::Value bili_decode::get_raw_info(std::string bvid)
 {
-    return string_to_json(
-        do_get("https://api.bilibili.com/x/web-interface/view?bvid=" + bvid));
+    return string_to_json(do_get("https://api.bilibili.com",
+                                 "/x/web-interface/view?bvid=" + bvid, false));
 }
 std::string bili_decode::get_decode_info(const Json::Value &raw_info)
 {
@@ -205,6 +205,4 @@ bool bili_decode::check(std::string message, const msg_meta &conf)
     return true;
 }
 
-extern "C" processable* create() {
-    return new bili_decode();
-}
+DECLARE_FACTORY_FUNCTIONS(bili_decode)

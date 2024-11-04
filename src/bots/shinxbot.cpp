@@ -1,10 +1,11 @@
-#include "mybot.hpp"
+#include "shinxbot.hpp"
 #include "dynamic_lib.hpp"
 
 #include <algorithm>
 #include <arpa/inet.h>
 #include <csignal>
 #include <filesystem>
+#include <httplib.h>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -12,135 +13,94 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <thread>
+#include <fmt/core.h>
 
-namespace fs = std::filesystem;
+namespace fs = fs;
 
-void mybot::read_server_message(int new_socket)
+void shinxbot::read_server_message(int new_socket) {}
+int shinxbot::start_server()
 {
-    char buffer[4096];
-    try {
-        std::string s_buffer;
-        int valread;
-        while (1) {
-            valread = read(new_socket, buffer, 4000);
-            if (valread < 0) {
-                break;
-            }
-            for (int i = 1; i < valread; ++i) {
-                if (buffer[i] == 'r' && buffer[i - 1] == '\\') {
-                    buffer[i] = 'n';
-                }
-            }
-            buffer[valread] = 0;
-            s_buffer += buffer;
-            if (valread < 4000) {
-                break;
-            }
-        }
-        if (valread == -1) {
-            setlog(LOG::ERROR, "Error read message.");
-        }
+    httplib::Server svr;
 
-        std::istringstream iss(s_buffer);
-        std::string msg, line;
-        bool flg = false;
-        while (std::getline(iss, line)) {
-            if (line[0] == '{') {
-                flg = true;
-            }
-            if (flg)
-                msg += line;
-        }
-        std::string *u = new std::string(msg);
-        std::thread(&mybot::input_process, this, u).detach();
+    svr.Post("/", [&](const httplib::Request &req, httplib::Response &res) {
+        std::string s_buffer = req.body;
+        std::thread([this, s_buffer]() {
+            std::string *u = new std::string(s_buffer);
+            input_process(u);
+        }).detach();
 
-        std::stringstream response_body;
-        response_body << "HTTP/1.1 200 OK\r\n"
-                         "Content-Length: 0\r\n"
-                         "Content-Type: application/json\r\n\r\n";
-        std::string response = response_body.str();
-        const char *response_cstr = response.c_str();
-        send(new_socket, response_cstr, strlen(response_cstr), 0);
-    }
-    catch (...) {
-    }
-    close(new_socket);
+        res.set_content("{}", "application/json");
+    });
+
+    fmt::print("Server is starting on port {}...", receive_port);
+    return svr.listen("0.0.0.0", receive_port);
 }
 
-int mybot::start_server()
+void shinxbot::refresh_log_stream()
 {
-    int server_fd, new_socket;
-    struct sockaddr_in address;
-    int addrlen = sizeof(address);
+    std::time_t nt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    tm tt = *std::localtime(&nt);
 
-    // Create server socket
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-        setlog(LOG::ERROR, "Error creating socket");
-        return 1;
-    }
+    std::string formatted_log = fmt::format("./log/{}/{:04}_{:02}_{:02}", 
+                                            botqq, 
+                                            tt.tm_year + 1900, 
+                                            tt.tm_mon + 1, 
+                                            tt.tm_mday);
 
-    // Set socket options
-    int opt = 1;
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
-                   sizeof(opt))) {
-        setlog(LOG::ERROR, "Error setting socket options");
-        return 1;
-    }
-
-    // Set server address and bind to socket
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(receive_port);
-    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
-        setlog(LOG::ERROR, "Error binding to socket");
-        return 1;
-    }
-
-    // Listen for incoming connections
-    if (listen(server_fd, 3) < 0) {
-        setlog(LOG::ERROR, "Error listening for connections");
-        return 1;
-    }
-
-    // Accept incoming connections and handle requests
-    while (bot_is_on) {
-        if ((new_socket = accept(server_fd, (struct sockaddr *)&address,
-                                 (socklen_t *)&addrlen)) < 0) {
-            setlog(LOG::ERROR, "Error accepting connection");
-            continue;
-        }
-        read_server_message(new_socket);
-    }
-    return 0;
-}
-void mybot::log_init()
-{
-    std::ostringstream oss;
-    std::time_t nt =
-        std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    tm tt = *std::localtime(
-        &nt); // No need to delete according to
-              // [stackoverflow](https://stackoverflow.com/questions/64854691/do-i-need-to-delete-the-pointer-returned-by-stdlocaltime)
-              // (?)
-
-    oss << "./log/" << botqq << "/" << tt.tm_year + 1900 << '_' << std::setw(2)
-        << std::setfill('0') << tt.tm_mon + 1 << '_' << std::setw(2)
-        << std::setfill('0') << tt.tm_mday;
-
-    if (!std::filesystem::exists(oss.str().c_str())) {
-        std::filesystem::create_directories(oss.str().c_str());
+    if (!fs::exists(formatted_log.c_str())) {
+        fs::create_directories(formatted_log.c_str());
     }
     for (int i = 0; i < 3; i++) {
         if (LOG_output[i].is_open()) {
             LOG_output[i].close();
         }
     }
-    LOG_output[0] = std::ofstream(oss.str() + "/info.log", std::ios_base::app);
-    LOG_output[1] = std::ofstream(oss.str() + "/warn.log", std::ios_base::app);
-    LOG_output[2] = std::ofstream(oss.str() + "/erro.log", std::ios_base::app);
+    LOG_output[0] = std::ofstream(formatted_log + "/info.log", std::ios_base::app);
+    LOG_output[1] = std::ofstream(formatted_log + "/warn.log", std::ios_base::app);
+    LOG_output[2] = std::ofstream(formatted_log + "/erro.log", std::ios_base::app);
 }
 
-void mybot::init()
+template <typename T> void close_dl(void *handle, T *p)
+{
+    typedef void (*close_t)(T *);
+    close_t closex = (close_t)dlsym(handle, "destroy_t");
+    const char *dlsym_error = dlerror();
+    if (dlsym_error) {
+        set_global_log(LOG::WARNING,
+                       std::string("Cannot load symbol 'destroy_t': ") +
+                           dlsym_error);
+        // delete p; // This is not always safe
+    }
+    else {
+        closex(p);
+    }
+    dlclose(handle);
+}
+
+void shinxbot::unload_func(std::tuple<processable *, void *, std::string> &f)
+{
+    this->mytimer->remove_callback(std::get<2>(f));
+    this->archive->remove_path(std::get<2>(f));
+
+    close_dl(std::get<1>(f), std::get<0>(f));
+}
+void shinxbot::unload_func(std::tuple<eventprocess *, void *, std::string> &f)
+{
+    this->mytimer->remove_callback(std::get<2>(f));
+    this->archive->remove_path(std::get<2>(f));
+    close_dl(std::get<1>(f), std::get<0>(f));
+}
+
+void shinxbot::init_func(const std::string &name, processable *p)
+{
+    p->set_callback([&](std::function<void(bot * p)> func) {
+        this->mytimer->add_callback(name, func);
+    });
+    p->set_backup_files(this->archive, name);
+}
+void shinxbot::init_func(const std::string &name, eventprocess *p) {}
+
+void shinxbot::init()
 {
     for (;;) {
         try {
@@ -154,7 +114,7 @@ void mybot::init()
     }
     std::cout << "botqq:" << botqq << std::endl;
 
-    log_init();
+    refresh_log_stream();
 
     Json::Value J_op = string_to_json(readfile("./config/op_list.json", "[]"));
     parse_json_to_set(J_op, op_list);
@@ -170,24 +130,24 @@ void mybot::init()
 
     recorder = new heartBeat(rec_list);
     for (auto px : functions) {
-        processable *p = std::get<0>(px);
-        p->set_callback([this](std::function<void(bot * p)> func) {
-            this->mytimer->add_callback(func);
-        });
-        p->set_backup_files(this->archive);
+        init_func(std::get<2>(px), std::get<0>(px));
     }
-    this->archive->add_path("./config");
+    for (auto px : events) {
+        init_func(std::get<2>(px), std::get<0>(px));
+    }
+    this->archive->add_path("MAIN", "./config");
     this->archive->set_default_pwd(std::to_string(this->botqq));
 }
 
-mybot::mybot(int recv_port, int send_port) : bot(recv_port, send_port) {}
+shinxbot::shinxbot(int recv_port, int send_port) : bot(recv_port, send_port) {}
+shinxbot::shinxbot(const Json::Value &J) : bot(J["recv_port"].asInt(), J["send_port"].asInt()) {}
 
-bool mybot::is_op(const uint64_t a) const
+bool shinxbot::is_op(const userid_t a) const
 {
     return op_list.find(a) != op_list.end();
 }
 
-bool mybot::meta_func(std::string message, const msg_meta &conf)
+bool shinxbot::meta_func(std::string message, const msg_meta &conf)
 {
     if (message == "bot.help") {
         std::string help_message;
@@ -217,9 +177,14 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
         tm tt = *localtime(&nt);
         std::ostringstream oss;
         oss << "./backup/" << std::put_time(&tt, "%Y-%m-%d_%H-%M-%S") << ".zip";
+
+        if (!fs::exists("./backup")) {
+            fs::create_directories("./backup");
+        }
+
         this->archive->make_archive(oss.str());
 
-        std::string filepa = std::filesystem::absolute(oss.str()).string();
+        std::string filepa = fs::absolute(oss.str()).string();
         if (conf.message_type == "private") {
             send_file_private(conf.p, conf.user_id, filepa);
         }
@@ -230,68 +195,85 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
     }
     else if (message.find("bot.load") == 0 && is_op(conf.user_id)) {
         std::istringstream iss(message.substr(8));
+        std::ostringstream oss;
+        bool flg = true;
         std::string type, name;
-        iss >> type >> name;
+        iss >> type;
         if (type == "function") {
-            for (size_t i = 0; i < functions.size(); ++i) {
-                if (std::get<2>(functions[i]) == name) {
-                    delete std::get<0>(functions[i]);
-                    dlclose(std::get<1>(functions[i]));
+            while (iss >> name) {
+                for (size_t i = 0; i < functions.size(); ++i) {
+                    if (std::get<2>(functions[i]) == name) {
+                        unload_func(functions[i]);
 
-                    auto u = load_function<processable>("./lib/functions/lib" +
-                                                        name + ".so");
-                    if (u.first != nullptr) {
-                        std::get<0>(functions[i]) = u.first;
-                        std::get<1>(functions[i]) = u.second;
-                        cq_send("reload " + name, conf);
+                        auto u = load_function<processable>(
+                            "./lib/functions/lib" + name + ".so");
+                        if (u.first != nullptr) {
+                            std::get<0>(functions[i]) = u.first;
+                            std::get<1>(functions[i]) = u.second;
+                            init_func(name, u.first);
+                            oss << "reload " << name << std::endl;
+                        }
+                        else {
+                            functions.erase(functions.begin() + i);
+                            oss << "load " << name << " failed" << std::endl;
+                        }
+                        flg = false;
+                        break;
                     }
-                    else {
-                        functions.erase(functions.begin() + i);
-                        cq_send("load " + name + " failed", conf);
-                    }
-                    return false;
                 }
             }
-            auto u = load_function<processable>("./lib/functions/lib" + name +
-                                                ".so");
-            if (u.first != nullptr) {
-                functions.push_back(std::make_tuple(u.first, u.second, name));
-                cq_send("load " + name, conf);
+            if (flg) {
+                auto u = load_function<processable>("./lib/functions/lib" +
+                                                    name + ".so");
+                if (u.first != nullptr) {
+                    functions.push_back(
+                        std::make_tuple(u.first, u.second, name));
+                    init_func(name, u.first);
+                    oss << "load " << name << std::endl;
+                }
+                else {
+                    oss << "load " << name << " failed" << std::endl;
+                }
             }
-            else {
-                cq_send("load " + name + " failed", conf);
-            }
+            cq_send(trim(oss.str()), conf);
             return false;
         }
         else if (type == "event") {
-            for (size_t i = 0; i < events.size(); ++i) {
-                if (std::get<2>(events[i]) == name) {
-                    delete std::get<0>(events[i]);
-                    dlclose(std::get<1>(events[i]));
+            while (iss >> name) {
+                for (size_t i = 0; i < events.size(); ++i) {
+                    if (std::get<2>(events[i]) == name) {
+                        unload_func(events[i]);
 
-                    auto u = load_function<eventprocess>("./lib/events/lib" +
-                                                         name + ".so");
-                    if (u.first != nullptr) {
-                        std::get<0>(events[i]) = u.first;
-                        std::get<1>(events[i]) = u.second;
-                        cq_send("reload " + name, conf);
+                        auto u = load_function<eventprocess>(
+                            "./lib/events/lib" + name + ".so");
+                        if (u.first != nullptr) {
+                            std::get<0>(events[i]) = u.first;
+                            std::get<1>(events[i]) = u.second;
+                            init_func(name, u.first);
+                            oss << "reload " << name << std::endl;
+                        }
+                        else {
+                            events.erase(events.begin() + i);
+                            oss << "load " << name << " failed" << std::endl;
+                        }
+                        flg = false;
+                        break;
                     }
-                    else {
-                        events.erase(events.begin() + i);
-                        cq_send("load " + name + " failed", conf);
-                    }
-                    return false;
                 }
             }
-            auto u =
-                load_function<eventprocess>("./lib/events/lib" + name + ".so");
-            if (u.first != nullptr) {
-                events.push_back(std::make_tuple(u.first, u.second, name));
-                cq_send("load " + name, conf);
+            if (flg) {
+                auto u = load_function<eventprocess>("./lib/events/lib" + name +
+                                                     ".so");
+                if (u.first != nullptr) {
+                    events.push_back(std::make_tuple(u.first, u.second, name));
+                    init_func(name, u.first);
+                    oss << "load " << name << std::endl;
+                }
+                else {
+                    oss << "load " << name << " failed" << std::endl;
+                }
             }
-            else {
-                cq_send("load " + name + " failed", conf);
-            }
+            cq_send(trim(oss.str()), conf);
             return false;
         }
         else {
@@ -314,32 +296,43 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
     }
     else if (message.find("bot.unload") == 0 && is_op(conf.user_id)) {
         std::istringstream iss(message.substr(10));
+        std::ostringstream oss;
         std::string type, name;
-        iss >> type >> name;
+        iss >> type;
         if (type == "function") {
-            for (size_t i = 0; i < functions.size(); ++i) {
-                if (std::get<2>(functions[i]) == name) {
-                    delete std::get<0>(functions[i]);
-                    dlclose(std::get<1>(functions[i]));
-                    functions.erase(functions.begin() + i);
-                    cq_send("unload " + name, conf);
-                    return false;
+            while (iss >> name) {
+                bool flg = true;
+                for (size_t i = 0; i < functions.size(); ++i) {
+                    if (std::get<2>(functions[i]) == name) {
+                        unload_func(functions[i]);
+                        functions.erase(functions.begin() + i);
+                        oss << "unload " << name << std::endl;
+                        flg = false;
+                        break;
+                    }
                 }
+                if (flg)
+                    oss << name << " not found" << std::endl;
             }
-            cq_send(name + " not found", conf);
+            cq_send(trim(oss.str()), conf);
             return false;
         }
         else if (type == "event") {
-            for (size_t i = 0; i < events.size(); ++i) {
-                if (std::get<2>(events[i]) == name) {
-                    delete std::get<0>(events[i]);
-                    dlclose(std::get<1>(events[i]));
-                    events.erase(events.begin() + i);
-                    cq_send("unload " + name, conf);
-                    return false;
+            while (iss >> name) {
+                bool flg = true;
+                for (size_t i = 0; i < events.size(); ++i) {
+                    if (std::get<2>(events[i]) == name) {
+                        unload_func(events[i]);
+                        events.erase(events.begin() + i);
+                        oss << "unload " << name << std::endl;
+                        flg = false;
+                        break;
+                    }
                 }
+                if (flg)
+                    oss << name << " not found" << std::endl;
             }
-            cq_send(name + " not found", conf);
+            cq_send(trim(oss.str()), conf);
             return false;
         }
         else {
@@ -351,7 +344,7 @@ bool mybot::meta_func(std::string message, const msg_meta &conf)
         return true;
 }
 
-void mybot::input_process(std::string *input)
+void shinxbot::input_process(std::string *input)
 {
     if (*input == "") {
         delete input;
@@ -375,6 +368,12 @@ void mybot::input_process(std::string *input)
             if (J["message"].isArray()) {
                 messageArr = J["message"];
             }
+            else if (J["message"].isString()) {
+                Json::Value jj;
+                jj["type"] = "text";
+                jj["data"]["text"] = J["message"];
+                messageArr.append(jj);
+            }
             else {
                 messageArr.append(J["message"]);
             }
@@ -382,7 +381,8 @@ void mybot::input_process(std::string *input)
             int64_t message_id = J["message_id"].asInt64();
             std::string message_type = J["message_type"].asString();
             if (message_type == "group" || message_type == "private") {
-                uint64_t user_id = 0, group_id = 0;
+                userid_t user_id = 0;
+                groupid_t group_id = 0;
                 if (J.isMember("group_id")) {
                     group_id = J["group_id"].asUInt64();
                 }
@@ -439,7 +439,7 @@ void mybot::input_process(std::string *input)
     }
 }
 
-void mybot::run()
+void shinxbot::run()
 {
     this->mytimer =
         new Timer(std::chrono::milliseconds(500), this); // smallest time: 1s
@@ -459,17 +459,20 @@ void mybot::run()
                         filename = filename.substr(0, filename.length() - 3);
                         functions.push_back(std::make_tuple(
                             result.first, result.second, filename));
-                        setlog(LOG::INFO, "Loaded function: " + filename);
+                        set_global_log(LOG::INFO,
+                                       "Loaded function: " + filename);
                     }
                     else
-                        std::cerr << "Error while loading function:"
-                                  << filename;
+                        set_global_log(LOG::ERROR,
+                                       "Error while loading function:" +
+                                           filename);
                 }
             }
         }
     }
     catch (const fs::filesystem_error &ex) {
-        std::cerr << "Error accessing directory: " << ex.what() << std::endl;
+        set_global_log(LOG::ERROR,
+                       std::string("Error accessing directory: ") + ex.what());
     }
 
     try {
@@ -489,25 +492,21 @@ void mybot::run()
                         setlog(LOG::INFO, "Loaded event: " + filename);
                     }
                     else
-                        std::cerr << "Error while loading function:"
-                                  << filename;
+                        set_global_log(LOG::ERROR,
+                                       "Error while loading function:" +
+                                           filename);
                 }
             }
         }
     }
     catch (const fs::filesystem_error &ex) {
-        std::cerr << "Error accessing directory: " << ex.what() << std::endl;
+        set_global_log(LOG::ERROR,
+                       std::string("Error accessing directory: ") + ex.what());
     }
 
     this->init();
 
-    msg_meta start_msg_conf;
-    start_msg_conf.message_type = "private";
-
-    for (uint64_t ops : op_list) {
-        start_msg_conf.user_id = ops;
-        this->cq_send("Love you!", start_msg_conf);
-    }
+    cq_send_all_op("Love you!");
     std::thread(&heartBeat::run, recorder).detach();
 
     this->mytimer->timer_start();
@@ -526,7 +525,7 @@ void mybot::run()
     events.clear();
 }
 
-void mybot::setlog(LOG type, std::string message)
+void shinxbot::setlog(LOG type, std::string message)
 {
     std::lock_guard<std::mutex> lock(log_lock);
 
@@ -538,27 +537,37 @@ void mybot::setlog(LOG type, std::string message)
           tt.tm_mon == last_getlog.tm_mon &&
           tt.tm_mday == last_getlog.tm_mday)) {
         last_getlog = tt;
-        this->log_init();
+        this->refresh_log_stream();
     }
 
-    std::ostringstream oss;
-    oss << "[" << std::setw(2) << std::setfill('0') << tt.tm_hour << ":"
-        << std::setw(2) << std::setfill('0') << tt.tm_min << ":" << std::setw(2)
-        << std::setfill('0') << tt.tm_sec << "][" << LOG_name[type] << "] "
-        << message << std::endl;
+    std::string formatted_message =
+        fmt::format("[{:02}:{:02}:{:02}][{}] {}\n", tt.tm_hour, tt.tm_min,
+                    tt.tm_sec, LOG_name[type], message);
 
     if (type == LOG::ERROR)
-        std::cerr << oss.str();
+        fmt::print(stderr, formatted_message);
     else
-        std::cout << oss.str();
-    LOG_output[type] << oss.str();
+        fmt::print(formatted_message);
+    LOG_output[type] << formatted_message;
     LOG_output[type].flush();
 }
 
-mybot::~mybot()
+void shinxbot::cq_send_all_op(const std::string &u)
+{
+    msg_meta conf = (msg_meta){"private", 0, 0, 0, this};
+    for (userid_t uid : op_list) {
+        conf.user_id = uid;
+        cq_send(u, conf);
+    }
+}
+
+shinxbot::~shinxbot()
 {
     bot_is_on = false;
     this->mytimer->timer_stop();
+    delete this->mytimer;
+    delete this->archive;
+    delete this->recorder;
 
     for (auto ux : functions) {
         delete std::get<0>(ux);

@@ -14,10 +14,10 @@ forwarder::forwarder()
     Json::Value J = string_to_json(readfile("./config/forwarder.json", "[]"));
     for (Json::Value j : J) {
         point_t from, to;
-        from = std::make_pair<uint64_t, uint64_t>(j["from"]["group_id"].asUInt64(),
-                                                j["from"]["user_id"].asUInt64());
-        to = std::make_pair<uint64_t, uint64_t>(j["to"]["group_id"].asUInt64(),
-                                              j["to"]["user_id"].asUInt64());
+        from = std::make_pair<groupid_t, userid_t>(
+            j["from"]["group_id"].asUInt64(), j["from"]["user_id"].asUInt64());
+        to = std::make_pair<groupid_t, userid_t>(j["to"]["group_id"].asUInt64(),
+                                                 j["to"]["user_id"].asUInt64());
         forward_set.insert(std::make_pair(from, to));
     }
 }
@@ -44,7 +44,8 @@ size_t forwarder::configure(std::string message, const msg_meta &conf)
         point_t from, to;
         iss >> from.first >> from.second >> to.first >> to.second;
         if (conf.p->is_op(conf.user_id) ||
-            ((from.first == 0 || is_group_op(conf.p, from.first, conf.user_id)) &&
+            ((from.first == 0 ||
+              is_group_op(conf.p, from.first, conf.user_id)) &&
              ((to.first == 0 && to.second == conf.user_id) ||
               (to.first == conf.group_id &&
                is_group_op(conf.p, conf.group_id, conf.user_id))))) {
@@ -59,7 +60,8 @@ size_t forwarder::configure(std::string message, const msg_meta &conf)
         point_t from, to;
         iss >> from.first >> from.second >> to.first >> to.second;
         if (conf.p->is_op(conf.user_id) ||
-            ((from.first == 0 || is_group_op(conf.p, from.first, conf.user_id)) &&
+            ((from.first == 0 ||
+              is_group_op(conf.p, from.first, conf.user_id)) &&
              ((to.first == 0 && to.second == conf.user_id) ||
               (to.first == conf.group_id &&
                is_group_op(conf.p, conf.group_id, conf.user_id))))) {
@@ -112,15 +114,17 @@ void forwarder::process(std::string message, const msg_meta &conf)
             if (!flg && it.first.first != 0) {
                 Json::Value qst;
                 qst["group_id"] = it.first.first;
-                group_name = string_to_json(conf.p->cq_send(
-                    "get_group_info", qst))["data"]["group_name"]
-                                 .asString();
+                qst = string_to_json(conf.p->cq_send("get_group_info", qst));
+                if (qst["data"].isNull())
+                    group_name = "";
+                else
+                    group_name = qst["data"]["group_name"].asString();
                 flg = true;
             }
-            user_name = get_username(conf.p, conf.user_id, conf.group_id) + "(" +
-                        std::to_string(conf.user_id) + "): ";
+            user_name = get_username(conf.p, conf.user_id, conf.group_id) +
+                        "(" + std::to_string(conf.user_id) + "): ";
             all_msg = it.first.first == 0 ? user_name
-                                           : (group_name + " " + user_name);
+                                          : (group_name + " " + user_name);
 
             if (is_full_msg(message)) {
                 Json::Value Ja;
@@ -130,16 +134,15 @@ void forwarder::process(std::string message, const msg_meta &conf)
                 Ja.append(J2);
                 if (it.second.first == 0) {
                     conf.p->cq_send(
-                        all_msg,
-                        (msg_meta){"private", it.second.second, 0, 0});
+                        all_msg, (msg_meta){"private", it.second.second, 0, 0});
                     Json::Value J;
                     J["user_id"] = it.second.second;
                     J["messages"] = Ja;
                     conf.p->cq_send("send_private_forward_msg", J);
                 }
                 else {
-                    conf.p->cq_send(
-                        all_msg, (msg_meta){"group", 0, it.second.first, 0});
+                    conf.p->cq_send(all_msg,
+                                    (msg_meta){"group", 0, it.second.first, 0});
                     Json::Value J;
                     J["group_id"] = it.second.first;
                     J["messages"] = Ja;
@@ -153,9 +156,8 @@ void forwarder::process(std::string message, const msg_meta &conf)
                         (msg_meta){"private", it.second.second, 0, 0});
                 }
                 else {
-                    conf.p->cq_send(
-                        all_msg + message,
-                        (msg_meta){"group", 0, it.second.first, 0});
+                    conf.p->cq_send(all_msg + message,
+                                    (msg_meta){"group", 0, it.second.first, 0});
                 }
             }
         }
@@ -167,6 +169,4 @@ bool forwarder::check(std::string message, const msg_meta &conf)
 }
 std::string forwarder::help() { return ""; }
 
-extern "C" processable* create() {
-    return new forwarder();
-}
+DECLARE_FACTORY_FUNCTIONS(forwarder)

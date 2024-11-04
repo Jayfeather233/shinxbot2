@@ -35,7 +35,7 @@ Here are three ways to run the bot (direct execution is not recommended due to p
 2. Clone the repository and execute `docker compose up -d` in the root directory for automatic configuration and compilation into the executable `./shinxbot`.
 
    Use `docker exec -it shinx-bot bash` to enter the container terminal and run inside the container.
-   
+
    This method does not compile functions; refer to the **Compiling from Source** section to compile features.
 
 3. After compiling on bare metal, run `./shinxbot`. See the next section for details.
@@ -112,8 +112,9 @@ When the bot unloads a library, it will call `extern "C" processable *close(proc
 ### Tips for Development
 
 1. If using clang, the `.clang-format` file in the root directory provides automatic formatting settings.
+
 2. `sender.sh` in `dev_tools` can be used to send messages to shinxbot, while `inspector` captures data sent from shinxbot to Onebot 11. `inspector` cannot run simultaneously with Onebot 11. Both serve as equivalents to Onebot 11, providing convenience for developers unable to run it. (You may need to modify paths in `inspector.cpp` and `sender.sh` to point to the `config` file.)
-   
+
    For example:
 
 ```bash

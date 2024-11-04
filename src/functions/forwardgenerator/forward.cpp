@@ -18,7 +18,7 @@ static std::string forward_help_msg = "格式为：\n"
 
 Json::Value forward_msg_gen::get_data(bot *p, std::wstring s1,
                                       std::wistringstream &wiss,
-                                      uint64_t group_id)
+                                      groupid_t group_id)
 {
     Json::Value res;
     std::wstring s2;
@@ -42,7 +42,7 @@ Json::Value forward_msg_gen::get_data(bot *p, std::wstring s1,
             flg = true;
         }
     }
-    uint64_t uin = my_string2uint64(s1);
+    userid_t uin = my_string2uint64(s1);
     res["name"] = get_username(p, uin, group_id);
     res["uin"] = std::to_string(uin); // TODO: maybe changed. But now its string
     if (s2 == L"转发") {
@@ -70,7 +70,7 @@ Json::Value forward_msg_gen::get_data(bot *p, std::wstring s1,
 }
 
 Json::Value forward_msg_gen::get_content(bot *p, std::wistringstream &wiss,
-                                         uint64_t group_id)
+                                         groupid_t group_id)
 {
     std::wstring s1;
     Json::Value Ja;
@@ -129,6 +129,4 @@ std::string forward_msg_gen::help()
     return "自动生成转发信息： 详细资料请输入 转发帮助";
 }
 
-extern "C" processable* create() {
-    return new forward_msg_gen();
-}
+DECLARE_FACTORY_FUNCTIONS(forward_msg_gen)

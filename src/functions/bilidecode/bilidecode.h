@@ -24,4 +24,4 @@ public:
     bool check(Json::Value message, const msg_meta &conf);
 };
 
-extern "C" processable* create();
+DECLARE_FACTORY_FUNCTIONS_HEADER

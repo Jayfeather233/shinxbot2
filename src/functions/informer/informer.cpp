@@ -162,7 +162,7 @@ void informer::process(std::string message, const msg_meta &conf)
         std::istringstream iss(message.substr(3));
         iss >> inputtime >> inputmsg;
 
-        if(inputmsg.find("multimedia.nt.qq.com.cn") != inputmsg.npos){
+        if (inputmsg.find("multimedia.nt.qq.com.cn") != inputmsg.npos) {
             conf.p->cq_send("请用旧版qq发送图片", conf);
             return;
         }
@@ -238,6 +238,4 @@ void informer::set_callback(std::function<void(std::function<void(bot *p)>)> f)
     f([this](bot *p) { this->check_inform(p); });
 }
 
-extern "C" processable* create() {
-    return new informer();
-}
+DECLARE_FACTORY_FUNCTIONS(informer)

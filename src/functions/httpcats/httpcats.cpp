@@ -25,6 +25,4 @@ std::string httpcats::help()
     return "Http status code with cats. httpcats 404";
 }
 
-extern "C" processable* create() {
-    return new httpcats();
-}
+DECLARE_FACTORY_FUNCTIONS(httpcats)

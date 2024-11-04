@@ -35,7 +35,7 @@ std::mutex gptlock[MAX_KEYS];
 
 gpt3_5::gpt3_5()
 {
-    if (!std::filesystem::exists("./config/openai.json")) {
+    if (!fs::exists("./config/openai.json")) {
         std::cout << "Please config your openai key in openai.json (and "
                      "restart) OR see openai_example.json"
                   << std::endl;
@@ -82,9 +82,9 @@ gpt3_5::gpt3_5()
     is_open = true;
     key_cycle = 0;
 
-    if (std::filesystem::exists("./config/gpt3_5")) {
-        std::filesystem::path gpt_files = "./config/gpt3_5";
-        std::filesystem::directory_iterator di(gpt_files);
+    if (fs::exists("./config/gpt3_5")) {
+        fs::path gpt_files = "./config/gpt3_5";
+        fs::directory_iterator di(gpt_files);
         for (auto &entry : di) {
             if (entry.is_regular_file()) {
                 std::istringstream iss(entry.path().filename().string());
@@ -304,8 +304,8 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     J["temperature"] = 0.7;
     J["max_tokens"] = MAX_REPLY;
     try {
-        J = string_to_json(do_post("https://api.openai.com/v1/chat/completions",
-                                   J,
+        J = string_to_json(do_post("https://api.openai.com",
+                                   "/v1/chat/completions", false, J,
                                    {{"Content-Type", "application/json"},
                                     {"Authorization", "Bearer " + key[keyid]}},
                                    true));
@@ -376,6 +376,4 @@ bool gpt3_5::check(std::string message, const msg_meta &conf)
 }
 std::string gpt3_5::help() { return "Openai gpt3.5: start with .ai"; }
 
-extern "C" processable* create() {
-    return new gpt3_5();
-}
+DECLARE_FACTORY_FUNCTIONS(gpt3_5)

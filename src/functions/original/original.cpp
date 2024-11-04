@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <iostream>
 #include <map>
-static std::map<uint64_t, bool> in_queue;
+static std::map<userid_t, bool> in_queue;
 
 void original::process(std::string message, const msg_meta &conf)
 {
@@ -22,14 +22,15 @@ void original::process(std::string message, const msg_meta &conf)
     else {
         in_queue[conf.user_id] = false;
         std::string response;
-        for (const char &ch : message) {
-            if (ch == '[')
-                response += "&#91;";
-            else if (ch == ']')
-                response += "&#93;";
-            else
-                response += ch;
-        }
+        // for (const char &ch : message) {
+        //     if (ch == '[')
+        //         response += "&#91;";
+        //     else if (ch == ']')
+        //         response += "&#93;";
+        //     else
+        //         response += ch;
+        // }
+        response = cq_encode(message);
         conf.p->cq_send(response, conf);
         conf.p->setlog(LOG::INFO, "original at group " +
                                       std::to_string(conf.group_id) + " by " +
@@ -47,6 +48,4 @@ std::string original::help()
     return "return the original text. send .original to begin.";
 }
 
-extern "C" processable* create() {
-    return new original();
-}
+DECLARE_FACTORY_FUNCTIONS(original)

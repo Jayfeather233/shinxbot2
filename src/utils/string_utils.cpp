@@ -52,7 +52,8 @@ std::string my_replace(const std::string &s, const char old, const char ne)
     return ans;
 }
 
-std::string cq_encode(const std::string& input) {
+std::string cq_encode(const std::string &input)
+{
     std::regex amp("&");
     std::regex lBracket("\\[");
     std::regex rBracket("\\]");
@@ -66,7 +67,8 @@ std::string cq_encode(const std::string& input) {
     return result;
 }
 
-std::string cq_decode(const std::string& input) {
+std::string cq_decode(const std::string &input)
+{
     std::regex amp("&amp;");
     std::regex lBracket("&#91;");
     std::regex rBracket("&#93;");
@@ -80,7 +82,8 @@ std::string cq_decode(const std::string& input) {
     return result;
 }
 
-std::wstring cq_encode(const std::wstring& input) {
+std::wstring cq_encode(const std::wstring &input)
+{
     std::wregex amp(L"&");
     std::wregex lBracket(L"\\[");
     std::wregex rBracket(L"\\]");
@@ -94,7 +97,8 @@ std::wstring cq_encode(const std::wstring& input) {
     return result;
 }
 
-std::wstring cq_decode(const std::wstring& input) {
+std::wstring cq_decode(const std::wstring &input)
+{
     std::wregex amp(L"&amp;");
     std::wregex lBracket(L"&#91;");
     std::wregex rBracket(L"&#93;");
@@ -106,4 +110,19 @@ std::wstring cq_decode(const std::wstring& input) {
     result = std::regex_replace(input, amp, L"&");
 
     return result;
+}
+
+std::pair<std::string, std::string> split_http_addr(const std::string addr)
+{
+    size_t p = addr.find("/");
+    while (p != addr.npos && ((p > 0 && addr[p - 1] == '/') ||
+                              (p < addr.length() && addr[p + 1] == '/'))) {
+        p = addr.find("/", p + 1);
+    }
+    if (p == addr.npos) {
+        return std::make_pair(addr, "");
+    }
+    else {
+        return std::make_pair(addr.substr(0, p), addr.substr(p));
+    }
 }

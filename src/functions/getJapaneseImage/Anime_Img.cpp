@@ -11,7 +11,7 @@ void AnimeImg::process(std::string message, const msg_meta &conf)
     conf.p->cq_send("mark_msg_as_read", J);
     try {
         Json::Value J = string_to_json(
-            do_get("https://www.dmoe.cc/random.php?return=json"));
+            do_get("https://www.dmoe.cc", "/random.php?return=json", false));
         conf.p->setlog(LOG::INFO, "Auto2DAnimateImg at group " +
                                       std::to_string(conf.group_id) + " by " +
                                       std::to_string(conf.user_id));
@@ -31,6 +31,4 @@ bool AnimeImg::check(std::string message, const msg_meta &conf)
 }
 std::string AnimeImg::help() { return "纸片人图片：来点二次元"; }
 
-extern "C" processable* create() {
-    return new AnimeImg();
-}
+DECLARE_FACTORY_FUNCTIONS(AnimeImg)

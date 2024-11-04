@@ -1,4 +1,5 @@
 #include "gemini.h"
+#include "image_utils.h"
 
 #include <fstream>
 
@@ -125,7 +126,7 @@ const std::string help_msg =
 
 gemini::gemini()
 {
-    if (!std::filesystem::exists("./config/gemini.json")) {
+    if (!fs::exists("./config/gemini.json")) {
         std::cout << "Please config your gemini key in gemini.json (and "
                      "restart) OR see gemini_example.json"
                   << std::endl;
@@ -163,9 +164,8 @@ size_t gemini::get_tokens(const Json::Value &history)
     Json::Value qes;
     qes["content"] = history;
     qes = string_to_json(
-        do_post((std::string) "https://generativelanguage.googleapis.com/"
-                              "v1beta/models/gemini-pro:countTokens?key=" +
-                    *nowkey,
+        do_post((std::string) "https://generativelanguage.googleapis.com",
+                "/v1beta/models/gemini-pro:countTokens?key=" + *nowkey, false,
                 qes, {}, true));
     return qes["totalTokens"].as<size_t>();
 }
@@ -189,11 +189,10 @@ std::string gemini::generate_text(std::string message, uint64_t id)
     J.clear();
     J["contents"] = history[0][id];
     shrink_prompt_size(id, 0);
-    Json::Value res = string_to_json(do_post(
-        (std::string) "https://generativelanguage.googleapis.com/v1beta/models/"
-                      "gemini-1.5-pro-latest:generateContent?key=" +
-            *nowkey,
-        J, {}, true));
+    Json::Value res = string_to_json(
+        do_post((std::string) "https://generativelanguage.googleapis.com",
+                "/v1/models/gemini-1.5-flash:generateContent?key=" + *nowkey,
+                false, J, {}, true));
     next_key(nowkey);
     std::string str_ans;
     if (res.isMember("error")) {
@@ -252,10 +251,9 @@ std::string gemini::generate_image(std::string message, uint64_t id)
     Q["contents"][0] = J;
     // shrink_prompt_size(id, 1);
     Json::Value res = string_to_json(do_post(
-        (std::string) "https://generativelanguage.googleapis.com/v1beta/models/"
-                      "gemini-pro-vision:generateContent?key=" +
-            *nowkey,
-        Q, {}, true));
+        (std::string) "https://generativelanguage.googleapis.com",
+        "/v1beta/models/gemini-pro-vision:generateContent?key=" + *nowkey,
+        false, Q, {}, true));
     next_key(nowkey);
     std::string str_ans;
     if (res.isMember("error")) {
@@ -315,6 +313,4 @@ std::string gemini::help()
     return "gemini: MultiModal AI,\n\tuseage: .gem for text only,\n\t.gemvi "
            "for image with text";
 }
-extern "C" processable* create() {
-    return new gemini();
-}
+DECLARE_FACTORY_FUNCTIONS(gemini)

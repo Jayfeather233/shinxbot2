@@ -20,8 +20,8 @@ void hhsh::process(std::string message, const msg_meta &conf)
     Json::Value Ja;
 
     try {
-        Ja = string_to_json(do_post(
-            "https://lab.magiconch.com/api/nbnhhsh/guess", J, {}, true));
+        Ja = string_to_json(do_post("https://lab.magiconch.com",
+                                    "/api/nbnhhsh/guess", false, J, {}, true));
     }
     catch (...) {
         conf.p->setlog(LOG::WARNING, "failed to connect to hhsh");
@@ -84,6 +84,4 @@ bool hhsh::check(std::string message, const msg_meta &conf)
 }
 std::string hhsh::help() { return "首字母缩写识别： hhsh+缩写"; }
 
-extern "C" processable* create() {
-    return new hhsh();
-}
+DECLARE_FACTORY_FUNCTIONS(hhsh)

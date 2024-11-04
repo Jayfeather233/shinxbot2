@@ -1,12 +1,20 @@
 #include "random_color.h"
 #include "utils.h"
 
+#include <httplib.h>
 #include <iostream>
 #include <sys/wait.h>
 
 #include <Magick++.h>
 
 std::string int_to_hex = "0123456789ABCDEF";
+
+r_color::r_color()
+{
+    if (!fs::exists("./resource/r_color/")) {
+        fs::create_directories("./resource/r_color/");
+    }
+}
 
 std::string get_code(int color)
 {
@@ -61,28 +69,29 @@ void r_color::process(std::string message, const msg_meta &conf)
         image.fontPointsize(32);
 
         // Set the text color
-        image.fillColor(dr+dg+db>=1.5 ? "black" : "white");
+        image.fillColor(dr + dg + db >= 1.5 ? "black" : "white");
 
         // Annotate (write) the text on the image
         image.annotate(name, Magick::Geometry(img_size, img_size, 0, 0),
                        Magick::CenterGravity);
 
         // Save the image
-        image.write((std::string) "./resource/r_color/" + name + ".png");
+        image.write((std::string) "./resource/r_color/" + name.substr(1) +
+                    ".png");
     }
     catch (std::exception &error) {
-        set_global_log(LOG::ERROR, error.what());
+        conf.p->setlog(LOG::ERROR, error.what());
     }
 
-    char *c_name = curl_easy_escape(nullptr, name.c_str(), name.length());
+    std::string enc_name = httplib::detail::encode_url(name.substr(1));
 
-    conf.p->cq_send("[CQ:image,file=file://" + get_local_path() +
-                        "/resource/r_color/" + c_name + ".png,id=40000]",
-                    conf);
-    curl_free(c_name);
-    conf.p->setlog(LOG::INFO, "r_color at group " +
-                                  std::to_string(conf.group_id) + " by " +
-                                  std::to_string(conf.user_id));
+    conf.p->cq_send(
+        fmt::format(
+            "[CQ:image,file=file://{}/resource/r_color/{}.png,id=40000]",
+            get_local_path(), enc_name),
+        conf);
+    conf.p->setlog(LOG::INFO, fmt::format("r_color at group {} by {}",
+                                          conf.group_id, conf.user_id));
 }
 bool r_color::check(std::string message, const msg_meta &conf)
 {
@@ -90,6 +99,4 @@ bool r_color::check(std::string message, const msg_meta &conf)
 }
 std::string r_color::help() { return "来点色图：来点色图+#color_hex_code"; }
 
-extern "C" processable* create() {
-    return new r_color();
-}
+DECLARE_FACTORY_FUNCTIONS(r_color)

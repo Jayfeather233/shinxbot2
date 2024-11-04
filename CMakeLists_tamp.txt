@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(cat)
+project({CNAME})
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Set the output directory for libraries
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../../../../lib/functions)
@@ -12,10 +15,10 @@ include_directories("../../../lib/base64/include")
 
 aux_source_directory(. MAIN_SOURCES)
 
-add_library(cat SHARED ${MAIN_SOURCES} ${UTIL_SOURCES} ${UTIL_META_SOURCES})
-target_link_libraries(cat PRIVATE ${CMAKE_BINARY_DIR}/../../../../lib/libutils.so)
-
 add_definitions( -DMAGICKCORE_QUANTUM_DEPTH=16 )
 add_definitions( -DMAGICKCORE_HDRI_ENABLE=1 )
 find_package(ImageMagick COMPONENTS Magick++ MagickWand MagickCore REQUIRED)
 include_directories(${ImageMagick_INCLUDE_DIRS})
+
+add_library({CNAME} SHARED ${MAIN_SOURCES} ${UTIL_SOURCES} ${UTIL_META_SOURCES})
+target_link_libraries({CNAME} PRIVATE ${CMAKE_BINARY_DIR}/../../../../lib/libutils.so)

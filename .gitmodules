@@ -2,3 +2,8 @@
 	path = lib/base64
 	url = https://github.com/tobiaslocker/base64
 	branch = master
+
+[submodule "lib/cpp-httplib"]
+	path = lib/cpp-httplib
+	url = https://github.com/yhirose/cpp-httplib
+	branch = master

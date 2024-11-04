@@ -1,151 +1,154 @@
 #include "utils.h"
 
+#include "httplib.h"
 #include <iostream>
+#include <jsoncpp/json/json.h>
 #include <mutex>
 
-static size_t write_callback(char *ptr, size_t size, size_t nmemb,
-                             void *userdata)
-{
-    if (ptr == NULL || userdata == NULL)
-        return 0;
-    std::string *response = (std::string *)userdata;
-    size_t num_bytes = size * nmemb;
-    response->append(ptr, num_bytes);
-    return num_bytes;
-}
+enum class http_req_method { GET, POST }; // for now, these are enough
 
-// std::mutex http_lock;
+std::string do_http_request(httplib::Client &client,
+                            const std::string &httpaddr,
+                            const std::string &httppath,
+                            const std::map<std::string, std::string> &headers,
+                            const bool proxy_flg, const http_req_method hrm,
+                            const Json::Value &json_message = Json::Value())
+{
+
+    client.set_connection_timeout(0, 5000000); // 5 seconds
+    client.set_read_timeout(5, 0);             // 5 seconds
+    client.set_write_timeout(5, 0);            // 5 seconds
+    if (proxy_flg) {
+        const char *http_proxy = std::getenv("http_proxy");
+        if (!http_proxy) {
+            http_proxy = std::getenv("HTTP_PROXY");
+        }
+        if (http_proxy) {
+            std::string proxy_str(http_proxy);
+            size_t colon_pos = proxy_str.find(':');
+            if (colon_pos != std::string::npos) {
+                std::string proxy_host = proxy_str.substr(0, colon_pos);
+                int proxy_port = std::stoi(proxy_str.substr(colon_pos + 1));
+                client.set_proxy(proxy_host, proxy_port);
+            }
+        }
+        else {
+            set_global_log(
+                LOG::WARNING,
+                fmt::format(
+                    "HTTP Request: {} need proxy but no system proxy found.",
+                    httpaddr));
+        }
+    }
+
+    // Set headers
+    httplib::Headers httplib_headers;
+    for (const auto &header : headers) {
+        httplib_headers.emplace(header.first, header.second);
+    }
+    // httplib_headers.emplace("Content-Type", "application/json");
+
+    // Perform the POST request
+    httplib::Result res =
+        hrm == http_req_method::POST
+            ? client.Post(httppath, httplib_headers,
+                          json_message.toStyledString(), "application/json")
+            : client.Get(httppath, httplib_headers);
+
+    if (!res || res->status != 200) {
+        auto err = res.error();
+        set_global_log(LOG::ERROR,
+                       fmt::format("Connect to {} failed with code {} err: {}",
+                                   httpaddr + httppath,
+                                   std::to_string(res ? res->status : -1),
+                                   httplib::to_string(err)));
+        throw fmt::format("HTTP Connect failed, err {}",
+                          httplib::to_string(err));
+    }
+
+    return res->body;
+}
 
 std::string do_post(const std::string &httpaddr,
                     const Json::Value &json_message,
                     const std::map<std::string, std::string> &headers,
                     const bool proxy_flg)
 {
-    // setlog(LOG::INFO, "Connect to" + httpaddr);
-    // std::lock_guard<std::mutex> guard(http_lock);
-    // Create a new curl handle
-    CURL *curl_handle = curl_easy_init();
-    if (!curl_handle) {
-        throw "Failed to initialize curl";
-    }
-    // Do not throw when connect timeout, for 20 seconds
-    curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1L);
-    curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, 20);
-
-    // Set the URL to POST to
-    curl_easy_setopt(curl_handle, CURLOPT_URL, httpaddr.c_str());
-
-    // Set the request method to POST
-    curl_easy_setopt(curl_handle, CURLOPT_POST, 1L);
-
-    // Set the request headers
-    struct curl_slist *header_list = nullptr;
-    for (auto const &header : headers) {
-        std::string header_string = header.first + ": " + header.second;
-        header_list = curl_slist_append(header_list, header_string.c_str());
-    }
-    header_list =
-        curl_slist_append(header_list, "Content-Type: application/json");
-    curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, header_list);
-
-    // Set the request body to the JSON message
-    std::string json_string = json_message.toStyledString();
-    curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, json_string.c_str());
-
-    if (proxy_flg) {
-        const char *http_proxy = std::getenv("http_proxy");
-        if (!http_proxy) {
-            http_proxy = std::getenv("HTTP_PROXY");
-        }
-        if (http_proxy) {
-            curl_easy_setopt(curl_handle, CURLOPT_PROXY, http_proxy);
-        }
-    }
-
-    // Set the callback function for receiving data from the HTTP response
-    std::string response;
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_callback);
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, &response);
-
-    // Perform the HTTP request
-    CURLcode curl_result = curl_easy_perform(curl_handle);
-    if (curl_result != CURLE_OK || response.length() <= 1) {
-        curl_slist_free_all(header_list);
-        curl_easy_cleanup(curl_handle);
-        set_global_log(LOG::ERROR, "Connect to " + httpaddr + " failed with code " +
-                               curl_easy_strerror(curl_result));
-        throw(std::string) "HTTP Connect failed." +
-            curl_easy_strerror(curl_result);
-        // return "";
-    }
-
-    // setlog(LOG::INFO, "Connect done");
-    // Clean up resources and return the response
-    curl_slist_free_all(header_list);
-    curl_easy_cleanup(curl_handle);
-    return response;
+    auto cli = httplib::Client(httpaddr);
+    return do_http_request(cli, httpaddr, "", headers, proxy_flg,
+                           http_req_method::POST, json_message);
 }
 
 std::string do_get(const std::string &httpaddr,
                    const std::map<std::string, std::string> &headers,
                    const bool proxy_flg)
 {
+    auto cli = httplib::Client(httpaddr);
+    return do_http_request(cli, httpaddr, "", headers, proxy_flg,
+                           http_req_method::GET);
+}
 
-    // std::lock_guard<std::mutex> guard(http_lock);
-    // Create a new curl handle
-    // setlog(LOG::INFO, "Connect to" + httpaddr);
-    CURL *curl_handle = curl_easy_init();
-    if (!curl_handle) {
-        throw "Failed to initialize curl";
-    }
-    // Do not throw when connect timeout, for 20 seconds
-    curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1L);
-    curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, 20);
+std::string do_post(const std::string &httpaddr, const std::string &httppath,
+                    bool enc, const Json::Value &json_message,
+                    const std::map<std::string, std::string> &headers,
+                    const bool proxy_flg)
+{
+    auto cli = httplib::Client(httpaddr);
+    cli.set_url_encode(enc);
+    return do_http_request(cli, httpaddr, httppath, headers, proxy_flg,
+                           http_req_method::POST, json_message);
+}
 
-    // Set the GET URL
-    curl_easy_setopt(curl_handle, CURLOPT_URL, httpaddr.c_str());
+std::string do_get(const std::string &httpaddr, const std::string &httppath,
+                   bool enc, const std::map<std::string, std::string> &headers,
+                   const bool proxy_flg)
+{
+    auto cli = httplib::Client(httpaddr);
+    cli.set_url_encode(enc);
+    return do_http_request(cli, httpaddr, httppath, headers, proxy_flg,
+                           http_req_method::GET);
+}
 
-    // Set the request method to GET
-    curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1L);
+std::string do_post(const std::string &httpaddr, int port,
+                    const Json::Value &json_message,
+                    const std::map<std::string, std::string> &headers,
+                    const bool proxy_flg)
+{
+    auto cli = httplib::Client(httpaddr, port);
+    return do_http_request(cli, fmt::format("{}:{}", httpaddr, port), "",
+                           headers, proxy_flg, http_req_method::POST,
+                           json_message);
+}
 
-    // Set the request headers
-    struct curl_slist *header_list = nullptr;
-    for (auto const &header : headers) {
-        std::string header_string = header.first + ": " + header.second;
-        header_list = curl_slist_append(header_list, header_string.c_str());
-    }
-    curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, header_list);
+std::string do_get(const std::string &httpaddr, int port,
+                   const std::map<std::string, std::string> &headers,
+                   const bool proxy_flg)
+{
+    auto cli = httplib::Client(httpaddr, port);
+    return do_http_request(cli, fmt::format("{}:{}", httpaddr, port), "",
+                           headers, proxy_flg, http_req_method::GET);
+}
 
-    if (proxy_flg) {
-        const char *http_proxy = std::getenv("http_proxy");
-        if (!http_proxy) {
-            http_proxy = std::getenv("HTTP_PROXY");
-        }
-        if (http_proxy) {
-            curl_easy_setopt(curl_handle, CURLOPT_PROXY, http_proxy);
-        }
-    }
+std::string do_post(const std::string &httpaddr, int port,
+                    const std::string &httppath, bool enc,
+                    const Json::Value &json_message,
+                    const std::map<std::string, std::string> &headers,
+                    const bool proxy_flg)
+{
+    auto cli = httplib::Client(httpaddr, port);
+    cli.set_url_encode(enc);
+    return do_http_request(cli, fmt::format("{}:{}", httpaddr, port), httppath,
+                           headers, proxy_flg, http_req_method::POST,
+                           json_message);
+}
 
-    // Set the callback function for receiving data from the HTTP response
-    std::string response;
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_callback);
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, &response);
-
-    // Perform the HTTP request
-    CURLcode curl_result = curl_easy_perform(curl_handle);
-    if (curl_result != CURLE_OK || response.length() <= 1) {
-        curl_slist_free_all(header_list);
-        curl_easy_cleanup(curl_handle);
-        set_global_log(LOG::ERROR, "Connect to " + httpaddr + " failed with code " +
-                               curl_easy_strerror(curl_result));
-        throw(std::string) "HTTP Connect failed." +
-            curl_easy_strerror(curl_result);
-        // return "";
-    }
-
-    // setlog(LOG::INFO, "Connect done");
-    // Clean up resources and return the response
-    curl_slist_free_all(header_list);
-    curl_easy_cleanup(curl_handle);
-    return response;
+std::string do_get(const std::string &httpaddr, int port,
+                   const std::string &httppath, bool enc,
+                   const std::map<std::string, std::string> &headers,
+                   const bool proxy_flg)
+{
+    auto cli = httplib::Client(httpaddr, port);
+    cli.set_url_encode(enc);
+    return do_http_request(cli, fmt::format("{}:{}", httpaddr, port), httppath,
+                           headers, proxy_flg, http_req_method::GET);
 }
