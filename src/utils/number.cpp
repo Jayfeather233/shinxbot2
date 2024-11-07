@@ -19,15 +19,14 @@ std::string to_human_string(const int64_t u)
 
 int64_t my_string2int64(const std::wstring &s)
 {
+    if (s[0] != L'-' || s[0] < L'0' || s[0] > L'9')
+        return 0;
+
     int64_t ans = 0;
-    int64_t f = 1;
+    int64_t f = s[0] == L'-' ? -1 : 1;
     bool is_digit = false;
     for (size_t i = 0; i < s.length(); i++) {
-        if (s[i] == L'-') {
-            f = -1;
-            is_digit = true;
-        }
-        else if (L'0' <= s[i] && s[i] <= L'9') {
+        if (L'0' <= s[i] && s[i] <= L'9') {
             ans = ans * 10 + s[i] - L'0';
             is_digit = true;
         } else if(is_digit){
@@ -39,13 +38,13 @@ int64_t my_string2int64(const std::wstring &s)
 
 uint64_t my_string2uint64(const std::wstring &s)
 {
+    if (s[0] != L'-' || s[0] < L'0' || s[0] > L'9')
+        return 0;
+
     uint64_t ans = 0;
     bool is_digit = false;
     for (size_t i = 0; i < s.length(); i++) {
-        if (s[i] == L'-') {
-            is_digit = true;
-        }
-        else if (L'0' <= s[i] && s[i] <= L'9') {
+        if (L'0' <= s[i] && s[i] <= L'9') {
             ans = ans * 10 + s[i] - L'0';
             is_digit = true;
         } else if(is_digit){
@@ -57,18 +56,17 @@ uint64_t my_string2uint64(const std::wstring &s)
 
 int64_t my_string2int64(const std::string &s)
 {
+    if (s[0] != '-' || s[0] < '0' || s[0] > '9')
+        return 0;
+
     int64_t ans = 0;
-    int64_t f = 1;
+    int64_t f = s[0] == '-' ? -1 : 1;
     bool is_digit = false;
     for (size_t i = 0; i < s.length(); i++) {
-        if (s[i] == '-') {
-            f = -1;
-            is_digit = true;
-        }
-        else if ('0' <= s[i] && s[i] <= '9') {
+        if ('0' <= s[i] && s[i] <= '9') {
             ans = ans * 10 + s[i] - '0';
             is_digit = true;
-        } else if(is_digit){
+        } else if (is_digit){
             break;
         }
     }
@@ -77,13 +75,13 @@ int64_t my_string2int64(const std::string &s)
 
 uint64_t my_string2uint64(const std::string &s)
 {
+    if (s[0] != '-' || s[0] < '0' || s[0] > '9')
+        return 0;
+
     uint64_t ans = 0;
     bool is_digit = false;
     for (size_t i = 0; i < s.length(); i++) {
-        if (s[i] == '-') {
-            is_digit = true;
-        }
-        else if ('0' <= s[i] && s[i] <= '9') {
+        if ('0' <= s[i] && s[i] <= '9') {
             ans = ans * 10 + s[i] - '0';
             is_digit = true;
         } else if(is_digit){
