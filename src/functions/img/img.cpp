@@ -283,7 +283,12 @@ void img::process(std::string message, const msg_meta &conf)
         index = get_random(it2->second) + 1;
     }
     else {
-        index = my_string2int64(indexs);
+        try {
+            index = std::stoi(indexs);
+        }
+        catch (...) {
+            return;
+        }
         if (index == 0) {
             return;
         }
