@@ -55,7 +55,7 @@ std::string do_http_request(httplib::Client &client,
                           json_message.toStyledString(), "application/json")
             : client.Get(httppath, httplib_headers);
 
-    if (!res || res->status != 200) {
+    if (!res || res->status/100 != 2) {
         auto err = res.error();
         set_global_log(LOG::ERROR,
                        fmt::format("Connect to {} failed with code {} err: {}",

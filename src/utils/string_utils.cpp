@@ -40,16 +40,19 @@ std::wstring trim(const std::wstring &u)
 
 std::string my_replace(const std::string &s, const char old, const char ne)
 {
-    std::string ans;
-    for (size_t i = 0; i < s.length(); i++) {
-        if (s[i] == old) {
-            ans += ne;
-        }
-        else {
-            ans += s[i];
-        }
-    }
-    return ans;
+    // std::string ans;
+    // for (size_t i = 0; i < s.length(); i++) {
+    //     if (s[i] == old) {
+    //         ans += ne;
+    //     }
+    //     else {
+    //         ans += s[i];
+    //     }
+    // }
+    // return ans;
+    std::string u = s;
+    std::replace(u.begin(), u.end(), old, ne);
+    return u;
 }
 
 std::string cq_encode(const std::string &input)
