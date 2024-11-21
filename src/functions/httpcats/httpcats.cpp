@@ -8,7 +8,8 @@ void httpcats::process(std::string message, const msg_meta &conf)
     Json::Value J;
     J["message_id"] = conf.message_id;
     conf.p->cq_send("mark_msg_as_read", J);
-    int64_t code = my_string2int64(message);
+    int64_t code = std::stoi(message.substr(8, message.size() - 8));
+    code = (code < 100 || code > 599) ? 404 : code; // invalid code
     conf.p->setlog(LOG::INFO, "httpcats at group " +
                                   std::to_string(conf.group_id) + " by " +
                                   std::to_string(conf.user_id));
