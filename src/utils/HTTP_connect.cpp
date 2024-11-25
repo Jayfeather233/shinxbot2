@@ -15,9 +15,9 @@ std::string do_http_request(httplib::Client &client,
                             const Json::Value &json_message = Json::Value())
 {
 
-    client.set_connection_timeout(0, 5000000); // 5 seconds
-    client.set_read_timeout(5, 0);             // 5 seconds
-    client.set_write_timeout(5, 0);            // 5 seconds
+    client.set_connection_timeout(0, 10000000); // 10 seconds
+    client.set_read_timeout(600, 0);             // 10 min
+    client.set_write_timeout(600, 0);            // 10 min
     if (proxy_flg) {
         const char *http_proxy = std::getenv("http_proxy");
         if (!http_proxy) {
