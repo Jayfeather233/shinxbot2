@@ -75,10 +75,8 @@ void command_download(const std::string &httpAddress,
     }
     p /= fileName;
     // std::cout<<p.string()<<std::endl;
-    std::string command = "curl -o " + p.string() + " ";
-    if (!proxy)
-        command += "--noproxy '*' ";
-    command += httpAddress + " > /dev/null 2>&1";
+    std::string command = fmt::format("curl -o \"{}\" {} \"{}\" > /dev/null 2>&1", p.string(), proxy ? "" : "--noproxy '*'", httpAddress);
+
     int ret = system(command.c_str());
     if (ret) {
         std::ostringstream oss;
@@ -113,5 +111,12 @@ void download(const std::string &httpAddress, const fs::path &filePath,
         set_global_log(LOG::ERROR, "At download from" + httpAddress + " to " +
                                        (filePath / fileName).string() +
                                        ", Exception occurred: " + e.what());
+        throw e;
+    }
+    catch (const std::string &e) {
+        set_global_log(LOG::ERROR, "At download from" + httpAddress + " to " +
+                                       (filePath / fileName).string() +
+                                       ", Exception occurred: " + e);
+        throw e;
     }
 }
