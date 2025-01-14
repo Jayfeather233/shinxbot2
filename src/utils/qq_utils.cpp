@@ -125,6 +125,20 @@ bool is_group_op(const bot *p, const groupid_t &group_id,
     return J["data"]["role"].asString() != "member";
 }
 
+bool is_group_member(const bot *p, const groupid_t &group_id,
+                     const userid_t &user_id){
+    Json::Value J;
+    J["group_id"] = group_id;
+    J = string_to_json(p->cq_send("get_group_member_list", J));
+    J = J["data"];
+    for(auto j : J) {
+        if (j["user_id"].asUInt64() == user_id) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool is_friend(const bot *p, const userid_t &user_id)
 {
     Json::Value J = string_to_json(p->cq_get("get_friend_list"))["data"];

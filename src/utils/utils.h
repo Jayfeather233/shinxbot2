@@ -266,6 +266,12 @@ bool is_folder_exist(const bot *p, const groupid_t &group_id,
 bool is_group_op(const bot *p, const groupid_t &group_id,
                  const userid_t &user_id);
 
+/**
+ * Check if someone is group member
+ */
+bool is_group_member(const bot *p, const groupid_t &groupid,
+                     const userid_t &user_id);
+
 inline bool is_digit(const char &s) { return '0' <= s && s <= '9'; }
 inline bool is_word(const char &s)
 {
