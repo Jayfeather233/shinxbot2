@@ -35,7 +35,22 @@ bool RP::check(std::string message, const msg_meta &conf)
 
 void RP::process(std::string message, const msg_meta &conf)
 {
-    if (message.find("rp.add ") == 0 &&
+    if (message.find("rp.del ") == 0 &&
+        (is_group_op(conf.p, conf.group_id, conf.user_id) ||
+         conf.p->is_op(conf.user_id))) {
+        size_t space1 = message.find(' ', 7);
+        if (space1 == std::string::npos) {
+            conf.p->cq_send(
+                "Invalid command format. Use: rp.add userid possibility "
+                "message, where possibility is in percentage",
+                conf);
+            return;
+        }
+        userid_t user_id = std::stoll(message.substr(7, space1 - 7));
+        reply_content.erase(user_id);
+        conf.p->cq_send("Reply removed successfully.", conf);
+        save();
+    } else if (message.find("rp.add ") == 0 &&
         (is_group_op(conf.p, conf.group_id, conf.user_id) ||
          conf.p->is_op(conf.user_id))) {
         // Command format: rp.add userid possi message
