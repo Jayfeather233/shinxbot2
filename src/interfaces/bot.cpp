@@ -55,4 +55,12 @@ void bot::setlog(LOG type, std::string message) {}
 
 userid_t bot::get_botqq() const { return botqq; }
 
+
+void bot::registerBar(BarInfo *p) {
+    pb.addBar(p);
+}
+std::string bot::descBar() {
+    return pb.desc();
+}
+
 bot::~bot() {}

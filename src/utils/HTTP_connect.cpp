@@ -15,21 +15,29 @@ std::string do_http_request(httplib::Client &client,
                             const Json::Value &json_message = Json::Value())
 {
 
-    client.set_connection_timeout(10, 0);    // 10 seconds
-    client.set_read_timeout(10, 0);          // 10 seconds
-    client.set_write_timeout(10, 0);         // 10 seconds
+    client.set_connection_timeout(10, 0); // 10 seconds
+    client.set_read_timeout(10, 0);       // 10 seconds
+    client.set_write_timeout(10, 0);      // 10 seconds
     if (proxy_flg) {
         const char *http_proxy = std::getenv("http_proxy");
         if (!http_proxy) {
             http_proxy = std::getenv("HTTP_PROXY");
         }
         if (http_proxy) {
-            std::string proxy_str(http_proxy);
-            size_t colon_pos = proxy_str.find(':');
-            if (colon_pos != std::string::npos) {
-                std::string proxy_host = proxy_str.substr(0, colon_pos);
-                int proxy_port = std::stoi(proxy_str.substr(colon_pos + 1));
-                client.set_proxy(proxy_host, proxy_port);
+            try {
+                std::string proxy_str(http_proxy);
+                size_t colon_pos = proxy_str.find(':');
+                if (proxy_str[colon_pos + 1] == '/') {
+                    colon_pos = proxy_str.find(':', colon_pos + 1);
+                }
+                if (colon_pos != std::string::npos) {
+                    std::string proxy_host = proxy_str.substr(0, colon_pos);
+                    int proxy_port = std::stoi(proxy_str.substr(colon_pos + 1));
+                    client.set_proxy(proxy_host, proxy_port);
+                }
+            }
+            catch (...) {
+                set_global_log(LOG::WARNING, "Unable to resolve proxy");
             }
         }
         else {
@@ -55,7 +63,7 @@ std::string do_http_request(httplib::Client &client,
                           json_message.toStyledString(), "application/json")
             : client.Get(httppath, httplib_headers);
 
-    if (!res || res->status/100 != 2) {
+    if (!res || res->status / 100 != 2) {
         auto err = res.error();
         set_global_log(LOG::ERROR,
                        fmt::format("Connect to {} failed with code {} err: {}",

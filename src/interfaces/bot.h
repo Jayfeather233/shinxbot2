@@ -6,6 +6,8 @@
 #include <jsoncpp/json/json.h>
 #include <filesystem>
 
+#include "progress_bar.hpp"
+
 namespace fs = std::filesystem;
 
 enum LOG { INFO = 0, WARNING = 1, ERROR = 2 };
@@ -39,6 +41,8 @@ protected:
     int receive_port, send_port;
 
     userid_t botqq;
+
+    progressBar pb;
 
 public:
     bot() = delete;
@@ -90,6 +94,9 @@ public:
      * receive a message, how to process
      */
     virtual void input_process(std::string *input) = 0;
+
+    virtual void registerBar(BarInfo *p);
+    virtual std::string descBar();
 
     virtual ~bot();
 };

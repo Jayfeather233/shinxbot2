@@ -339,6 +339,9 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
             cq_send("useage: bot.unload [function|event] name", conf);
             return false;
         }
+    } else if (message == "bot.progress") {
+        cq_send(descBar(), conf);
+        return false;
     }
     else
         return true;

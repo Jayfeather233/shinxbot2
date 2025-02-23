@@ -271,11 +271,22 @@ void img::process(std::string message, const msg_meta &conf)
         return;
     if (indexs == "all") {
         std::ostringstream oss;
+        oss << "转发" << std::endl;
         for (size_t i = 0; i < it2->second; ++i) {
-            oss << "[CQ:image,file=file://" << get_local_path()
-                << "/resource/mt/" << name << "/" << i << ",id=40000] ";
+            oss << std::to_string(conf.p->get_botqq())
+                << " [CQ:image,file=file://" << get_local_path()
+                << "/resource/mt/" << name << "/" << i << ",id=40000]" << std::endl;
         }
-        conf.p->cq_send(oss.str(), conf);
+        
+        Json::Value J_send;
+        J_send["post_type"] = "message";
+        J_send["message"] = oss.str();
+        J_send["message_type"] = conf.message_type;
+        J_send["message_id"] = conf.message_id;
+        J_send["user_id"] = conf.user_id;
+        J_send["group_id"] = conf.group_id;
+        conf.p->input_process(new std::string(J_send.toStyledString()));
+        conf.p->setlog(LOG::INFO, fmt::format("美图 {} all by {}",name,  std::to_string(conf.user_id)));
         return;
     }
     int64_t index;
