@@ -151,13 +151,16 @@ mirrorImageError:
     throw "Invalid parameter, see more in log.";
 }
 
-void mirrorImage(std::vector<Magick::Image> &img, char axis, bool direction)
+void mirrorImage(std::vector<Magick::Image> &img, char axis, bool direction, std::function<void()> callback)
 {
     Magick::Image las =
         Magick::Image(Magick::Geometry(1, 1), Magick::Color("white"));
     for (Magick::Image &im : img) {
         mirrorImage(im, axis, direction, las);
         las = im;
+        if (callback != nullptr) {
+            callback();
+        }
     }
 }
 
@@ -210,7 +213,7 @@ void constsize_rotate(Magick::Image &img, double deg)
 }
 
 std::vector<Magick::Image> rotateImage(const Magick::Image img, int fps,
-                                       bool clockwise)
+                                       bool clockwise, std::function<void()> callback)
 {
     Magick::Image dimg = img;
     dimg.alphaChannel(MagickCore::AlphaChannelOption::SetAlphaChannel);
@@ -233,6 +236,9 @@ std::vector<Magick::Image> rotateImage(const Magick::Image img, int fps,
         constsize_rotate(ximg, deg_per_frame * i);
         crop_to_circle(ximg);
         ret.push_back(ximg);
+        if (callback != nullptr) {
+            callback();
+        }
     }
     return ret;
 }
@@ -302,7 +308,7 @@ void kaleido(Magick::Image &img, int layers, int nums_per_layer,
     img = ret_img;
 }
 
-void kaleido(std::vector<Magick::Image> &img, int layers, int nums_per_layer)
+void kaleido(std::vector<Magick::Image> &img, int layers, int nums_per_layer, std::function<void()> callback)
 {
     Magick::Image las =
         Magick::Image(Magick::Geometry(1, 1), Magick::Color("white"));
@@ -316,5 +322,8 @@ void kaleido(std::vector<Magick::Image> &img, int layers, int nums_per_layer)
         Magick::Image las_td = im;
         kaleido(im, layers, nums_per_layer, las);
         las = las_td;
+        if (callback != nullptr) {
+            callback();
+        }
     }
 }

@@ -20,8 +20,8 @@ void BarInfo::setBar(float pg, const std::string &d)
 BarInfo::~BarInfo()
 {
     std::lock_guard<std::mutex> lock(m);
-    b->f = f;
-    f->b = b;
+    if(b != nullptr) b->f = f;
+    if(f != nullptr) f->b = b;
 }
 
 

@@ -12,6 +12,8 @@ static std::string imgfun_help_msg =
 
 void img_fun::process(std::string message, const msg_meta &conf)
 {
+    BarInfo p(0, "图片处理初始化");
+    conf.p->registerBar(&p);
     if (message == "img_fun.help") {
         conf.p->cq_send(imgfun_help_msg, conf);
         return;
@@ -82,6 +84,7 @@ void img_fun::process(std::string message, const msg_meta &conf)
         return;
     }
 
+    p.setBar(0.1, "图片处理下载");
     if (wmessage.find(L"[CQ:at") != wmessage.npos) {
         userid_t userid = my_string2uint64(wmessage);
         fileurl =
@@ -116,6 +119,7 @@ void img_fun::process(std::string message, const msg_meta &conf)
 
     is_input.erase(conf.user_id);
     download(cq_decode(fileurl), "./resource/download/", filename);
+    p.setBar(0.2, "图片处理中");
     Magick::Image img;
     bool mgif = false;
     try {
@@ -130,18 +134,28 @@ void img_fun::process(std::string message, const msg_meta &conf)
         Magick::readImages(&img_list, "./resource/download/" + filename);
         if (proc_type.type == img_fun_type::MIRROR) {
             filename += "_mir.gif";
-            mirrorImage(img_list, proc_type.para1, proc_type.para2);
+            float delta_p = 0.7 / (img_list.size());
+            float prog = 0.2;
+            mirrorImage(img_list, proc_type.para1, proc_type.para2,
+                        [&]() { p.setProgress(prog += delta_p); });
         }
         else if (proc_type.type == img_fun_type::ROTATE) {
             filename += "_rot.gif";
-            img_list = rotateImage(img, proc_type.para1, proc_type.para2);
+            float delta_p = 0.7 / proc_type.para1;
+            float prog = 0.2;
+            img_list = rotateImage(img, proc_type.para1, proc_type.para2,
+                                   [&]() { p.setProgress(prog += delta_p); });
         }
         else if (proc_type.type == img_fun_type::KALEIDO) {
             filename += "_kal.gif";
-            kaleido(img_list, proc_type.para1, proc_type.para2);
+            float delta_p = 0.7 / (img_list.size());
+            float prog = 0.2;
+            kaleido(img_list, proc_type.para1, proc_type.para2,
+                    [&]() { p.setProgress(prog += delta_p); });
         }
         Magick::writeImages(img_list.begin(), img_list.end(),
                             "./resource/download/" + filename);
+        p.setBar(0.9, "图片处理完成，发送中");
     }
     else {
         if (proc_type.type == img_fun_type::MIRROR) {
@@ -153,6 +167,7 @@ void img_fun::process(std::string message, const msg_meta &conf)
             kaleido(img, proc_type.para1, proc_type.para2);
         }
         img.write("./resource/download/" + filename);
+        p.setBar(0.9, "图片处理完成，发送中");
     }
     conf.p->cq_send("[CQ:image,file=file://" + get_local_path() +
                         "/resource/download/" + filename + ",id=40000]",
