@@ -55,6 +55,7 @@ std::string progressBar::desc()
         ++cnt;
         oss << p->desc << ' ' << std::setprecision(2) << p->progress * 100
             << '%' << std::endl;
+        p = p->b;
     }
     return fmt::format("Total {} Tasks running.\n{}", cnt, oss.str());
 }
