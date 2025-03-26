@@ -8,8 +8,9 @@ void m_change::process(bot *p, Json::Value J)
     std::string name =
         get_username(p, J["user_id"].asUInt64(), J["group_id"].asUInt64());
     std::ostringstream oss;
-    oss << name << " (***" << std::setw(3) << std::setfill('0')
-        << J["user_id"].asUInt64() % 1000 << ")";
+    // oss << name << " (***" << std::setw(3) << std::setfill('0')
+    //     << J["user_id"].asUInt64() % 1000 << ")";
+    oss << name;
     std::string name1 = oss.str();
     oss = std::ostringstream();
     oss << name << " (" << J["user_id"].asUInt64() << ")";
