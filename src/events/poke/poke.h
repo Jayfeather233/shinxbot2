@@ -9,6 +9,7 @@
 class poke : public eventprocess {
 private:
     std::set<userid_t> no_poke_users;
+    std::set<userid_t> no_poke_groups;
     std::chrono::steady_clock::time_point lastExecutionTime_{};
     std::mutex mutex_;
     std::chrono::duration<int64_t> minInterval;

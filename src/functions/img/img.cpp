@@ -210,6 +210,9 @@ std::string img::commands(std::string message, const msg_meta &conf)
             }
         }
         else if (wmessage.find(L"属于") == 0) {
+            if (is_group_op(conf.p, conf.group_id, conf.user_id) == false && conf.p->is_op(conf.user_id) == false) {
+                return "仅限管理员";
+            }
             std::string name = wstring_to_string(trim(wmessage.substr(2)));
             belong_to(name, conf.group_id);
             save();

@@ -153,6 +153,7 @@ void img_fun::process(std::string message, const msg_meta &conf)
             kaleido(img_list, proc_type.para1, proc_type.para2,
                     [&]() { p.setProgress(prog += delta_p); });
         }
+        p.setBar(0.9, "图片处理完成，保存中");
         Magick::writeImages(img_list.begin(), img_list.end(),
                             "./resource/download/" + filename);
         p.setBar(0.9, "图片处理完成，发送中");
