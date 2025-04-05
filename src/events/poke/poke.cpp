@@ -38,8 +38,9 @@ bool poke::check(bot *p, Json::Value J)
         return false;
     userid_t target_id = J["target_id"].asUInt64();
     userid_t user_id = J["user_id"].asUInt64();
+    groupid_t group_id = J["group_id"].asUInt64();
     if (target_id != p->get_botqq() ||
-        no_poke_users.find(user_id) != no_poke_users.end())
+        no_poke_users.find(user_id) != no_poke_users.end() || no_poke_groups.find(group_id) != no_poke_groups.end())
         return false;
     return true;
 }
