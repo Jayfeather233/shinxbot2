@@ -26,38 +26,45 @@ This project depends on the following packages:
 - libmagick++-dev
 - libfmt-dev (version 8+)
 
-For methods other than running with Docker, please install dependencies first. For specific installation methods, refer to `entrypoint.sh`.
+For methods other than running with Docker, please install dependencies first. For specific installation methods, refer to `Dockerfile`.
+
+No matter what method you use, before running, ensure the Onebot 11 standard backend is running. After running `shinxbot`, input the reporting port and API port for the Onebot 11 backend, or write the sending/receiving ports in `./config/port.txt`.(And add mapping port in `docker-compose`)
 
 Here are three ways to run the bot (direct execution is not recommended due to potential version inconsistencies of dependency libraries):
 
-1. Download and extract from Release, then run `shinxbot`.
-
-2. Clone the repository and execute `docker compose up -d` in the root directory for automatic configuration and compilation into the executable `./shinxbot`.
+1. Clone the repository `git clone --recursive git@github.com:Jayfeather233/shinxbot2.git` and execute `docker compose up -d` in the root directory for automatic configuration and compilation into the executable `./shinxbot`.
 
    Use `docker exec -it shinx-bot bash` to enter the container terminal and run inside the container.
 
    This method does not compile functions; refer to the **Compiling from Source** section to compile features.
 
-3. After compiling on bare metal, run `./shinxbot`. See the next section for details.
+   config the port in `./config/port.txt`.
 
-Before running, ensure the Onebot 11 standard backend is running. After running `shinxbot`, input the reporting port and API port for the Onebot 11 backend.
+   Then run `./start.sh` to start running.
+
+2. After compiling on bare metal, run `./shinxbot`. See **Compiling from Source**.
+
+3. Download and extract from Release, then run `shinxbot`. (Out dated release)
 
 You can use `start.sh` to run shinxbot in the background.
 
 ### Compiling from Source
 
-Since it includes the `base64` submodule, please enable `--recursive` when cloning the repository.
+Since it includes submodule(s), please enable `--recursive` when cloning the repository.
 
 ```sh
 git clone --recursive git@github.com:Jayfeather233/shinxbot2.git
 ```
 
-- **Linux**: Execute the automatic compilation script `build.sh` (`build.sh main` builds everything by default; `build.sh simple` skips rebuilding libutils).
+- **Linux**: Execute the automatic compilation script `build.sh` (`build.sh main` builds everything by default; `build.sh simple` skips rebuilding `libutils`).
+
 - **Windows**: You need to change TCP connection headers and handle OS-level differences such as sleep, file:///, etc. (not verified); running in a container is recommended.
 
-Note: This only compiles the bot framework. Specific features must be compiled from the code in `./src/[functions|events]`:
+Note: This only compiles the bot framework. Specific features must be compiled from the code in `./src/[functions|events]/`: (`./src/functions/`, `./src/events/` contains different features, please compile both)
 
-To compile all features, navigate to `./src/[functions|events]`, run `python generate_cmake.py` to generate CMakeLists.txt templates for each feature, and then run `bash ./make_all.sh` to compile all features.
+To compile all features, navigate to `./src/[functions|events]/`, run `python generate_cmake.py` to generate CMakeLists.txt templates for each feature, and then run `bash ./make_all.sh` to compile all features.
+
+After this, the compiled shared library should be presented in `./lib/[functions|events]/`.
 
 ### Connecting Other Bot Backends
 
@@ -71,6 +78,8 @@ You can refer to `shinxbot` in `./src/bots`, which is a class already connected 
 ### Adding Features
 
 You can refer to a minimal development module: [shinxbot2_dev_module](https://github.com/Jayfeather233/shinxbot2_dev_module).
+
+Or continue develop on this responsitory:
 
 If developing on the code from this repository, ensure you have generated `libutils.so` with `./build.sh`.
 
