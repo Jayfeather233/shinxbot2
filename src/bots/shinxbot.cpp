@@ -383,7 +383,7 @@ void shinxbot::input_process(std::string *input)
             std::string messageStr = messageArr_to_string(J["message"]);
             int64_t message_id = J["message_id"].asInt64();
             std::string message_type = J["message_type"].asString();
-            if (message_type == "group" || message_type == "private") {
+            if (message_type == "group" || message_type == "private" || message_type == "internal") {
                 userid_t user_id = 0;
                 groupid_t group_id = 0;
                 if (J.isMember("group_id")) {
