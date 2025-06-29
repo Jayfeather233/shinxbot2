@@ -62,8 +62,9 @@ void m_change_f::process(std::string message, const msg_meta &conf)
             std::wstring new_msg = message_w.substr(6);
             this->group_welcome_messages[conf.group_id] = new_msg;
             this->save_welcome_messages();
-            conf.p->setlog(LOG::INFO, fmt::format("{} 设置入群消息: {}", conf.group_id, new_msg));
-            conf.p->cq_send(fmt::format("设置入群消息成功!\n{}", trim(this->format_message(this->get_welcome_message(conf.group_id), conf))), conf);
+            conf.p->setlog(LOG::INFO, fmt::format("{} 设置入群消息: {}", conf.group_id, std::string(new_msg.begin(), new_msg.end())));
+            std::wstring test_msg = trim(this->format_message(this->get_welcome_message(conf.group_id), conf));
+            conf.p->cq_send(fmt::format("设置入群消息成功!\n{}", std::string(test_msg.begin(), test_msg.end())), conf);
         } else if (message_w.find(L"删除入群消息") == 0) {
             group_welcome_messages[conf.group_id] = L"";
             conf.p->setlog(LOG::INFO, fmt::format("{} 删除入群消息", conf.group_id));
