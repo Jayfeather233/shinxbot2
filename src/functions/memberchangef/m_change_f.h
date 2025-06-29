@@ -16,6 +16,8 @@ private:
     std::wstring get_welcome_message(groupid_t group_id);
     std::wstring format_message(const std::wstring &message, const msg_meta &conf);
 public:
+    m_change_f();
+    ~m_change_f();
     void process(std::string message, const msg_meta &conf);
     bool check(std::string message, const msg_meta &conf);
     std::string help();

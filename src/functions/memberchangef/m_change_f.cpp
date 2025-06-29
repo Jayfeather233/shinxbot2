@@ -8,6 +8,13 @@
 
 const std::string WELCOME_MESSAGE_FILE = "./config/welcome_messages.json";
 
+m_change_f::m_change_f() {
+    load_welcome_messages();
+}
+m_change_f::~m_change_f() {
+    save_welcome_messages();
+}
+
 void m_change_f::save_welcome_messages() {
     Json::Value root;
     for (const auto &pair : group_welcome_messages) {
@@ -61,7 +68,7 @@ void m_change_f::process(std::string message, const msg_meta &conf)
                 conf.p->cq_send("你没有权限设置入群消息", conf);
                 return;
             }
-            std::wstring new_msg = message_w.substr(6);
+            std::wstring new_msg = trim(message_w.substr(6));
             this->group_welcome_messages[conf.group_id] = new_msg;
             this->save_welcome_messages();
             conf.p->setlog(LOG::INFO, fmt::format("{} 设置入群消息: {}", conf.group_id, wstring_to_string(new_msg)));
@@ -69,6 +76,7 @@ void m_change_f::process(std::string message, const msg_meta &conf)
             conf.p->cq_send(fmt::format("设置入群消息成功!\n{}", wstring_to_string(test_msg)), conf);
         } else if (message_w.find(L"删除入群消息") == 0) {
             group_welcome_messages[conf.group_id] = L"";
+            this->save_welcome_messages();
             conf.p->setlog(LOG::INFO, fmt::format("{} 删除入群消息", conf.group_id));
             conf.p->cq_send("删除入群消息成功", conf);
             return;
