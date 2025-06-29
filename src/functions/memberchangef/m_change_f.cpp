@@ -51,7 +51,9 @@ void m_change_f::process(std::string message, const msg_meta &conf)
     if (conf.message_type == "internal") {
         std::wstring welcome_message = trim(this->format_message(this->get_welcome_message(conf.group_id), conf));
         if (!welcome_message.empty()) {
-            conf.p->cq_send(std::string(welcome_message.begin(), welcome_message.end()), conf);
+            conf.p->cq_send(std::string(welcome_message.begin(), welcome_message.end()),
+                (msg_meta){std::string("group"), conf.user_id, conf.group_id, conf.message_id, conf.p});
+            conf.p->setlog(LOG::INFO, fmt::format("{} 入群消息: {}", conf.group_id, std::string(welcome_message.begin(), welcome_message.end())));
         }
     } else {
         if (message_w.find(L"设置入群消息") == 0) {
