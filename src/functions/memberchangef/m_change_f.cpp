@@ -77,7 +77,10 @@ void m_change_f::process(std::string message, const msg_meta &conf)
 }
 bool m_change_f::check(std::string message, const msg_meta &conf)
 {
-    return message.find("设置入群消息") == 0 || (conf.message_type == "internal" && message == "m_change_f") || message.find("删除入群消息") == 0;
+    return conf.group_id != 0 && (
+        message.find("设置入群消息") == 0
+        || (conf.message_type == "internal" && message == "m_change_f")
+        || message.find("删除入群消息") == 0);
 }
 std::string m_change_f::help() { return "入群提示词。\n    设置入群消息 [后接入群提示消息，{{username}}代表用户名]\n    删除入群消息"; }
 

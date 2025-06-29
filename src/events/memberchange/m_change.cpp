@@ -39,15 +39,15 @@ void m_change::process(bot *p, Json::Value J)
     else if (J["notice_type"].asString() == "group_increase") {
         // p->cq_send((std::string) "欢迎" + name1 + "的加入",
         //            (msg_meta){"group", 0, J["group_id"].asUInt64(), 0});
-        Json::Value J;
-        J["post_type"] = "message";
-        J["message_type"] = "internal";
-        J["message"] = "m_change_f";
-        J["message_id"] = 0;
-        J["group_id"] = J["group_id"].asUInt64();
-        J["user_id"] = J["user_id"].asUInt64();
+        Json::Value w;
+        w["post_type"] = "message";
+        w["message_type"] = "internal";
+        w["message"] = "m_change_f";
+        w["message_id"] = 0;
+        w["group_id"] = J["group_id"].asUInt64();
+        w["user_id"] = J["user_id"].asUInt64();
 
-        p->input_process(new std::string(J.toStyledString()));
+        p->input_process(new std::string(w.toStyledString()));
 
         p->setlog(LOG::INFO, "member increase in group " +
                                  std::to_string(J["group_id"].asUInt64()) +
