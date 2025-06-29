@@ -79,6 +79,11 @@ void m_change_f::process(std::string message, const msg_meta &conf)
 }
 bool m_change_f::check(std::string message, const msg_meta &conf)
 {
+    conf.p->setlog(LOG::INFO, fmt::format("m_change_f check: {} {} {} {}", message,
+        conf.group_id,
+        conf.message_type,
+        conf.user_id
+    ));
     return conf.group_id != 0 && (
         message.find("设置入群消息") == 0
         || (conf.message_type == "internal" && message == "m_change_f")
