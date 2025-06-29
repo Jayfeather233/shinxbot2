@@ -63,11 +63,11 @@ void m_change_f::process(std::string message, const msg_meta &conf)
             conf.p->setlog(LOG::INFO, fmt::format("{} 入群消息: {}", conf.group_id, wstring_to_string(welcome_message)));
         }
     } else {
+        if (conf.p->is_op(conf.user_id) == false && is_group_op(conf.p, conf.group_id, conf.user_id) == false) {
+            conf.p->cq_send("你没有权限设置入群消息", conf);
+            return;
+        }
         if (message_w.find(L"设置入群消息") == 0) {
-            if (conf.p->is_op(conf.user_id) == false && is_group_op(conf.p, conf.group_id, conf.user_id) == false) {
-                conf.p->cq_send("你没有权限设置入群消息", conf);
-                return;
-            }
             std::wstring new_msg = trim(message_w.substr(6));
             this->group_welcome_messages[conf.group_id] = new_msg;
             this->save_welcome_messages();
