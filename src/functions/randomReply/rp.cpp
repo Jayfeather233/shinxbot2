@@ -133,7 +133,7 @@ void RP::process(std::string message, const msg_meta &conf)
 std::string RP::help()
 {
     return "Automatic Reply Bot:\n"
-           "- Add a reply: rp.add <userid> <message>\n"
+           "- Add a reply: rp.add <userid> <possibility in %> <message>\n"
            "- Replies are triggered automatically when a message is received "
            "from the specified user.";
 }

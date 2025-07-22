@@ -137,6 +137,9 @@ std::string img::commands(std::string message, const msg_meta &conf)
         }
         else if (wmessage.find(L"列表") == 0) {
             std::ostringstream oss;
+            
+            oss << "转发" << std::endl;
+            oss << std::to_string(conf.p->get_botqq()) << ' ';
             if (wmessage.find(L"all") != wmessage.npos &&
                 conf.p->is_op(conf.user_id)) {
                 for (auto it : images) {
@@ -160,7 +163,16 @@ std::string img::commands(std::string message, const msg_meta &conf)
                     }
                 }
             }
-            return oss.str();
+            
+            Json::Value J_send;
+            J_send["post_type"] = "message";
+            J_send["message"] = oss.str();
+            J_send["message_type"] = conf.message_type;
+            J_send["message_id"] = conf.message_id;
+            J_send["user_id"] = conf.user_id;
+            J_send["group_id"] = conf.group_id;
+            conf.p->input_process(new std::string(J_send.toStyledString()));
+            return std::string();
         }
         else if (wmessage.find(L"加入") == 0) {
             std::wstring name = L"";
