@@ -30,6 +30,9 @@ bool bot::is_op(const userid_t a) const { return false; }
 
 std::string bot::cq_send(const std::string &message, const msg_meta &conf) const
 {
+    if (trim(message).empty()) {
+        return std::string("{\"data\": {\"message_id\": 0}}");
+    }
     Json::Value input;
     input["message"] = trim(message);
     input["message_type"] = conf.message_type;
