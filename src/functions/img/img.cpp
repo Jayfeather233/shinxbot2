@@ -139,11 +139,11 @@ std::string img::commands(std::string message, const msg_meta &conf)
             std::ostringstream oss;
             
             oss << "转发" << std::endl;
+            oss << std::to_string(conf.p->get_botqq()) << " 合并行" << std::endl;
             if (wmessage.find(L"all") != wmessage.npos &&
                 conf.p->is_op(conf.user_id)) {
                 for (auto it : images) {
                     if (it.second != 0){
-                        oss << std::to_string(conf.p->get_botqq()) << ' ';
                         oss << it.first << '(' << it.second << ")\n";
                     }
                 }
@@ -153,7 +153,6 @@ std::string img::commands(std::string message, const msg_meta &conf)
                     belongs.find(conf.group_id) == belongs.end()) {
                     for (auto it2 : default_img) {
                         if (images[it2] != 0) {
-                            oss << std::to_string(conf.p->get_botqq()) << ' ';
                             oss << it2 << '(' << images[it2] << ")\n";
                         }
                     }
@@ -161,13 +160,13 @@ std::string img::commands(std::string message, const msg_meta &conf)
                 else {
                     for (auto it2 : belongs[conf.group_id]) {
                         if (images[it2.asString()] != 0){
-                            oss << std::to_string(conf.p->get_botqq()) << ' ';
                             oss << it2.asString() << '('
                                 << images[it2.asString()] << ")\n";
                         }
                     }
                 }
             }
+            oss << std::endl << "结束合并";
             
             Json::Value J_send;
             J_send["post_type"] = "message";
