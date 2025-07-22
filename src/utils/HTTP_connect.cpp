@@ -102,7 +102,7 @@ std::string do_post(const std::string &httpaddr, const std::string &httppath,
                     const bool proxy_flg)
 {
     auto cli = httplib::Client(httpaddr);
-    cli.set_url_encode(enc);
+    cli.set_path_encode(enc);
     return do_http_request(cli, httpaddr, httppath, headers, proxy_flg,
                            http_req_method::POST, json_message);
 }
@@ -112,7 +112,7 @@ std::string do_get(const std::string &httpaddr, const std::string &httppath,
                    const bool proxy_flg)
 {
     auto cli = httplib::Client(httpaddr);
-    cli.set_url_encode(enc);
+    cli.set_path_encode(enc);
     return do_http_request(cli, httpaddr, httppath, headers, proxy_flg,
                            http_req_method::GET);
 }
@@ -144,7 +144,7 @@ std::string do_post(const std::string &httpaddr, int port,
                     const bool proxy_flg)
 {
     auto cli = httplib::Client(httpaddr, port);
-    cli.set_url_encode(enc);
+    cli.set_path_encode(enc);
     return do_http_request(cli, fmt::format("{}:{}", httpaddr, port), httppath,
                            headers, proxy_flg, http_req_method::POST,
                            json_message);
@@ -156,7 +156,7 @@ std::string do_get(const std::string &httpaddr, int port,
                    const bool proxy_flg)
 {
     auto cli = httplib::Client(httpaddr, port);
-    cli.set_url_encode(enc);
+    cli.set_path_encode(enc);
     return do_http_request(cli, fmt::format("{}:{}", httpaddr, port), httppath,
                            headers, proxy_flg, http_req_method::GET);
 }
