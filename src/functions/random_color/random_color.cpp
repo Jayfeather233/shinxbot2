@@ -83,7 +83,7 @@ void r_color::process(std::string message, const msg_meta &conf)
         conf.p->setlog(LOG::ERROR, error.what());
     }
 
-    std::string enc_name = httplib::detail::encode_url(name.substr(1));
+    std::string enc_name = httplib::detail::encode_path(name.substr(1));
 
     conf.p->cq_send(
         fmt::format(
