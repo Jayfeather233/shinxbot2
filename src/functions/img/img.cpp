@@ -139,27 +139,32 @@ std::string img::commands(std::string message, const msg_meta &conf)
             std::ostringstream oss;
             
             oss << "转发" << std::endl;
-            oss << std::to_string(conf.p->get_botqq()) << ' ';
             if (wmessage.find(L"all") != wmessage.npos &&
                 conf.p->is_op(conf.user_id)) {
                 for (auto it : images) {
-                    if (it.second != 0)
+                    if (it.second != 0){
+                        oss << std::to_string(conf.p->get_botqq()) << ' ';
                         oss << it.first << '(' << it.second << ")\n";
+                    }
                 }
             }
             else {
                 if (conf.group_id == 0 ||
                     belongs.find(conf.group_id) == belongs.end()) {
                     for (auto it2 : default_img) {
-                        if (images[it2] != 0)
+                        if (images[it2] != 0) {
+                            oss << std::to_string(conf.p->get_botqq()) << ' ';
                             oss << it2 << '(' << images[it2] << ")\n";
+                        }
                     }
                 }
                 else {
                     for (auto it2 : belongs[conf.group_id]) {
-                        if (images[it2.asString()] != 0)
+                        if (images[it2.asString()] != 0){
+                            oss << std::to_string(conf.p->get_botqq()) << ' ';
                             oss << it2.asString() << '('
                                 << images[it2.asString()] << ")\n";
+                        }
                     }
                 }
             }
