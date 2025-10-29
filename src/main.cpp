@@ -32,9 +32,10 @@ int main()
     signal(SIGALRM, SIG_IGN);
     std::ifstream iport("./config/port.txt");
     int x, y;
+    std::string token;
     if (iport.is_open()) {
         while(!iport.eof()){
-            iport >> x >> y;
+            iport >> x >> y >> token;
         }
         iport.close();
     }
@@ -43,15 +44,17 @@ int main()
         std::cin >> x;
         std::cout << "Please input the receive_port: (send port in Onebot11):";
         std::cin >> y;
+        std::cout << "Please input the token:";
+        std::cin >> token;
         std::ofstream oport("./config/port.txt");
         if (oport) {
-            oport << x << ' ' << y;
+            oport << x << ' ' << y << ' ' << token;
             oport.flush();
             oport.close();
         }
     }
 
-    bot_run(bots = new shinxbot(y, x));
+    bot_run(bots = new shinxbot(y, x, token));
     
     while(true) sleep(10);
 

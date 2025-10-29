@@ -21,8 +21,8 @@ msg_meta::msg_meta(std::string mt, userid_t uid, groupid_t gid, int64_t mid,
 {
 }
 
-bot::bot(int recv_port, int send_port)
-    : receive_port(recv_port), send_port(send_port)
+bot::bot(int recv_port, int send_port, std::string tk)
+    : receive_port(recv_port), send_port(send_port), token(tk)
 {
 }
 
@@ -45,7 +45,7 @@ std::string bot::cq_send(const std::string &end_point,
                          const Json::Value &J) const
 {
     return do_post((std::string) "127.0.0.1", send_port,
-                   (std::string) "/" + end_point, false, J);
+                   (std::string) "/" + end_point, false, J, {{"Authorization", "Bearer " + token}});
 }
 
 std::string bot::cq_get(const std::string &end_point) const

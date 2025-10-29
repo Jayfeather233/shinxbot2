@@ -139,8 +139,8 @@ void shinxbot::init()
     this->archive->set_default_pwd(std::to_string(this->botqq));
 }
 
-shinxbot::shinxbot(int recv_port, int send_port) : bot(recv_port, send_port) {}
-shinxbot::shinxbot(const Json::Value &J) : bot(J["recv_port"].asInt(), J["send_port"].asInt()) {}
+shinxbot::shinxbot(int recv_port, int send_port, std::string tk) : bot(recv_port, send_port, tk) {}
+shinxbot::shinxbot(const Json::Value &J) : bot(J["recv_port"].asInt(), J["send_port"].asInt(), J["token"].asString()) {}
 
 bool shinxbot::is_op(const userid_t a) const
 {

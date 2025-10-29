@@ -39,6 +39,7 @@ struct msg_meta {
 class bot {
 protected:
     int receive_port, send_port;
+    std::string token;
 
     userid_t botqq;
 
@@ -48,7 +49,7 @@ public:
     bot() = delete;
     bot(bot &bot) = delete;
     bot(bot &&bot) = delete;
-    bot(int recv_port, int send_port);
+    bot(int recv_port, int send_port, std::string tk);
 
     /**
      * Starter of the bot.

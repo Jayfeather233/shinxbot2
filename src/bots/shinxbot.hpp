@@ -59,7 +59,7 @@ private:
     void init_func(const std::string &name, eventprocess *p);
 
 public:
-    shinxbot(int recv_port, int send_port);
+    shinxbot(int recv_port, int send_port, std::string tk);
     shinxbot(const Json::Value &J);
 
     bool is_op(const userid_t a) const;
