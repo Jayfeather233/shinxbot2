@@ -66,11 +66,11 @@ std::string do_http_request(httplib::Client &client,
     if (!res || res->status / 100 != 2) {
         auto err = res.error();
         set_global_log(LOG::ERROR,
-                       fmt::format("Connect to {} failed with code {} err: {} body: {}",
+                       fmt::format("Connect to {} failed with code {}, err: {}, body: {}",
                                    httpaddr + httppath,
                                    std::to_string(res ? res->status : -1),
                                    httplib::to_string(err),
-                                   res->body));
+                                   res ? res->body : ""));
         throw fmt::format("HTTP Connect failed, err {}",
                           httplib::to_string(err));
     }
