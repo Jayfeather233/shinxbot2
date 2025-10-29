@@ -436,7 +436,7 @@ void shinxbot::input_process(std::string *input)
         }
     }
     else if (post_type == "meta_event") {
-        if (J["meta_event_type"].asString() == "heartbeat") {
+        if (J.isMember("meta_event_type") && J["meta_event_type"].asString() == "heartbeat") {
             recorder->inform();
         }
     }

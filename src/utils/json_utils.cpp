@@ -7,11 +7,18 @@ Json::Value string_to_json(const std::string &str)
 {
     Json::Value root;
     Json::Reader re;
-    bool isok = re.parse(str, root);
-    if (!isok) {
+    try {
+        bool isok = re.parse(str, root);
+        if (!isok) {
+            set_global_log(LOG::ERROR,
+                "string to json failed: " + re.getFormattedErrorMessages() +
+                    "\nstring: " + str);
+        }
+    } catch (std::exception &e) {
         set_global_log(LOG::ERROR,
-               "string to json failed: " + re.getFormattedErrorMessages() +
-                   "\nstring: " + str);
+                       "string to json exception: " + std::string(e.what()) +
+                           "\nstring: " + str);
+        throw "Json parse error";
     }
     return root;
 }
