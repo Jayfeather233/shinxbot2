@@ -87,18 +87,22 @@ Json::Value bili_decode::get_raw_info(uint64_t aid)
     return string_to_json(
         do_get("https://api.bilibili.com",
                "/x/web-interface/view?aid=" + std::to_string(aid), false, {
-                {"user-agent", "curl/7.88.1"},
-                {"accept", "*/*"},
-                {"Proxy-Connection", "Keep-Alive"},
-                {"Accept-Language", "zh-CN,zh;q=0.9"},
-                {"Connection", "keep-alive"}}));
+                                    {"user-agent", "curl/8.5.0"},
+                                    {"accept", "*/*"},
+                                    {"Referer", "https://www.bilibili.com/"},
+                                    {"Host", "api.bilibili.com"},
+                                    {"Proxy-Connection", "Keep-Alive"},
+                                    {"Accept-Language", "zh-CN,zh;q=0.9"},
+                                    {"Connection", "keep-alive"}}));
 }
 Json::Value bili_decode::get_raw_info(std::string bvid)
 {
     return string_to_json(do_get("https://api.bilibili.com",
                                  "/x/web-interface/view?bvid=" + bvid, false, {
-                                    {"user-agent", "curl/7.88.1"},
+                                    {"user-agent", "curl/8.5.0"},
                                     {"accept", "*/*"},
+                                    {"Referer", "https://www.bilibili.com/"},
+                                    {"Host", "api.bilibili.com"},
                                     {"Proxy-Connection", "Keep-Alive"},
                                     {"Accept-Language", "zh-CN,zh;q=0.9"},
                                     {"Connection", "keep-alive"}}));
