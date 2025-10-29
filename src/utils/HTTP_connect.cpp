@@ -1,6 +1,7 @@
 #include "utils.h"
 
 #include "httplib.h"
+#include <fmt/ostream.h>
 #include <iostream>
 #include <jsoncpp/json/json.h>
 #include <mutex>
@@ -70,7 +71,7 @@ std::string do_http_request(httplib::Client &client,
                                    httpaddr + httppath,
                                    std::to_string(res ? res->status : -1),
                                    httplib::to_string(err),
-                                   res ? res->body : ""));
+                                   fmt::streamed(res ? res->body : "")));
         throw fmt::format("HTTP Connect failed, err {}",
                           httplib::to_string(err));
     }
