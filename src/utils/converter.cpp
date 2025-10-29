@@ -38,7 +38,12 @@ std::string message_to_string(const Json::Value &J)
     else {
         std::string ret = "[CQ:" + J["type"].asString();
         for (auto u : J["data"].getMemberNames()) {
-            ret += "," + u + "=" + cq_encode(J["data"][u].asString());
+            if (J["data"][u].isString()) {
+                ret += "," + u + "=" + cq_encode(J["data"][u].asString());
+            }
+            else {
+                ret += "," + u + "=" + cq_encode(J["data"][u].toStyledString());
+            }
         }
         ret += "]";
         return ret;

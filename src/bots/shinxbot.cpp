@@ -355,6 +355,9 @@ void shinxbot::input_process(std::string *input)
     }
     Json::Value J = string_to_json(*input);
     delete input;
+    if (J.isMember("post_type") == false) {
+        return;
+    }
     std::string post_type = J["post_type"].asString();
 
     if ((post_type == "request" || post_type == "notice") && bot_isopen) {
