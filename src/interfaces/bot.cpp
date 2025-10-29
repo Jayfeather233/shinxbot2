@@ -51,7 +51,7 @@ std::string bot::cq_send(const std::string &end_point,
 std::string bot::cq_get(const std::string &end_point) const
 {
     return do_get((std::string) "127.0.0.1", send_port,
-                  (std::string) "/" + end_point, false);
+                  (std::string) "/" + end_point, false, {{"Authorization", "Bearer " + token}});
 }
 
 void bot::setlog(LOG type, std::string message) {}
