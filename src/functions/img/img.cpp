@@ -137,13 +137,14 @@ std::string img::commands(std::string message, const msg_meta &conf)
         }
         else if (wmessage.find(L"列表") == 0) {
             std::ostringstream oss;
-            
+
             oss << "转发" << std::endl;
-            oss << std::to_string(conf.p->get_botqq()) << " 合并行" << std::endl;
+            oss << std::to_string(conf.p->get_botqq()) << " 合并行"
+                << std::endl;
             if (wmessage.find(L"all") != wmessage.npos &&
                 conf.p->is_op(conf.user_id)) {
                 for (auto it : images) {
-                    if (it.second != 0){
+                    if (it.second != 0) {
                         oss << it.first << '(' << it.second << ")\n";
                     }
                 }
@@ -159,7 +160,7 @@ std::string img::commands(std::string message, const msg_meta &conf)
                 }
                 else {
                     for (auto it2 : belongs[conf.group_id]) {
-                        if (images[it2.asString()] != 0){
+                        if (images[it2.asString()] != 0) {
                             oss << it2.asString() << '('
                                 << images[it2.asString()] << ")\n";
                         }
@@ -167,7 +168,7 @@ std::string img::commands(std::string message, const msg_meta &conf)
                 }
             }
             oss << std::endl << "结束合并";
-            
+
             Json::Value J_send;
             J_send["post_type"] = "message";
             J_send["message"] = oss.str();
@@ -192,6 +193,13 @@ std::string img::commands(std::string message, const msg_meta &conf)
             if (name.length() <= 0) {
                 return "美图 加入 xxx - 加入一张图片至xxx类";
             }
+            if (this->images.find(wstring_to_string(name)) !=
+                    this->images.end() &&
+                (this->belongs.find(conf.group_id) == this->belongs.end() ||
+                 !find_in_array(this->belongs[conf.group_id],
+                                wstring_to_string(name)))) {
+                return "此美图类别已存在，请联系op";
+            }
             wmessage = trim(wmessage.substr(i));
             if (wmessage.length() <= 1) {
                 is_adding[conf.user_id] = true;
@@ -207,10 +215,7 @@ std::string img::commands(std::string message, const msg_meta &conf)
             }
         }
         else if (wmessage.find(L"删除") == 0) {
-            if (!conf.p->is_op(conf.user_id)) {
-                return "Not on op_list.";
-            }
-            else {
+            if (conf.p->is_op(conf.user_id)) {
                 std::string name, indexs;
                 std::istringstream iss(wstring_to_string(wmessage.substr(2)));
                 iss >> name >> indexs;
@@ -224,9 +229,32 @@ std::string img::commands(std::string message, const msg_meta &conf)
                     return "已删除";
                 }
             }
+            else if (conf.message_type == "group" &&
+                     is_group_op(conf.p, conf.group_id, conf.user_id)) {
+                std::string name, indexs;
+                std::istringstream iss(wstring_to_string(wmessage.substr(2)));
+                iss >> name >> indexs;
+                if (this->belongs.find(conf.group_id) == this->belongs.end() ||
+                    !find_in_array(this->belongs[conf.group_id], name)) {
+                    return "本群无此美图";
+                }
+                if (indexs.length() <= 0) {
+                    is_deling[conf.user_id] = true;
+                    del_name[conf.user_id] = name;
+                    return "即将删除 *所有* " + name + "图片，请确认[N/y]";
+                }
+                else {
+                    del_single(name, my_string2uint64(indexs) - 1);
+                    return "已删除";
+                }
+            }
+            else {
+                return "仅限管理员";
+            }
         }
         else if (wmessage.find(L"属于") == 0) {
-            if (is_group_op(conf.p, conf.group_id, conf.user_id) == false && conf.p->is_op(conf.user_id) == false) {
+            if (is_group_op(conf.p, conf.group_id, conf.user_id) == false &&
+                conf.p->is_op(conf.user_id) == false) {
                 return "仅限管理员";
             }
             std::string name = wstring_to_string(trim(wmessage.substr(2)));
@@ -294,9 +322,10 @@ void img::process(std::string message, const msg_meta &conf)
         for (size_t i = 0; i < it2->second; ++i) {
             oss << std::to_string(conf.p->get_botqq())
                 << " [CQ:image,file=file://" << get_local_path()
-                << "/resource/mt/" << name << "/" << i << ",id=40000]" << std::endl;
+                << "/resource/mt/" << name << "/" << i << ",id=40000]"
+                << std::endl;
         }
-        
+
         Json::Value J_send;
         J_send["post_type"] = "message";
         J_send["message"] = oss.str();
@@ -305,7 +334,8 @@ void img::process(std::string message, const msg_meta &conf)
         J_send["user_id"] = conf.user_id;
         J_send["group_id"] = conf.group_id;
         conf.p->input_process(new std::string(J_send.toStyledString()));
-        conf.p->setlog(LOG::INFO, fmt::format("美图 {} all by {}",name,  std::to_string(conf.user_id)));
+        conf.p->setlog(LOG::INFO, fmt::format("美图 {} all by {}", name,
+                                              std::to_string(conf.user_id)));
         return;
     }
     int64_t index;
