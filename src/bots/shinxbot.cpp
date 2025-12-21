@@ -289,7 +289,7 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
             return false;
         }
     }
-    else if (message == "bot.list_module") {
+    else if (message == "bot.list_module" && is_op(conf.user_id)) {
         std::ostringstream oss;
         oss << "functions:\n";
         for (auto u : functions) {
@@ -351,7 +351,7 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
         cq_send(descBar(), conf);
         return false;
     } else if (message.find("bot.block") == 0 && conf.message_type == "group") {
-        if (is_group_op(conf.p, conf.group_id, conf.user_id)) {
+        if (is_group_op(conf.p, conf.group_id, conf.user_id) || is_op(conf.user_id)) {
             std::istringstream iss(message.substr(9));
             std::string type;
             while(iss >> type) {
@@ -359,12 +359,12 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
             }
             cq_send("已添加屏蔽功能", conf);
             save_blocklist();
+            return false;
         } else {
-            cq_send("你不是本群管理员，无法使用此命令", conf);
+            return true;
         }
-        return false;
     } else if (message.find("bot.unblock") == 0 && conf.message_type == "group") {
-        if (is_group_op(conf.p, conf.group_id, conf.user_id)) {
+        if (is_group_op(conf.p, conf.group_id, conf.user_id) || is_op(conf.user_id)) {
             std::istringstream iss(message.substr(11));
             std::string type;
             while(iss >> type) {
@@ -372,10 +372,10 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
             }
             cq_send("已移除屏蔽功能", conf);
             save_blocklist();
+            return false;
         } else {
-            cq_send("你不是本群管理员，无法使用此命令", conf);
+            return true;
         }
-        return false;
     }
     else
         return true;
