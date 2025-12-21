@@ -357,7 +357,7 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
             while(iss >> type) {
                 group_blocklist[conf.group_id].insert(type);
             }
-            cq_send("已添加屏蔽词", conf);
+            cq_send("已添加屏蔽功能", conf);
             save_blocklist();
         } else {
             cq_send("你不是本群管理员，无法使用此命令", conf);
@@ -370,7 +370,7 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
             while(iss >> type) {
                 group_blocklist[conf.group_id].erase(type);
             }
-            cq_send("已移除屏蔽词", conf);
+            cq_send("已移除屏蔽功能", conf);
             save_blocklist();
         } else {
             cq_send("你不是本群管理员，无法使用此命令", conf);
