@@ -350,7 +350,7 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
     } else if (message == "bot.progress") {
         cq_send(descBar(), conf);
         return false;
-    } else if (message == "bot.block" && conf.message_type == "group") {
+    } else if (message.find("bot.block") == 0 && conf.message_type == "group") {
         if (is_group_op(conf.p, conf.group_id, conf.user_id)) {
             std::istringstream iss(message.substr(9));
             std::string type;
@@ -363,7 +363,7 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
             cq_send("你不是本群管理员，无法使用此命令", conf);
         }
         return false;
-    } else if (message == "bot.unblock" && conf.message_type == "group") {
+    } else if (message.find("bot.unblock") == 0 && conf.message_type == "group") {
         if (is_group_op(conf.p, conf.group_id, conf.user_id)) {
             std::istringstream iss(message.substr(11));
             std::string type;
