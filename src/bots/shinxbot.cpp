@@ -122,7 +122,7 @@ void shinxbot::init()
     // J_block: {"group_id": ["word1", "word2", ...}, ...}
     Json::Value J_block = string_to_json(readfile("./config/blocklist.json", "{}"));
     for (auto &member : J_block.getMemberNames()) {
-        group_t gid = std::stoull(member);
+        groupid_t gid = std::stoull(member);
         std::set<std::string> &s = group_blocklist[gid];
         parse_json_to_set(J_block[member], s);
     }
@@ -385,7 +385,7 @@ void shinxbot::save_blocklist()
 {
     Json::Value J_block;
     for (const auto &pair : group_blocklist) {
-        group_t gid = pair.first;
+        groupid_t gid = pair.first;
         const std::set<std::string> &s = pair.second;
         Json::Value Ja_block;
         for (const auto &word : s) {
@@ -393,7 +393,7 @@ void shinxbot::save_blocklist()
         }
         J_block[std::to_string(gid)] = Ja_block;
     }
-    writefile("./config/blocklist.json", json_to_string(J_block));
+    writefile("./config/blocklist.json", J_block.toStyledString());
 }
 
 void shinxbot::input_process(std::string *input)
@@ -412,8 +412,7 @@ void shinxbot::input_process(std::string *input)
     if ((post_type == "request" || post_type == "notice") && bot_isopen) {
         for (auto evenx : events) {
             eventprocess *even = std::get<0>(evenx);
-            std::string name = std::get<2>(evenx);
-            if (group_blocklist[conf.group_id].find(name) == group_blocklist[conf.group_id].end() && even->check(this, J)) {
+            if (even->check(this, J)) {
                 even->process(this, J);
             }
         }
@@ -451,7 +450,7 @@ void shinxbot::input_process(std::string *input)
                     for (auto funcx : functions) {
                         processable *func = std::get<0>(funcx);
                         std::string name = std::get<2>(funcx);
-                        if (group_blocklist[conf.group_id].find(name) != group_blocklist[conf.group_id].end()) {
+                        if (message_type == "group" && group_blocklist[group_id].find(name) != group_blocklist[group_id].end()) {
                             continue;
                         }
                         try {
