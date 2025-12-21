@@ -28,6 +28,9 @@ private:
     Timer *mytimer;
     archivist *archive;
 
+    std::map<group_t, std::set<std::string>> group_blocklist;
+    void save_blocklist();
+
     /**
      * after connect to gocq, read the message out
      */
