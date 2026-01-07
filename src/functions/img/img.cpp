@@ -193,11 +193,8 @@ std::string img::commands(std::string message, const msg_meta &conf)
             if (name.length() <= 0) {
                 return "美图 加入 xxx - 加入一张图片至xxx类";
             }
-            if (this->images.find(wstring_to_string(name)) !=
-                    this->images.end() &&
-                (this->belongs.find(conf.group_id) == this->belongs.end() ||
-                 !find_in_array(this->belongs[conf.group_id],
-                                wstring_to_string(name)))) {
+            if (conf.message_type == "group" && this->images.find(wstring_to_string(name)) != this->images.end() &&
+                (this->belongs.find(conf.group_id) == this->belongs.end() || !find_in_array(this->belongs[conf.group_id], wstring_to_string(name)))) {
                 return "此美图类别已存在，请联系op";
             }
             wmessage = trim(wmessage.substr(i));
@@ -373,7 +370,7 @@ std::string img::help() { return "美图： 美图 帮助 - 列出所有美图�
 
 void img::set_backup_files(archivist *p, const std::string &name)
 {
-    p->add_path(name, "./resource/mt/", "resource");
+    p->add_path(name, "./resource/mt/", "resource/mt/");
 }
 
 DECLARE_FACTORY_FUNCTIONS(img)

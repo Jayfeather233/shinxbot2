@@ -12,15 +12,15 @@ std::string ocr::ocr_tostring(const Json::Value &J)
     long long top, bottom, center;
     long long new_top, new_bottom;
     for (Json::ArrayIndex i = 0; i < sz; i++) {
-        top = J[i]["coordinates"][0]["y"].asInt64();
-        bottom = J[i]["coordinates"][2]["y"].asInt64();
+        top = J[i]["pt1"]["y"].asInt64();
+        bottom = J[i]["pt3"]["y"].asInt64();
         center = (top + bottom) >> 1;
         oss << J[i]["text"].asString();
         ++i;
 
         for (; i < sz; i++) {
-            new_top = J[i]["coordinates"][0]["y"].asInt64();
-            new_bottom = J[i]["coordinates"][2]["y"].asInt64();
+            new_top = J[i]["pt1"]["y"].asInt64();
+            new_bottom = J[i]["pt3"]["y"].asInt64();
             if (new_top > center || new_bottom < center) {
                 oss << std::endl;
                 --i;
@@ -41,6 +41,10 @@ void ocr::process(std::string message, const msg_meta &conf)
 {
     size_t index = message.find("[CQ:image,file=");
     if (index == std::string::npos) {
+        if (in_queue[conf.user_id] == true) {
+            in_queue[conf.user_id] = false;
+            return;
+        }
         conf.p->cq_send("图来！", conf);
         in_queue[conf.user_id] = true;
         return;
@@ -57,7 +61,7 @@ void ocr::process(std::string message, const msg_meta &conf)
     J = string_to_json(conf.p->cq_send("ocr_image", J));
     if (J["data"].isNull())
         return;
-    J = J["data"]["texts"];
+    J = J["data"];
     std::string res = ocr_tostring(J);
     conf.p->cq_send(res, conf);
     conf.p->setlog(LOG::INFO, "OCR at group " + std::to_string(conf.group_id) +
