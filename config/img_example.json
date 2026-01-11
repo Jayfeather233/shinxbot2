@@ -1,0 +1,19 @@
+{
+    "default_images": [
+        "default_uuid1",
+        "default_uuid2"
+    ],
+    "image_size": {
+        "default_uuid1": 3,
+        "default_uuid2": 2,
+        "uuid1": 2,
+        "uuid2": 2
+    },
+    "name": {
+        "uuid1": "Image Set Name 1",
+        "uuid2": "Image Set Name 2"
+    },
+    "belongs": {
+        "group_id": ["uuid1", "uuid2"]
+    }
+}

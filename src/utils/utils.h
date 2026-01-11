@@ -302,3 +302,5 @@ std::string get_stranger_name(const bot *p, userid_t user_id);
 
 void send_file_private(const bot *p, const userid_t user_id,
                        const fs::path &path);
+
+std::string generate_uuid();

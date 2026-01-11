@@ -7,3 +7,8 @@
 	path = lib/cpp-httplib
 	url = https://github.com/yhirose/cpp-httplib
 	branch = master
+
+[submodule "lib/uuid_v4"]
+	path = lib/uuid_v4
+	url = https://github.com/crashoz/uuid_v4
+	branch = master

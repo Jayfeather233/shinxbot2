@@ -77,10 +77,10 @@ std::string cq_decode(const std::string &input)
     std::regex rBracket("&#93;");
     std::regex comma("&#44;");
 
-    std::string result = std::regex_replace(result, lBracket, "[");
+    std::string result = std::regex_replace(input, lBracket, "[");
     result = std::regex_replace(result, rBracket, "]");
     result = std::regex_replace(result, comma, ",");
-    result = std::regex_replace(input, amp, "&");
+    result = std::regex_replace(result, amp, "&");
 
     return result;
 }
