@@ -8,7 +8,7 @@
 static std::string imgfun_help_msg =
     "图片处理。\n对称 axis=[0|1] order=[0|1] @或图片。\n\t axis， "
     "order为可选，axis指定x/y轴，order指定翻转哪边\n旋转 fps=[24] order=[0|1] "
-    "@或图片。\n万花筒 layers=[3] num=[8] @或图片。";
+    "@或图片。\n万花筒 layer=[1~4] num=[2~8] @或图片。";
 
 void img_fun::process(std::string message, const msg_meta &conf)
 {
@@ -25,7 +25,7 @@ void img_fun::process(std::string message, const msg_meta &conf)
     std::string fileurl;
     std::string filename;
     img_fun_type proc_type;
-    std::map<userid_t, img_fun_type>::iterator it;
+    std::map<userid_t, img_fun_type>::iterator it = is_input.end();
     if (wmessage.find(L"对称") == 0) {
         char axis = 1;
         char order = 0;
@@ -66,13 +66,11 @@ void img_fun::process(std::string message, const msg_meta &conf)
             wmessage = trim(wmessage.substr(6));
             layers = std::max(1, std::min(4, (int)my_string2int64(wmessage)));
             wmessage = trim(wmessage.substr(wmessage.find(L' ') + 1));
-            printf("layers=%d\n", layers);
         }
         if (wmessage.find(L"num=") == 0) {
             wmessage = trim(wmessage.substr(4));
             nums = std::max(2, std::min(8, (int)my_string2int64(wmessage)));
             wmessage = trim(wmessage.substr(wmessage.find(L' ') + 1));
-            printf("nums=%d\n", nums);
         }
         proc_type = (img_fun_type){img_fun_type::KALEIDO, layers, nums};
     }
@@ -112,8 +110,12 @@ void img_fun::process(std::string message, const msg_meta &conf)
         }
     }
     else {
-        conf.p->cq_send("图来", conf);
-        is_input[conf.user_id] = proc_type;
+        if (it != is_input.end()) {
+            is_input.erase(it);
+        } else {
+            conf.p->cq_send("图来", conf);
+            is_input[conf.user_id] = proc_type;
+        }
         return;
     }
 

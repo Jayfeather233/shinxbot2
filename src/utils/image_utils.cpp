@@ -92,21 +92,26 @@ std::pair<std::string, std::string> image2base64(std::string filepath)
     return std::make_pair(type, blob.base64());
 }
 
-void copyImageTo(Magick::Image &dst, const Magick::Image src, size_t x1,
-                 size_t x2, size_t y1, size_t y2, size_t x3, size_t y3)
+void copyImageTo(Magick::Image &dst, const Magick::Image src,
+                 size_t src_row_start, size_t src_row_end,
+                 size_t src_col_start, size_t src_col_end,
+                 size_t dst_row, size_t dst_col)
 {
-    Magick::Geometry gem = Magick::Geometry(y2 - y1, x2 - x1, y1, x1);
-    Magick::Image subimg = src;
-    subimg.crop(gem);
-    dst.composite(subimg, y3, x3,
-                  MagickCore::CompositeOperator::OverCompositeOp);
+    size_t crop_width = src_col_end - src_col_start;
+    size_t crop_height = src_row_end - src_row_start;
+    Magick::Geometry crop_region(crop_width, crop_height, src_col_start, src_row_start);
+    Magick::Image cropped_src = src;
+    cropped_src.crop(crop_region);
+    dst.composite(cropped_src, dst_col, dst_row, MagickCore::CompositeOperator::OverCompositeOp);
 }
 
 void mirrorImage(Magick::Image &img, char axis, bool direction,
                  const Magick::Image las)
 {
     Magick::Image new_img = img;
-    if (axis == 0) {
+
+    // Mirror operation
+    if (axis == 0) { // Vertical axis (flip)
         new_img.flip();
         if (direction == 0) {
             copyImageTo(img, new_img, new_img.rows() >> 1, new_img.rows(), 0,
@@ -120,7 +125,7 @@ void mirrorImage(Magick::Image &img, char axis, bool direction,
             goto mirrorImageError;
         }
     }
-    else if (axis == 1) {
+    else if (axis == 1) { // Horizontal axis (flop)
         new_img.flop();
         if (direction == 0) {
             copyImageTo(img, new_img, 0, new_img.rows(), new_img.columns() >> 1,
@@ -143,6 +148,7 @@ void mirrorImage(Magick::Image &img, char axis, bool direction,
         img = ret_img;
     }
     return;
+
 mirrorImageError:
     std::ostringstream oss;
     oss << "Invalid parameter in " << __FUNCTION__ << ", axis= " << axis
@@ -153,15 +159,18 @@ mirrorImageError:
 
 void mirrorImage(std::vector<Magick::Image> &img, char axis, bool direction, std::function<void()> callback)
 {
-    Magick::Image las =
-        Magick::Image(Magick::Geometry(1, 1), Magick::Color("white"));
-    for (Magick::Image &im : img) {
-        mirrorImage(im, axis, direction, las);
-        las = im;
+    std::vector<Magick::Image> coalesced;
+    Magick::coalesceImages(&coalesced, img.begin(), img.end());
+
+    for (Magick::Image &im : coalesced) {
+        mirrorImage(im, axis, direction);
+        
         if (callback != nullptr) {
             callback();
         }
     }
+    img.clear();
+    Magick::optimizeImageLayers(&img, coalesced.begin(), coalesced.end());
 }
 
 using namespace Magick;
@@ -310,20 +319,25 @@ void kaleido(Magick::Image &img, int layers, int nums_per_layer,
 
 void kaleido(std::vector<Magick::Image> &img, int layers, int nums_per_layer, std::function<void()> callback)
 {
-    Magick::Image las =
-        Magick::Image(Magick::Geometry(1, 1), Magick::Color("white"));
-    for (Magick::Image &im : img) {
+    std::vector<Magick::Image> coalesced;
+    Magick::coalesceImages(&coalesced, img.begin(), img.end());
+    
+    for (Magick::Image &im : coalesced) {
         im.backgroundColor(
             Magick::Color(QuantumRange, QuantumRange, QuantumRange));
-        im.trim();
         im.backgroundColor(Magick::Color(0, 0, 0));
-        im.trim();
         im.page(Magick::Geometry(0, 0, 0, 0));
-        Magick::Image las_td = im;
-        kaleido(im, layers, nums_per_layer, las);
-        las = las_td;
+
+        size_t delay = im.animationDelay();
+        size_t dispose = im.animationIterations();
+        kaleido(im, layers, nums_per_layer);
+        im.animationDelay(delay);
+        im.animationIterations(dispose);
         if (callback != nullptr) {
             callback();
         }
     }
+
+    img.clear();
+    Magick::optimizeImageLayers(&img, coalesced.begin(), coalesced.end());
 }
