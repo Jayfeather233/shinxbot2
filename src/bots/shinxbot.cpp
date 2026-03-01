@@ -161,6 +161,10 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
         std::string help_message;
         for (auto funcx : functions) {
             processable *func = std::get<0>(funcx);
+            std::string name = std::get<2>(funcx);
+            if (conf.message_type == "group" && group_blocklist[conf.group_id].find(name) != group_blocklist[conf.group_id].end()) {
+                continue;
+            }
             if (func->help() != "")
                 help_message += func->help() + '\n';
         }

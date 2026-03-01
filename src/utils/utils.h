@@ -161,7 +161,15 @@ uint64_t my_string2uint64(const std::string &s);
  * get a random number [0, maxi)
  */
 int get_random(int maxi = 65536);
-std::mt19937 get_engine();
+/**
+ * get a random number [mini, maxi)
+ */
+int get_random(int mini, int maxi);
+/**
+ * get a random float number [mini, maxi)
+ */
+float get_random_f(float mini, float maxi);
+std::mt19937& get_engine();
 
 /**
  * download a image from a http address.

@@ -8,7 +8,7 @@
 static std::string imgfun_help_msg =
     "图片处理。\n对称 axis=[0|1] order=[0|1] @或图片。\n\t axis， "
     "order为可选，axis指定x/y轴，order指定翻转哪边\n旋转 fps=[24] order=[0|1] "
-    "@或图片。\n万花筒 layer=[1~4] num=[2~8] @或图片。";
+    "@或图片。\n万花筒 num=[3~12] @或图片。";
 
 void img_fun::process(std::string message, const msg_meta &conf)
 {
@@ -62,14 +62,9 @@ void img_fun::process(std::string message, const msg_meta &conf)
         int layers = 3;
         int nums = 8;
         wmessage = trim(wmessage.substr(3));
-        if (wmessage.find(L"layer=") == 0) {
-            wmessage = trim(wmessage.substr(6));
-            layers = std::max(1, std::min(4, (int)my_string2int64(wmessage)));
-            wmessage = trim(wmessage.substr(wmessage.find(L' ') + 1));
-        }
         if (wmessage.find(L"num=") == 0) {
             wmessage = trim(wmessage.substr(4));
-            nums = std::max(2, std::min(8, (int)my_string2int64(wmessage)));
+            nums = std::max(3, std::min(12, (int)my_string2int64(wmessage)));
             wmessage = trim(wmessage.substr(wmessage.find(L' ') + 1));
         }
         proc_type = (img_fun_type){img_fun_type::KALEIDO, layers, nums};
@@ -119,6 +114,7 @@ void img_fun::process(std::string message, const msg_meta &conf)
         return;
     }
 
+    conf.p->setlog(LOG::INFO, fmt::format("img_fun at u{} g{}：type={}, para1={}, para2={}", conf.user_id, conf.group_id, proc_type.type, (int)proc_type.para1, (int)proc_type.para2));
     is_input.erase(conf.user_id);
     download(cq_decode(fileurl), "./resource/download/", filename);
     p.setBar(0.2, "图片处理中");
@@ -136,24 +132,21 @@ void img_fun::process(std::string message, const msg_meta &conf)
         Magick::readImages(&img_list, "./resource/download/" + filename);
         if (proc_type.type == img_fun_type::MIRROR) {
             filename += "_mir.gif";
-            float delta_p = 0.7 / (img_list.size());
             float prog = 0.2;
             mirrorImage(img_list, proc_type.para1, proc_type.para2,
-                        [&]() { p.setProgress(prog += delta_p); });
+                        [&](float delta_p) { p.setProgress(prog += delta_p * 0.7); });
         }
         else if (proc_type.type == img_fun_type::ROTATE) {
             filename += "_rot.gif";
-            float delta_p = 0.7 / proc_type.para1;
             float prog = 0.2;
             img_list = rotateImage(img, proc_type.para1, proc_type.para2,
-                                   [&]() { p.setProgress(prog += delta_p); });
+                                   [&](float delta_p) { p.setProgress(prog += delta_p * 0.7); });
         }
         else if (proc_type.type == img_fun_type::KALEIDO) {
             filename += "_kal.gif";
-            float delta_p = 0.7 / (img_list.size());
             float prog = 0.2;
             kaleido(img_list, proc_type.para1, proc_type.para2,
-                    [&]() { p.setProgress(prog += delta_p); });
+                    [&](float delta_p) { p.setProgress(prog += delta_p * 0.7); });
         }
         p.setBar(0.9, "图片处理完成，保存中");
         Magick::writeImages(img_list.begin(), img_list.end(),
@@ -175,6 +168,7 @@ void img_fun::process(std::string message, const msg_meta &conf)
     conf.p->cq_send("[CQ:image,file=file://" + get_local_path() +
                         "/resource/download/" + filename + ",id=40000]",
                     conf);
+    conf.p->setlog(LOG::INFO, fmt::format("img_fun done at u{} g{}", conf.user_id, conf.group_id));
     return;
 }
 bool img_fun::check(std::string message, const msg_meta &conf)
