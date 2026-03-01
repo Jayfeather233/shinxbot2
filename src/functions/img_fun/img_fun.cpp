@@ -160,7 +160,9 @@ void img_fun::process(std::string message, const msg_meta &conf)
         }
         else if (proc_type.type == img_fun_type::KALEIDO) {
             filename += "_kal.png";
-            kaleido(img, proc_type.para1, proc_type.para2);
+            float prog = 0.2;
+            kaleido(img, proc_type.para1, proc_type.para2,
+                [&](float delta_p) { p.setProgress(prog += delta_p * 0.7); });
         }
         img.write("./resource/download/" + filename);
         p.setBar(0.9, "图片处理完成，发送中");

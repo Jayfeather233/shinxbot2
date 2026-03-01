@@ -53,8 +53,23 @@ std::string progressBar::desc()
     size_t cnt = 0;
     while (p != &tail) {
         ++cnt;
-        oss << p->desc << ' ' << std::setprecision(2) << p->progress * 100
-            << '%' << std::endl;
+
+        float progress = std::clamp(p->progress, 0.0f, 1.0f);
+        int pos = static_cast<int>(barWidth * progress);
+
+        oss << p->desc << " [";
+
+        for (int i = 0; i < barWidth; ++i) {
+            if (i < pos)
+                oss << "█";
+            else
+                oss << "░";
+        }
+
+        oss << "] "
+            << std::fixed << std::setprecision(0)
+            << progress * 100 << "%\n";
+
         p = p->b;
     }
     return fmt::format("Total {} Tasks running.\n{}", cnt, oss.str());

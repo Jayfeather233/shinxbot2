@@ -280,9 +280,9 @@ struct TileTransform
 void buildRandomCanvas(
     const std::vector<Magick::Image>& input,
     std::vector<Magick::Image>& output,
+    std::function<void(float)> callback = nullptr,
     double cover_rate = 0.98,
-    double scaleFactor = 4.0, 
-    std::function<void(float)> callback = nullptr)
+    double scaleFactor = 4.0)
 {
     if (input.empty())
         return;
@@ -359,7 +359,7 @@ void buildRandomCanvas(
     }
 }
 
-Magick::Image buildRandomCanvas(const Image& input, double cover_rate = 0.98, double scaleFactor = 4.0, std::function<void(float)> callback = nullptr)
+Magick::Image buildRandomCanvas(const Image& input, std::function<void(float)> callback = nullptr, double cover_rate = 0.98, double scaleFactor = 4.0)
 {
     int w = input.columns();
     int h = input.rows();
@@ -499,9 +499,9 @@ Magick::Image kaleidoscopeSectorSymmetry(const Magick::Image& canvas, int sector
 }
 
 void kaleido(Magick::Image &img, int layers, int nums_per_layer,
-             const Magick::Image las)
+             std::function<void(float)> callback)
 {
-    img = kaleidoscopeSectorSymmetry(buildRandomCanvas(img), nums_per_layer);
+    img = kaleidoscopeSectorSymmetry(buildRandomCanvas(img, callback), nums_per_layer);
 }
 
 void kaleido(std::vector<Magick::Image> &img, int layers, int nums_per_layer, std::function<void(float)> callback)
@@ -522,7 +522,7 @@ void kaleido(std::vector<Magick::Image> &img, int layers, int nums_per_layer, st
     }
 
     std::vector<Magick::Image> coalesced_canvas;
-    buildRandomCanvas(coalesced, coalesced_canvas, 0.9, 3.0, callback);
+    buildRandomCanvas(coalesced, coalesced_canvas, callback);
 
     for (Magick::Image &im : coalesced_canvas) {
         im.backgroundColor(Magick::Color(0, 0, 0, 0));

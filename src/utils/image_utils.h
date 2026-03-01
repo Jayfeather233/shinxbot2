@@ -43,8 +43,7 @@ rotateImage(const Magick::Image img, int fps, bool clockwise = 1,
             std::function<void(float)> callback = nullptr);
 
 void kaleido(Magick::Image &img, int layers = 3, int nums_per_layer = 8,
-             const Magick::Image las = Magick::Image(Magick::Geometry(1, 1),
-                                                     Magick::Color("white")));
+             std::function<void(float)> callback = nullptr);
 
 void kaleido(std::vector<Magick::Image> &img, int layers = 3,
              int nums_per_layer = 8, std::function<void(float)> callback = nullptr);
