@@ -290,6 +290,15 @@ void buildRandomCanvas(
     // 处理 GIF offset / partial frame
     std::vector<Magick::Image> frames = input;
     Magick::coalesceImages(&frames, frames.begin(), frames.end());
+    // 限制图片大小
+    double resize_d = sqrt((frames[0].columns() * frames[0].rows() * frames.size()) / 1000000.0);
+    for (auto& img : frames) {
+        if (resize_d > 1.0) {
+            img.resize(Magick::Geometry((size_t)(img.columns() / resize_d),
+                                        (size_t)(img.rows() / resize_d)));
+            img.page(Magick::Geometry(0, 0, 0, 0));
+        }
+    }
 
     int baseW = frames[0].columns();
     int baseH = frames[0].rows();
@@ -487,14 +496,6 @@ Magick::Image kaleidoscopeSectorSymmetry(const Magick::Image& canvas, int sector
         output.composite(piece, 0, 0, MagickCore::CompositeOperator::OverCompositeOp);
     }
 
-    // 最终输出也裁剪回原图片大小
-    // int out_crop_x = (output.columns() - w) / 2;
-    // int out_crop_y = (output.rows() - h) / 2;
-    // if (w < output.columns() && h < output.rows()) {
-    //     output.crop(Magick::Geometry(w, h, out_crop_x, out_crop_y));
-    //     output.page(Magick::Geometry(0, 0, 0, 0));
-    // }
-
     return output;
 }
 
@@ -508,18 +509,6 @@ void kaleido(std::vector<Magick::Image> &img, int layers, int nums_per_layer, st
 {
     std::vector<Magick::Image> coalesced;
     Magick::coalesceImages(&coalesced, img.begin(), img.end());
-
-    size_t w = coalesced[0].columns();
-    size_t h = coalesced[0].rows();
-    
-    if (w > 1000 || h > 1000) {
-        double scale = std::min(1000.0 / w, 1000.0 / h);
-        // Limit image size to 1k x 1k
-        for (Magick::Image &im : coalesced) {
-            im.resize(Magick::Geometry((size_t)(w * scale), (size_t)(h * scale)));
-            im.page(Magick::Geometry(0, 0, 0, 0));
-        }
-    }
 
     std::vector<Magick::Image> coalesced_canvas;
     buildRandomCanvas(coalesced, coalesced_canvas, callback);

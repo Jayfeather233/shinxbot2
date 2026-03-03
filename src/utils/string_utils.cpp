@@ -129,3 +129,45 @@ std::pair<std::string, std::string> split_http_addr(const std::string addr)
         return std::make_pair(addr.substr(0, p), addr.substr(p));
     }
 }
+
+float similarity(const std::string &s1, const std::string &s2)
+{
+    size_t m = s1.length();
+    size_t n = s2.length();
+    std::vector<std::vector<size_t>> dp(m + 1, std::vector<size_t>(n + 1));
+    for (size_t i = 0; i <= m; i++) {
+        for (size_t j = 0; j <= n; j++) {
+            if (i == 0 || j == 0) {
+                dp[i][j] = 0;
+            }
+            else if (s1[i - 1] == s2[j - 1]) {
+                dp[i][j] = dp[i - 1][j - 1] + 1;
+            }
+            else {
+                dp[i][j] = std::max(dp[i - 1][j], dp[i][j - 1]);
+            }
+        }
+    }
+    return (float)dp[m][n] / n;
+}
+
+float similarity(const std::wstring &s1, const std::wstring &s2)
+{
+    size_t m = s1.length();
+    size_t n = s2.length();
+    std::vector<std::vector<size_t>> dp(m + 1, std::vector<size_t>(n + 1));
+    for (size_t i = 0; i <= m; i++) {
+        for (size_t j = 0; j <= n; j++) {
+            if (i == 0 || j == 0) {
+                dp[i][j] = 0;
+            }
+            else if (s1[i - 1] == s2[j - 1]) {
+                dp[i][j] = dp[i - 1][j - 1] + 1;
+            }
+            else {
+                dp[i][j] = std::max(dp[i - 1][j], dp[i][j - 1]);
+            }
+        }
+    }
+    return (float)dp[m][n] / n;
+}

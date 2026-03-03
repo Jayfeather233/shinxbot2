@@ -478,7 +478,7 @@ void shinxbot::input_process(std::string *input)
                             cq_send("Throw an string: " + e, conf);
                             setlog(LOG::ERROR, "Throw an string: " + e);
                         }
-                        catch (const std::exception &e) {
+                        catch (std::exception &e) {
                             cq_send((std::string) "Throw an exception: " +
                                         e.what(),
                                     conf);

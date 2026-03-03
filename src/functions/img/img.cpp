@@ -6,7 +6,10 @@
 #include <mutex>
 
 static std::string help_message = "美图 帮助 - 列出所有美图命令\n"
-                                  "美图 列表 - 列出本群美图\n"
+                                  "美图 列表 - 列出本群美图（仅限群聊）\n"
+                                  "美图 列表 groupid - 列出群groupid美图（仅限私聊）\n"
+                                  "美图 搜索 关键词 - 搜索本群美图（仅限群聊）\n"
+                                  "美图 搜索 groupid 关键词 - 搜索群groupid美图（仅限私聊）\n"
                                   "美图 加入 xxx - 加入一张图片至xxx类，不存在会创建（仅限群聊）\n"
                                   "美图 加入 groupid xxx - 加入一张图片至groupid群的xxx类，不存在会创建（仅限私聊）\n"
                                   "xxx - 发送美图（随机或指定一个数字）（仅限群聊）\n"
@@ -285,10 +288,17 @@ bool img::process_command(std::string message, const msg_meta &conf)
     if (wmessage == L"美图 帮助") {
         conf.p->cq_send(help_message, conf);
         return true;
-    }
-    if (wmessage == L"美图 列表" && conf.message_type == "group") {
+    } else if (wmessage.find(L"美图 列表") == 0) {
+        groupid_t group_id = conf.group_id;
+        if (conf.message_type != "group") {
+            group_id = my_string2uint64(wmessage.substr(7));
+            if (!is_in_group(group_id, conf.user_id, conf.p) && !conf.p->is_op(conf.user_id)) {
+                conf.p->cq_send(fmt::format("用户 {} 不在群 {} 内", conf.user_id, group_id), conf);
+                return true;
+            }
+        }
         std::vector<std::string> group_images_uuid =
-            uuid_groupid.get_by_second(conf.group_id);
+            uuid_groupid.get_by_second(group_id);
         group_images_uuid.insert(group_images_uuid.end(),
                                  default_image_list.begin(),
                                  default_image_list.end());
@@ -323,12 +333,58 @@ bool img::process_command(std::string message, const msg_meta &conf)
             J_send["message_type"] = conf.message_type;
             J_send["message_id"] = conf.message_id;
             J_send["user_id"] = conf.user_id;
-            J_send["group_id"] = conf.group_id;
+            J_send["group_id"] = group_id;
             conf.p->input_process(new std::string(J_send.toStyledString()));
             return true;
         }
-    }
-    if (wmessage.find(L"美图 加入 ") == 0) {
+    } else if (wmessage.find(L"美图 搜索") == 0) {
+        groupid_t group_id = conf.group_id;
+        wmessage = trim(wmessage.substr(5));
+        if (conf.message_type != "group") {
+            group_id = my_string2uint64(wmessage);
+            if (!is_in_group(group_id, conf.user_id, conf.p) && !conf.p->is_op(conf.user_id)) {
+                conf.p->cq_send(fmt::format("用户 {} 不在群 {} 内", conf.user_id, group_id), conf);
+                return true;
+            }
+            // remove the group id part
+            wmessage = trim(wmessage.substr(wmessage.find(L" ") + 1));
+        }
+        std::wstring keyword = wmessage;
+        
+        std::vector<std::string> group_images_uuid =
+            uuid_groupid.get_by_second(group_id);
+        group_images_uuid.insert(group_images_uuid.end(),
+                                 default_image_list.begin(),
+                                 default_image_list.end());
+        std::vector<std::pair<std::wstring, float>> matched_images; // name, similarity
+        for (const auto &uuid : group_images_uuid) {
+            const auto &names = name_uuid.get_by_second(uuid);
+            for (const auto &name : names) {
+                float sim = similarity(name, keyword);
+                if (sim > 0.48) { // threshold
+                    matched_images.emplace_back(name, sim);
+                }
+            }
+        }
+        if (matched_images.empty()) {
+            conf.p->cq_send("未找到匹配的美图", conf);
+            return true;
+        } else {
+            // sort by similarity
+            std::sort(matched_images.begin(), matched_images.end(), [keyword](const auto &a, const auto &b) {
+                if (std::abs(a.second - b.second) < 1e-1) {
+                    return similarity(keyword, a.first) > similarity(keyword, b.first);
+                }
+                return a.second > b.second;
+            });
+            std::ostringstream oss;
+            for (const auto &[name, sim] : matched_images) {
+                oss << fmt::format("{:<10}", wstring_to_string(name)) << std::endl;
+            }
+            conf.p->cq_send(oss.str(), conf);
+            return true;
+        }
+    } else if (wmessage.find(L"美图 加入 ") == 0) {
         std::wstring msg = trim(wmessage.substr(5));
         std::istringstream iss(wstring_to_string(msg));
         if (conf.message_type == "group") {
@@ -343,8 +399,7 @@ bool img::process_command(std::string message, const msg_meta &conf)
         } else {
             return false;
         }
-    }
-    if (wmessage.find(L"美图 删除 ") == 0) {
+    } else if (wmessage.find(L"美图 删除 ") == 0) {
         std::wstring msg = trim(wmessage.substr(5));
         std::istringstream iss(wstring_to_string(msg));
         if (conf.message_type == "group") {

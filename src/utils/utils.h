@@ -64,6 +64,21 @@ std::string do_get(const std::string &httpaddr, int port,
 std::pair<std::string, std::string> split_http_addr(const std::string addr);
 
 /**
+ * use longest common subsequence to calculate the similarity of two strings
+ * @param s1 first string
+ * @param s2 second string, pattern string
+ * @return value in [0, 1], the larger the more similar
+ */
+float similarity(const std::string &s1, const std::string &s2);
+/**
+ * use longest common subsequence to calculate the similarity of two strings
+ * @param s1 first string
+ * @param s2 second string, pattern string
+ * @return value in [0, 1], the larger the more similar
+ */
+float similarity(const std::wstring &s1, const std::wstring &s2);
+
+/**
  * get user's name (group name if group_id != 0)
  */
 std::string get_username(const bot *p, userid_t user_id, groupid_t group_id);

@@ -4,10 +4,7 @@ a.out
 build/
 test/
 config/port.txt
-resource/r_color
-resource/download
-resource/generate
-resource/mt
+resource/
 log/
 test*
 compile_commands.json
