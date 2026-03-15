@@ -251,13 +251,16 @@ std::vector<Magick::Image> rotateImage(const Magick::Image img, int fps,
 
     std::vector<Magick::Image> ret;
     double deg_per_frame = 360.0 / fps * (clockwise ? 1 : -1);
-    dimg.animationDelay(100 / fps);
+    int delay = 100 / fps;
+    dimg.animationDelay(delay);
     dimg.backgroundColor(Magick::Color(3, 5, 7, 0));
     for (int i = 0; i < fps; i++) {
         Magick::Image ximg = dimg;
-        ximg.animationDelay(100 / fps);
+        ximg.animationDelay(delay);
         constsize_rotate(ximg, deg_per_frame * i);
         crop_to_circle(ximg);
+        ximg.gifDisposeMethod(MagickCore::DisposeType::BackgroundDispose);
+
         ret.push_back(ximg);
         if (callback != nullptr) {
             callback(1.0 / fps);

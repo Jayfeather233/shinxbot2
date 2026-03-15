@@ -3,21 +3,24 @@
 
 // 固定消息回复功能
 static std::string HELP = 
-"固定消息回复功能。\n格式：reply.add [trigger] [response]\ntrigger为触发消息，response为回复消息，支持{{username}}变量。（response可以在第二条消息中发出）\nreply.del [trigger]\n只能在群内管理员操作。";
+"固定消息回复功能。\n"
+"格式：reply.add [trigger] [response]（仅限群聊）\n"
+"格式：reply.add [group_id] [trigger] [response]（仅限私聊）\n"
+"trigger为触发消息，response为回复消息，支持{{username}}变量。（response可以在第二条消息中发出）\n"
+"reply.del [trigger]\n"
+"reply.del [group_id] [trigger]\n"
+"只能由群管理员操作。";
 void Responder::process(std::string message, const msg_meta &conf)
 {
     if (message == "reply.help") {
         conf.p->cq_send(HELP, conf);
         return;
     }
-    if (conf.message_type != "group") {
-        return;
-    }
     auto it = is_adding.find(conf.user_id);
     if (it != is_adding.end()) {
-        if (std::get<0>(it->second) == conf.group_id) {
+        if (conf.message_type == "private" || std::get<0>(it->second) == conf.group_id) {
             std::string trigger = std::get<1>(it->second);
-            replies[conf.group_id][trigger] = get_reply_message(message, conf);
+            replies[std::get<0>(it->second)][trigger] = get_reply_message(message, conf);
             save();
             conf.p->cq_send("添加成功", conf);
         }
@@ -26,35 +29,59 @@ void Responder::process(std::string message, const msg_meta &conf)
     }
 
     if (message.find("reply.add ") == 0) {
-        if (!conf.p->is_op(conf.user_id) && !is_group_op(conf.p, conf.group_id, conf.user_id)) {
-            conf.p->cq_send("只有群管理员可以添加回复", conf);
+        size_t group_id = conf.group_id;
+        message = trim(message.substr(10));
+        if (conf.message_type != "group") {
+            try {
+                size_t space_pos = message.find(' ');
+                group_id = std::stoull(message.substr(0, space_pos));
+                message = trim(message.substr(space_pos + 1));
+            } catch (...) {
+                conf.p->cq_send("参数错误。请使用 reply.add [group_id] [trigger] [response] 格式（response可以在第二条消息中发出）", conf);
+                return;
+            }
+        }
+        if (!conf.p->is_op(conf.user_id) && !is_group_op(conf.p, group_id, conf.user_id)) {
             return;
         }
-        std::string rest = trim(message.substr(10));
-        size_t space_pos = rest.find(' ');
-        if (rest.empty()) {
+        size_t space_pos = message.find(' ');
+        if (message.empty()) {
             conf.p->cq_send("请使用 reply.add [trigger] [response] 格式（response可以在第二条消息中发出）", conf);
             return;
         }
         if (space_pos == std::string::npos) {
+            space_pos = message.find('[');
+        }
+        if (space_pos == std::string::npos) {
             conf.p->cq_send("请发送消息", conf);
-            is_adding[conf.user_id] = std::make_tuple(conf.group_id, rest);
+            is_adding[conf.user_id] = std::make_tuple(group_id, message);
             return;
         }
-        std::string trigger = trim(rest.substr(0, space_pos));
-        std::string response = trim(rest.substr(space_pos + 1));
-        replies[conf.group_id][trigger] = get_reply_message(response, conf);
+        std::string trigger = trim(message.substr(0, space_pos));
+        std::string response = trim(message.substr(space_pos + 1));
+        replies[group_id][trigger] = get_reply_message(response, conf);
         save();
         conf.p->cq_send("添加成功", conf);
         return;
     }
     else if (message.find("reply.del ") == 0) {
-        if (!conf.p->is_op(conf.user_id) && !is_group_op(conf.p, conf.group_id, conf.user_id)) {
-            conf.p->cq_send("只有群管理员可以删除回复", conf);
+        size_t group_id = conf.group_id;
+        message = trim(message.substr(10));
+        if (conf.message_type != "group") {
+            try {
+                size_t space_pos = message.find(' ');
+                group_id = std::stoull(message.substr(0, space_pos));
+                message = trim(message.substr(space_pos + 1));
+            } catch (...) {
+                conf.p->cq_send("参数错误。请使用 reply.add [group_id] [trigger] [response] 格式（response可以在第二条消息中发出）", conf);
+                return;
+            }
+        }
+        if (!conf.p->is_op(conf.user_id) && !is_group_op(conf.p, group_id, conf.user_id)) {
             return;
         }
-        std::string trigger = trim(message.substr(10));
-        if (replies[conf.group_id].erase(trigger)) {
+        std::string trigger = trim(message);
+        if (replies[group_id].erase(trigger)) {
             save();
             conf.p->cq_send("删除成功", conf);
         }
@@ -64,36 +91,91 @@ void Responder::process(std::string message, const msg_meta &conf)
         return;
     }
     else if (message.find("reply.trigger ") == 0) {
-        if (!conf.p->is_op(conf.user_id) && !is_group_op(conf.p, conf.group_id, conf.user_id)) {
+        size_t group_id = conf.group_id;
+        message = trim(message.substr(14));
+        if (conf.message_type != "group") {
+            try {
+                size_t space_pos = message.find(' ');
+                group_id = std::stoull(message.substr(0, space_pos));
+                message = trim(message.substr(space_pos + 1));
+            } catch (...) {
+                conf.p->cq_send("参数错误。请使用 reply.trigger [group_id] [0/1] 格式", conf);
+                return;
+            }
+        }
+        if (!conf.p->is_op(conf.user_id) && !is_group_op(conf.p, group_id, conf.user_id)) {
             conf.p->cq_send("只有群管理员可以设置触发人", conf);
             return;
         }
-        std::string trigger = trim(message.substr(14));
+        std::string trigger = trim(message);
         try {
-            trigger_by[conf.group_id] = std::stoi(trigger) == 1;
+            trigger_by[group_id] = std::stoi(trigger) == 1;
+            save();
+            conf.p->cq_send(fmt::format("触发人设置为{}", trigger_by[group_id] ? "管理" : "全员"), conf);
         } catch (...) {
             conf.p->cq_send("参数错误。0: 全员；1：管理", conf);
             return;
         }
         return;
     }
-    else {
-        if (trigger_by[conf.group_id] && !conf.p->is_op(conf.user_id) && !is_group_op(conf.p, conf.group_id, conf.user_id)) {
+    else if (message.find("reply.list") == 0) {
+        size_t group_id = conf.group_id;
+        if (conf.message_type != "group") {
+            try {
+                group_id = std::stoull(trim(message.substr(10)));
+            } catch (...) {
+                conf.p->cq_send("参数错误。请使用 reply.list [group_id] 格式", conf);
+                return;
+            }
+        }
+        if (!conf.p->is_op(conf.user_id) && !is_group_op(conf.p, group_id, conf.user_id)) {
             return;
         }
-        auto it = replies[conf.group_id].find(trim(message));
-        if (it != replies[conf.group_id].end()) {
+        std::ostringstream oss;
+        for (const auto &pair : replies[group_id]) {
+            oss << fmt::format("{}\n", pair.first);
+        }
+        conf.p->cq_send(oss.str(), conf);
+        return;
+    }
+    else {
+        groupid_t groupid = conf.group_id;
+        if (conf.message_type == "private") {
+            try {
+                message = trim(message);
+                size_t space_pos = message.find(' ');
+                groupid = my_string2uint64(message.substr(space_pos + 1));
+                message = message.substr(0, space_pos);
+            } catch (...) {
+                return;
+            }
+        } else if (conf.message_type != "group") {
+            return;
+        } else if (trigger_by[conf.group_id] && !conf.p->is_op(conf.user_id) && !is_group_op(conf.p, conf.group_id, conf.user_id)) {
+            return;
+        }
+        if (groupid == 0) {
+            return;
+        }
+        auto it = replies[groupid].find(trim(message));
+        if (it != replies[groupid].end()) {
             std::string response = it->second;
             size_t pos = 0;
             while ((pos = response.find("{{username}}", pos)) != std::string::npos) {
-                response.replace(pos, 12, get_username(conf.p, conf.user_id, conf.group_id));
-                pos += get_username(conf.p, conf.user_id, conf.group_id).length();
+                response.replace(pos, 12, get_username(conf.p, conf.user_id, groupid));
             }
             if (response.find("[fwd]") == 0) {
-                Json::Value J;
-                J["message"] = string_to_json(response.substr(5))["messages"];
-                J["group_id"] = conf.group_id;
-                conf.p->cq_send("send_group_forward_msg", J);
+                if (conf.message_type == "private") {
+                    Json::Value J;
+                    J["message"] = string_to_json(response.substr(5))["messages"];
+                    J["user_id"] = conf.user_id;
+                    conf.p->cq_send("send_private_forward_msg", J);
+                } else {
+                    Json::Value J;
+                    J["message"] = string_to_json(response.substr(5))["messages"];
+                    J["group_id"] = conf.group_id;
+                    conf.p->cq_send("send_group_forward_msg", J);
+                }
             } else {
                 conf.p->cq_send(response, conf);
             }
@@ -112,6 +194,11 @@ void Responder::save()
         }
         J[std::to_string(group_pair.first)] = group_val;
     }
+    if (!trigger_by.empty()) {
+        for (const auto &pair : trigger_by) {
+            J["trigger_by"][std::to_string(pair.first)] = pair.second ? 1 : 0;
+        }
+    }
     writefile("./config/responder.json", J.toStyledString());
 }
 
@@ -125,17 +212,27 @@ Responder::Responder()
         return;
     }
     for (const auto &group_member : J.getMemberNames()) {
-        groupid_t group_id = std::stoull(group_member);
-        const Json::Value &group_val = J[group_member];
-        for (const auto &reply_member : group_val.getMemberNames()) {
-            replies[group_id][reply_member] = group_val[reply_member].asString();
+        try {
+            groupid_t group_id = std::stoull(group_member);
+            const Json::Value &group_val = J[group_member];
+            for (const auto &reply_member : group_val.getMemberNames()) {
+                replies[group_id][reply_member] = group_val[reply_member].asString();
+            }
+        } catch (...) {
+            continue;
+        }
+    }
+    if (J.isMember("trigger_by")) {
+        for (const auto &member : J["trigger_by"].getMemberNames()) {
+            groupid_t group_id = std::stoull(member);
+            trigger_by[group_id] = J["trigger_by"][member].asInt() == 1;
         }
     }
 }
 
 bool Responder::check(std::string message, const msg_meta &conf)
 {
-    return true;
+    return conf.message_type == "group" || conf.message_type == "private";
 }
 std::string Responder::help() { return "固定消息回复功能：reply.help"; }
 

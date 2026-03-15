@@ -361,7 +361,7 @@ bool img::process_command(std::string message, const msg_meta &conf)
             const auto &names = name_uuid.get_by_second(uuid);
             for (const auto &name : names) {
                 float sim = similarity(name, keyword);
-                if (sim > 0.48) { // threshold
+                if (sim > 0.51) { // threshold
                     matched_images.emplace_back(name, sim);
                 }
             }
