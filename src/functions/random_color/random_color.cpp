@@ -67,6 +67,7 @@ void r_color::process(std::string message, const msg_meta &conf)
         // Set the font and font size
         image.fontFamily("sans-serif");
         image.fontPointsize(32);
+        image.textAntiAlias(true);
 
         // Set the text color
         image.fillColor(dr + dg + db >= 1.5 ? "black" : "white");

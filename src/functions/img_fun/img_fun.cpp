@@ -116,12 +116,13 @@ void img_fun::process(std::string message, const msg_meta &conf)
 
     conf.p->setlog(LOG::INFO, fmt::format("img_fun at u{} g{}：type={}, para1={}, para2={}", conf.user_id, conf.group_id, proc_type.type, (int)proc_type.para1, (int)proc_type.para2));
     is_input.erase(conf.user_id);
+    std::string filepath = "./resource/download/" + filename;
     download(cq_decode(fileurl), "./resource/download/", filename);
     p.setBar(0.2, "图片处理中");
     Magick::Image img;
     bool mgif = false;
     try {
-        img.read("./resource/download/" + filename);
+        img.read(filepath);
     }
     catch (...) {
         mgif = true;
@@ -129,7 +130,7 @@ void img_fun::process(std::string message, const msg_meta &conf)
     if (img.animationDelay() || proc_type.type == img_fun_type::ROTATE ||
         mgif) {
         std::vector<Magick::Image> img_list;
-        Magick::readImages(&img_list, "./resource/download/" + filename);
+        Magick::readImages(&img_list, filepath);
         if (proc_type.type == img_fun_type::MIRROR) {
             filename += "_mir.gif";
             float prog = 0.2;
@@ -170,6 +171,8 @@ void img_fun::process(std::string message, const msg_meta &conf)
     conf.p->cq_send("[CQ:image,file=file://" + get_local_path() +
                         "/resource/download/" + filename + ",id=40000]",
                     conf);
+    fs::remove("./resource/download/" + filename);
+    fs::remove(filepath);
     conf.p->setlog(LOG::INFO, fmt::format("img_fun done at u{} g{}", conf.user_id, conf.group_id));
     return;
 }

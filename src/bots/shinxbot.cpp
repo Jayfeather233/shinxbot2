@@ -123,8 +123,7 @@ void shinxbot::init()
     Json::Value J_block = string_to_json(readfile("./config/blocklist.json", "{}"));
     for (auto &member : J_block.getMemberNames()) {
         groupid_t gid = std::stoull(member);
-        std::set<std::string> &s = group_blocklist[gid];
-        parse_json_to_set(J_block[member], s);
+        group_blocklist[gid] = blockItem(J_block[member]);
     }
 
     Json::Value J_rec =
@@ -162,7 +161,7 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
         for (auto funcx : functions) {
             processable *func = std::get<0>(funcx);
             std::string name = std::get<2>(funcx);
-            if (conf.message_type == "group" && group_blocklist[conf.group_id].find(name) != group_blocklist[conf.group_id].end()) {
+            if (conf.message_type == "group" && group_blocklist[conf.group_id].is_blocked(name)) {
                 continue;
             }
             if (func->help() != "")
@@ -354,12 +353,21 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
     } else if (message == "bot.progress") {
         cq_send(descBar(), conf);
         return false;
-    } else if (message.find("bot.block") == 0 && conf.message_type == "group") {
+    } else if (trim(message) == "bot.blockclear" && conf.message_type == "group") {
+        if (is_group_op(conf.p, conf.group_id, conf.user_id) || is_op(conf.user_id)) {
+            group_blocklist[conf.group_id].clear();
+            cq_send("已清除屏蔽功能", conf);
+            save_blocklist();
+            return false;
+        } else {
+            return true;
+        }
+    } else if (message.find("bot.block ") == 0 && conf.message_type == "group") {
         if (is_group_op(conf.p, conf.group_id, conf.user_id) || is_op(conf.user_id)) {
             std::istringstream iss(message.substr(9));
             std::string type;
             while(iss >> type) {
-                group_blocklist[conf.group_id].insert(type);
+                group_blocklist[conf.group_id].add_block(type);
             }
             cq_send("已添加屏蔽功能", conf);
             save_blocklist();
@@ -367,14 +375,40 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
         } else {
             return true;
         }
-    } else if (message.find("bot.unblock") == 0 && conf.message_type == "group") {
+    } else if (message.find("bot.unblock ") == 0 && conf.message_type == "group") {
         if (is_group_op(conf.p, conf.group_id, conf.user_id) || is_op(conf.user_id)) {
             std::istringstream iss(message.substr(11));
             std::string type;
             while(iss >> type) {
-                group_blocklist[conf.group_id].erase(type);
+                group_blocklist[conf.group_id].remove_block(type);
             }
             cq_send("已移除屏蔽功能", conf);
+            save_blocklist();
+            return false;
+        } else {
+            return true;
+        }
+    } else if (message.find("bot.white ") == 0 && conf.message_type == "group") {
+        if (is_group_op(conf.p, conf.group_id, conf.user_id) || is_op(conf.user_id)) {
+            std::istringstream iss(message.substr(9));
+            std::string type;
+            while(iss >> type) {
+                group_blocklist[conf.group_id].add_white(type);
+            }
+            cq_send("已添加白名单功能", conf);
+            save_blocklist();
+            return false;
+        } else {
+            return true;
+        }
+    } else if (message.find("bot.unwhite ") == 0 && conf.message_type == "group") {
+        if (is_group_op(conf.p, conf.group_id, conf.user_id) || is_op(conf.user_id)) {
+            std::istringstream iss(message.substr(11));
+            std::string type;
+            while(iss >> type) {
+                group_blocklist[conf.group_id].remove_white(type);
+            }
+            cq_send("已移除白名单功能", conf);
             save_blocklist();
             return false;
         } else {
@@ -390,12 +424,7 @@ void shinxbot::save_blocklist()
     Json::Value J_block;
     for (const auto &pair : group_blocklist) {
         groupid_t gid = pair.first;
-        const std::set<std::string> &s = pair.second;
-        Json::Value Ja_block;
-        for (const auto &word : s) {
-            Ja_block.append(word);
-        }
-        J_block[std::to_string(gid)] = Ja_block;
+        J_block[std::to_string(gid)] = pair.second.to_json();
     }
     writefile("./config/blocklist.json", J_block.toStyledString());
 }
@@ -454,7 +483,7 @@ void shinxbot::input_process(std::string *input)
                     for (auto funcx : functions) {
                         processable *func = std::get<0>(funcx);
                         std::string name = std::get<2>(funcx);
-                        if (message_type == "group" && group_blocklist[group_id].find(name) != group_blocklist[group_id].end()) {
+                        if (message_type == "group" && group_blocklist[group_id].is_blocked(name)) {
                             continue;
                         }
                         try {
