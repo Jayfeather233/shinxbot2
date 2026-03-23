@@ -1,0 +1,18 @@
+[
+  {
+    "file_path": "A/",
+    "answer": "这类图片的名字A",
+    "alias": [
+      "alias里放answer的别名",
+      "匹配时会忽略大小写、全半角标点",
+      "会读取所有在./resource/guessmap/images/A/下图片，作为这个问题可能抽取的图片"
+    ]
+  },
+  {
+    "file_path": "B/1/",
+    "answer": "这类图片的名字B",
+    "alias": [
+      "path是多层目录也行"
+    ]
+  }
+]

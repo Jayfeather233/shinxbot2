@@ -10,7 +10,7 @@
 
 namespace fs = std::filesystem;
 
-static const std::string kMapsJson = "./data/guessmap/maps.json";
+static const std::string kMapsJson = "./config/guessmap/maps.json";
 static const std::string kImagesRoot = "./resource/guessmap/images";
 static const std::string kCacheRoot = "./resource/guessmap";
 
@@ -54,16 +54,16 @@ static crop_region get_center_16_9_region(int w, int h)
 static bool resolve_data_paths(std::string &maps_json, std::string &images_root)
 {
     const std::vector<std::pair<std::string, std::string>> candidates = {
-        {"./data/guessmap/maps.json", "./resource/guessmap/images"},
-        {"../data/guessmap/maps.json", "../resource/guessmap/images"},
-        {"../../data/guessmap/maps.json", "../../resource/guessmap/images"},
-        {"./data/guessmap/maps.json", "./data/guessmap/images"},
-        {"../data/guessmap/maps.json", "../data/guessmap/images"},
-        {"../../data/guessmap/maps.json", "../../data/guessmap/images"},
-        {"./shinxbot2/data/guessmap/maps.json",
+        {"./config/guessmap/maps.json", "./resource/guessmap/images"},
+        {"../config/guessmap/maps.json", "../resource/guessmap/images"},
+        {"../../config/guessmap/maps.json", "../../resource/guessmap/images"},
+        {"./config/guessmap/maps.json", "./config/guessmap/images"},
+        {"../config/guessmap/maps.json", "../config/guessmap/images"},
+        {"../../config/guessmap/maps.json", "../../config/guessmap/images"},
+        {"./shinxbot2/config/guessmap/maps.json",
          "./shinxbot2/resource/guessmap/images"},
-        {"./shinxbot2/data/guessmap/maps.json",
-         "./shinxbot2/data/guessmap/images"},
+        {"./shinxbot2/config/guessmap/maps.json",
+         "./shinxbot2/config/guessmap/images"},
     };
 
     for (const auto &c : candidates) {
@@ -124,7 +124,7 @@ guessmap::guessmap()
     if (!load_maps()) {
         set_global_log(
             LOG::WARNING,
-            "guessmap: failed to load maps from ./data/guessmap/maps.json");
+            "guessmap: failed to load maps from ./config/guessmap/maps.json");
     }
 }
 
@@ -822,7 +822,7 @@ void guessmap::process(std::string message, const msg_meta &conf)
         const int crop = get_start_crop(message);
         if (!start_game(id, crop)) {
             conf.p->cq_send("题库未就绪，请检查 ./resource/guessmap/images 与 "
-                            "./data/guessmap/maps.json",
+                            "./config/guessmap/maps.json",
                             conf);
             return;
         }
