@@ -92,22 +92,23 @@ void nonogram::generate_puzzle_image(
 {
     size_t rows = row_clues.size();
     size_t cols = col_clues.size();
-    size_t max_row_clues =
+    size_t max_col_clues =
         std::max_element(
             row_clues.begin(), row_clues.end(),
             [](const std::vector<int> &a, const std::vector<int> &b) {
                 return a.size() < b.size(); // 返回 true 表示 a 比 b “小”
             })
             ->size();
-    size_t max_col_clues =
+    size_t max_row_clues =
         std::max_element(
             col_clues.begin(), col_clues.end(),
             [](const std::vector<int> &a, const std::vector<int> &b) {
                 return a.size() < b.size(); // 返回 true 表示 a 比 b “小”
             })
             ->size();
-    size_t img_size_row =
-        50 * (rows + (max_row_clues / 2 + 1)) + 50; // +50 for padding
+    max_row_clues += 1;
+    max_col_clues += 1;
+    size_t img_size_row = 50 * (rows + (max_row_clues / 2 + 1)) + 50; // +50 for padding
     size_t img_size_col = 50 * (cols + (max_col_clues / 2 + 1)) + 50;
     size_t row_header_size = 50 * (max_row_clues / 2 + 1);
     size_t col_header_size = 50 * (max_col_clues / 2 + 1);
@@ -337,22 +338,23 @@ nonogram::get_user_data(std::string filename,
     }
     size_t rows = level->get_row_clues().size();
     size_t cols = level->get_col_clues().size();
-    size_t max_row_clues =
+    size_t max_col_clues =
         std::max_element(
             level->get_row_clues().begin(), level->get_row_clues().end(),
             [](const std::vector<int> &a, const std::vector<int> &b) {
                 return a.size() < b.size(); // 返回 true 表示 a 比 b “小”
             })
             ->size();
-    size_t max_col_clues =
+    size_t max_row_clues =
         std::max_element(
             level->get_col_clues().begin(), level->get_col_clues().end(),
             [](const std::vector<int> &a, const std::vector<int> &b) {
                 return a.size() < b.size(); // 返回 true 表示 a 比 b “小”
             })
             ->size();
-    size_t img_size_row =
-        50 * (rows + (max_row_clues / 2 + 1)) + 50; // +50 for padding
+    max_row_clues += 1;
+    max_col_clues += 1;
+    size_t img_size_row = 50 * (rows + (max_row_clues / 2 + 1)) + 50; // +50 for padding
     size_t img_size_col = 50 * (cols + (max_col_clues / 2 + 1)) + 50;
     size_t row_header_size = 50 * (max_row_clues / 2 + 1);
     size_t col_header_size = 50 * (max_col_clues / 2 + 1);
