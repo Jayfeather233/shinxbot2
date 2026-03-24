@@ -16,13 +16,19 @@ private:
     bool mode; // true: blocklist, false: whitelist
 public:
     blockItem() : mode(true) {}
-    blockItem(const std::set<std::string> &blocklist, const std::set<std::string> &whitelist, bool mode) : blocklist(blocklist), whitelist(whitelist), mode(mode) {}
-    blockItem(const Json::Value &J) {
+    blockItem(const std::set<std::string> &blocklist,
+              const std::set<std::string> &whitelist, bool mode)
+        : blocklist(blocklist), whitelist(whitelist), mode(mode)
+    {
+    }
+    blockItem(const Json::Value &J)
+    {
         if (J.isMember("block") && J.isMember("white") && J.isMember("mode")) {
             parse_json_to_set(J["block"], blocklist);
             parse_json_to_set(J["white"], whitelist);
             mode = J["mode"].asBool();
-        } else {
+        }
+        else {
             mode = true;
         }
     }
@@ -30,7 +36,8 @@ public:
     {
         if (mode) {
             return blocklist.find(message) != blocklist.end();
-        } else {
+        }
+        else {
             return whitelist.find(message) == whitelist.end();
         }
     }
@@ -118,7 +125,7 @@ private:
     bool meta_func(std::string message, const msg_meta &conf);
     void unload_func(std::tuple<processable *, void *, std::string> &f);
     void unload_func(std::tuple<eventprocess *, void *, std::string> &f);
-    
+
     void init_func(const std::string &name, processable *p);
     void init_func(const std::string &name, eventprocess *p);
 
@@ -133,7 +140,7 @@ public:
     void run();
 
     void setlog(LOG type, std::string message);
-    
+
     void cq_send_all_op(const std::string &message);
 
     ~shinxbot();

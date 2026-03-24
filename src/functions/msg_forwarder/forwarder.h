@@ -7,7 +7,7 @@ typedef std::pair<groupid_t, userid_t> point_t;
 
 class forwarder : public processable {
 private:
-    std::set<std::pair<point_t, point_t> > forward_set;
+    std::set<std::pair<point_t, point_t>> forward_set;
 
 public:
     forwarder();

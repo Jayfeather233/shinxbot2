@@ -104,7 +104,8 @@ Cat::Cat(userid_t user_id) : _id(user_id)
         location = static_cast<Place>(J["place"].asInt64());
     }
     else {
-        set_global_log(LOG::ERROR, "Missing cat file, user: " + std::to_string(user_id));
+        set_global_log(LOG::ERROR,
+                       "Missing cat file, user: " + std::to_string(user_id));
     }
 }
 

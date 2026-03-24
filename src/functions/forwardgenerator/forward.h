@@ -5,10 +5,12 @@ class forward_msg_gen : public processable {
 private:
     Json::Value get_data(bot *p, std::wstring s1, std::wistringstream &wiss,
                          groupid_t group_id);
-    Json::Value get_content(bot *p, std::wistringstream &wiss, groupid_t group_id);
+    Json::Value get_content(bot *p, std::wistringstream &wiss,
+                            groupid_t group_id);
 
     Json::Value get_data(Json::Value message, const msg_meta &conf);
     Json::Value get_content(Json::Value message, const msg_meta &conf);
+
 public:
     void process(std::string message, const msg_meta &conf);
     bool check(std::string message, const msg_meta &conf);

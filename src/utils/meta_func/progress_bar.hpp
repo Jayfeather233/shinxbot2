@@ -7,6 +7,7 @@ class BarInfo {
     float progress;
     std::string desc;
     BarInfo *f, *b;
+
 public:
     BarInfo(float pg = 0, const std::string &dc = "");
     void setProgress(float pg);
@@ -20,6 +21,7 @@ public:
 class progressBar {
     static const int barWidth = 20;
     BarInfo root, tail;
+
 public:
     progressBar();
     void addBar(BarInfo *u);

@@ -93,16 +93,17 @@ std::pair<std::string, std::string> image2base64(std::string filepath)
 }
 
 void copyImageTo(Magick::Image &dst, const Magick::Image src,
-                 size_t src_row_start, size_t src_row_end,
-                 size_t src_col_start, size_t src_col_end,
-                 size_t dst_row, size_t dst_col)
+                 size_t src_row_start, size_t src_row_end, size_t src_col_start,
+                 size_t src_col_end, size_t dst_row, size_t dst_col)
 {
     size_t crop_width = src_col_end - src_col_start;
     size_t crop_height = src_row_end - src_row_start;
-    Magick::Geometry crop_region(crop_width, crop_height, src_col_start, src_row_start);
+    Magick::Geometry crop_region(crop_width, crop_height, src_col_start,
+                                 src_row_start);
     Magick::Image cropped_src = src;
     cropped_src.crop(crop_region);
-    dst.composite(cropped_src, dst_col, dst_row, MagickCore::CompositeOperator::OverCompositeOp);
+    dst.composite(cropped_src, dst_col, dst_row,
+                  MagickCore::CompositeOperator::OverCompositeOp);
 }
 
 void mirrorImage(Magick::Image &img, char axis, bool direction,
@@ -136,7 +137,8 @@ void mirrorImage(Magick::Image &img, char axis, bool direction,
         // Delete original half side first
         for (size_t y = 0; y < img.rows(); ++y) {
             for (size_t x = (direction == 0 ? img.columns() >> 1 : 0);
-                 x < (direction == 0 ? img.columns() : img.columns() >> 1); ++x) {
+                 x < (direction == 0 ? img.columns() : img.columns() >> 1);
+                 ++x) {
                 img.pixelColor(x, y, Magick::Color(0, 0, 0, 0));
             }
         }
@@ -171,14 +173,15 @@ mirrorImageError:
     throw "Invalid parameter, see more in log.";
 }
 
-void mirrorImage(std::vector<Magick::Image> &img, char axis, bool direction, std::function<void(float)> callback)
+void mirrorImage(std::vector<Magick::Image> &img, char axis, bool direction,
+                 std::function<void(float)> callback)
 {
     std::vector<Magick::Image> coalesced;
     Magick::coalesceImages(&coalesced, img.begin(), img.end());
 
     for (Magick::Image &im : coalesced) {
         mirrorImage(im, axis, direction);
-        
+
         if (callback != nullptr) {
             callback(1.0 / coalesced.size());
         }
@@ -236,7 +239,8 @@ void constsize_rotate(Magick::Image &img, double deg)
 }
 
 std::vector<Magick::Image> rotateImage(const Magick::Image img, int fps,
-                                       bool clockwise, std::function<void(float)> callback)
+                                       bool clockwise,
+                                       std::function<void(float)> callback)
 {
     Magick::Image dimg = img;
     dimg.alphaChannel(MagickCore::AlphaChannelOption::SetAlphaChannel);
@@ -269,8 +273,7 @@ std::vector<Magick::Image> rotateImage(const Magick::Image img, int fps,
     return ret;
 }
 
-struct TileTransform
-{
+struct TileTransform {
     double angle;
     double scale;
     bool flipX;
@@ -279,13 +282,10 @@ struct TileTransform
     int y;
 };
 
-
-void buildRandomCanvas(
-    const std::vector<Magick::Image>& input,
-    std::vector<Magick::Image>& output,
-    std::function<void(float)> callback = nullptr,
-    double cover_rate = 0.98,
-    double scaleFactor = 4.0)
+void buildRandomCanvas(const std::vector<Magick::Image> &input,
+                       std::vector<Magick::Image> &output,
+                       std::function<void(float)> callback = nullptr,
+                       double cover_rate = 0.98, double scaleFactor = 4.0)
 {
     if (input.empty())
         return;
@@ -294,8 +294,9 @@ void buildRandomCanvas(
     std::vector<Magick::Image> frames = input;
     Magick::coalesceImages(&frames, frames.begin(), frames.end());
     // 限制图片大小
-    double resize_d = sqrt((frames[0].columns() * frames[0].rows() * frames.size()) / 1000000.0);
-    for (auto& img : frames) {
+    double resize_d = sqrt(
+        (frames[0].columns() * frames[0].rows() * frames.size()) / 1000000.0);
+    for (auto &img : frames) {
         if (resize_d > 1.0) {
             img.resize(Magick::Geometry((size_t)(img.columns() / resize_d),
                                         (size_t)(img.rows() / resize_d)));
@@ -310,14 +311,14 @@ void buildRandomCanvas(
     int canvasH = int(baseH * scaleFactor);
 
     double scale_fact = (canvasW * canvasH) / 2.0 / (baseW * baseH);
-    int tiles = std::min(int(std::log(1.0 - cover_rate) / std::log(1.0 - 1.0 / scale_fact)), 60);
+    int tiles = std::min(
+        int(std::log(1.0 - cover_rate) / std::log(1.0 - 1.0 / scale_fact)), 60);
 
     // ---------- 关键：预生成随机布局 ----------
     std::vector<TileTransform> transforms;
     transforms.reserve(tiles);
 
-    for (int i = 0; i < tiles; i++)
-    {
+    for (int i = 0; i < tiles; i++) {
         TileTransform t;
         t.angle = get_random_f(0.0, 360.0);
         t.scale = get_random_f(0.8, 1.2);
@@ -333,33 +334,34 @@ void buildRandomCanvas(
     output.clear();
     output.reserve(frames.size());
 
-    for (size_t fi = 0; fi < frames.size(); fi++)
-    {
-        const Magick::Image& src = frames[fi];
+    for (size_t fi = 0; fi < frames.size(); fi++) {
+        const Magick::Image &src = frames[fi];
 
-        Magick::Image canvas(Magick::Geometry(canvasW, canvasH), Magick::Color(0,0,0,0));
+        Magick::Image canvas(Magick::Geometry(canvasW, canvasH),
+                             Magick::Color(0, 0, 0, 0));
         canvas.alpha(true);
 
-        for (const auto& t : transforms)
-        {
+        for (const auto &t : transforms) {
             Magick::Image img = src;
 
-            if (t.flipX) img.flop();
-            if (t.flipY) img.flip();
+            if (t.flipX)
+                img.flop();
+            if (t.flipY)
+                img.flip();
 
-            img.resize(Magick::Geometry(
-                int(src.columns() * t.scale),
-                int(src.rows() * t.scale)));
+            img.resize(Magick::Geometry(int(src.columns() * t.scale),
+                                        int(src.rows() * t.scale)));
 
-            img.backgroundColor(Magick::Color(0,0,0,0));
+            img.backgroundColor(Magick::Color(0, 0, 0, 0));
             img.rotate(t.angle);
 
             img.alpha(true);
-            canvas.composite(img, t.x, t.y, MagickCore::CompositeOperator::OverCompositeOp);
-            
-        
+            canvas.composite(img, t.x, t.y,
+                             MagickCore::CompositeOperator::OverCompositeOp);
+
             if (callback != nullptr) {
-                callback(1.0 / (frames.size() * tiles) * 0.5); // 预生成布局进度，50%
+                callback(1.0 / (frames.size() * tiles) *
+                         0.5); // 预生成布局进度，50%
             }
         }
 
@@ -371,7 +373,10 @@ void buildRandomCanvas(
     }
 }
 
-Magick::Image buildRandomCanvas(const Image& input, std::function<void(float)> callback = nullptr, double cover_rate = 0.98, double scaleFactor = 4.0)
+Magick::Image buildRandomCanvas(const Image &input,
+                                std::function<void(float)> callback = nullptr,
+                                double cover_rate = 0.98,
+                                double scaleFactor = 4.0)
 {
     int w = input.columns();
     int h = input.rows();
@@ -387,19 +392,22 @@ Magick::Image buildRandomCanvas(const Image& input, std::function<void(float)> c
     canvasW = std::max(canvasW, canvasH);
     canvasH = canvasW;
 
-    Magick::Image canvas(Magick::Geometry(canvasW, canvasH), Magick::Color(0,0,0,0));
+    Magick::Image canvas(Magick::Geometry(canvasW, canvasH),
+                         Magick::Color(0, 0, 0, 0));
     canvas.alpha(true);
 
     double scale_fact = (canvasW * canvasH) / 2.0 / (w * h);
-    int tiles = std::min(int(std::log(1.0 - cover_rate) / std::log(1.0 - 1.0 / scale_fact)), 60);
+    int tiles = std::min(
+        int(std::log(1.0 - cover_rate) / std::log(1.0 - 1.0 / scale_fact)), 60);
 
-    for (int i = 0; i < tiles; i++)
-    {
+    for (int i = 0; i < tiles; i++) {
         Magick::Image img = input_scaled;
 
         // 随机翻转
-        if (get_random(2)) img.flop();
-        if (get_random(2)) img.flip();
+        if (get_random(2))
+            img.flop();
+        if (get_random(2))
+            img.flip();
 
         // 随机缩放
         double scale = get_random_f(0.8, 1.2);
@@ -407,7 +415,7 @@ Magick::Image buildRandomCanvas(const Image& input, std::function<void(float)> c
 
         // 旋转
         double angle = get_random_f(0.0, 360.0);
-        img.backgroundColor(Magick::Color(0,0,0,0));
+        img.backgroundColor(Magick::Color(0, 0, 0, 0));
         img.rotate(angle);
 
         // alpha
@@ -417,7 +425,8 @@ Magick::Image buildRandomCanvas(const Image& input, std::function<void(float)> c
         int x = get_random(-w, canvasW);
         int y = get_random(-h + (canvasH >> 1), canvasH);
 
-        canvas.composite(img, x, y, MagickCore::CompositeOperator::OverCompositeOp);
+        canvas.composite(img, x, y,
+                         MagickCore::CompositeOperator::OverCompositeOp);
 
         if (callback != nullptr) {
             callback(1.0 / tiles * 0.5); // 生成进度，50%
@@ -427,7 +436,8 @@ Magick::Image buildRandomCanvas(const Image& input, std::function<void(float)> c
     return canvas;
 }
 
-Magick::Image kaleidoscopeSectorSymmetry(const Magick::Image& canvas, int sectors = 12)
+Magick::Image kaleidoscopeSectorSymmetry(const Magick::Image &canvas,
+                                         int sectors = 12)
 {
     int w = canvas.columns();
     int h = canvas.rows();
@@ -454,41 +464,38 @@ Magick::Image kaleidoscopeSectorSymmetry(const Magick::Image& canvas, int sector
     double a0 = 0.0;
     double a1 = sectorAngle;
 
-    double step = 1.0;  // 每 1 度采样
-    for (double a = a0; a <= a1; a += step)
-    {
+    double step = 1.0; // 每 1 度采样
+    for (double a = a0; a <= a1; a += step) {
         double rad = a * M_PI / 180.0;
-        poly.emplace_back(
-            cx + r * cos(rad),
-            cy + r * sin(rad)
-        );
+        poly.emplace_back(cx + r * cos(rad), cy + r * sin(rad));
     }
 
     drawList.push_back(Magick::DrawablePolygon(poly));
     mask.draw(drawList);
 
     Magick::Image sector = canvas;
-    sector.crop(Magick::Geometry(size, size, (w - size)/2, (h - size)/2));
+    sector.crop(Magick::Geometry(size, size, (w - size) / 2, (h - size) / 2));
     sector.composite(mask, 0, 0, MagickCore::DstInCompositeOp);
 
     // 输出画布
-    Magick::Image output(Magick::Geometry(size, size), Magick::Color(0, 0, 0, 0));
+    Magick::Image output(Magick::Geometry(size, size),
+                         Magick::Color(0, 0, 0, 0));
     output.alpha(true);
-    for (int i = 0; i < sectors; i++)
-    {
+    for (int i = 0; i < sectors; i++) {
         Magick::Image piece = sector;
-        piece.backgroundColor(Magick::Color(0,0,0,0));
-        piece.page(Magick::Geometry(0,0,0,0));
+        piece.backgroundColor(Magick::Color(0, 0, 0, 0));
+        piece.page(Magick::Geometry(0, 0, 0, 0));
 
         if (i % 2 == 1) {
             piece.flip();
-            piece.page(Magick::Geometry(0,0,0,0));
+            piece.page(Magick::Geometry(0, 0, 0, 0));
             piece.rotate((i + 1) * sectorAngle);
-        } else {
-            piece.page(Magick::Geometry(0,0,0,0));
+        }
+        else {
+            piece.page(Magick::Geometry(0, 0, 0, 0));
             piece.rotate(i * sectorAngle);
         }
-        piece.page(Magick::Geometry(0,0,0,0));
+        piece.page(Magick::Geometry(0, 0, 0, 0));
 
         // 裁剪回原图片大小，以图片正中心为标准
         int crop_x = (piece.columns() - size) / 2;
@@ -496,7 +503,8 @@ Magick::Image kaleidoscopeSectorSymmetry(const Magick::Image& canvas, int sector
         piece.crop(Magick::Geometry(size, size, crop_x, crop_y));
         piece.page(Magick::Geometry(0, 0, 0, 0));
 
-        output.composite(piece, 0, 0, MagickCore::CompositeOperator::OverCompositeOp);
+        output.composite(piece, 0, 0,
+                         MagickCore::CompositeOperator::OverCompositeOp);
     }
 
     return output;
@@ -505,10 +513,12 @@ Magick::Image kaleidoscopeSectorSymmetry(const Magick::Image& canvas, int sector
 void kaleido(Magick::Image &img, int layers, int nums_per_layer,
              std::function<void(float)> callback)
 {
-    img = kaleidoscopeSectorSymmetry(buildRandomCanvas(img, callback), nums_per_layer);
+    img = kaleidoscopeSectorSymmetry(buildRandomCanvas(img, callback),
+                                     nums_per_layer);
 }
 
-void kaleido(std::vector<Magick::Image> &img, int layers, int nums_per_layer, std::function<void(float)> callback)
+void kaleido(std::vector<Magick::Image> &img, int layers, int nums_per_layer,
+             std::function<void(float)> callback)
 {
     std::vector<Magick::Image> coalesced;
     Magick::coalesceImages(&coalesced, img.begin(), img.end());
@@ -531,5 +541,6 @@ void kaleido(std::vector<Magick::Image> &img, int layers, int nums_per_layer, st
     }
 
     img.clear();
-    Magick::optimizeImageLayers(&img, coalesced_canvas.begin(), coalesced_canvas.end());
+    Magick::optimizeImageLayers(&img, coalesced_canvas.begin(),
+                                coalesced_canvas.end());
 }

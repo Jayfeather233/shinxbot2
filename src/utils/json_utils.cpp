@@ -10,11 +10,12 @@ Json::Value string_to_json(const std::string &str)
     try {
         bool isok = re.parse(str, root);
         if (!isok) {
-            set_global_log(LOG::ERROR,
-                "string to json failed: " + re.getFormattedErrorMessages() +
-                    "\nstring: " + str);
+            set_global_log(LOG::ERROR, "string to json failed: " +
+                                           re.getFormattedErrorMessages() +
+                                           "\nstring: " + str);
         }
-    } catch (std::exception &e) {
+    }
+    catch (std::exception &e) {
         set_global_log(LOG::ERROR,
                        "string to json exception: " + std::string(e.what()) +
                            "\nstring: " + str);

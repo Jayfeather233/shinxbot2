@@ -2,9 +2,9 @@
 
 #include "eventprocess.h"
 
-#include <set>
 #include <chrono>
 #include <mutex>
+#include <set>
 
 class poke : public eventprocess {
 private:
@@ -13,6 +13,7 @@ private:
     std::chrono::steady_clock::time_point lastExecutionTime_{};
     std::mutex mutex_;
     std::chrono::duration<int64_t> minInterval;
+
 public:
     poke();
     void process(bot *p, Json::Value J);

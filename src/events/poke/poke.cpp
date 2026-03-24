@@ -3,7 +3,8 @@
 
 poke::poke()
 {
-    Json::Value J = string_to_json(readfile("./config/poke.json", "{\"users\": [], \"groups\": []}"));
+    Json::Value J = string_to_json(
+        readfile("./config/poke.json", "{\"users\": [], \"groups\": []}"));
     parse_json_to_set(J["users"], no_poke_users);
     parse_json_to_set(J["groups"], no_poke_groups);
     minInterval = std::chrono::seconds(3);
@@ -40,7 +41,8 @@ bool poke::check(bot *p, Json::Value J)
     userid_t user_id = J["user_id"].asUInt64();
     groupid_t group_id = J["group_id"].asUInt64();
     if (target_id != p->get_botqq() ||
-        no_poke_users.find(user_id) != no_poke_users.end() || no_poke_groups.find(group_id) != no_poke_groups.end())
+        no_poke_users.find(user_id) != no_poke_users.end() ||
+        no_poke_groups.find(group_id) != no_poke_groups.end())
         return false;
     return true;
 }

@@ -2,9 +2,9 @@
 
 #define QQBOT
 
+#include <filesystem>
 #include <iostream>
 #include <jsoncpp/json/json.h>
-#include <filesystem>
 
 #include "progress_bar.hpp"
 
@@ -33,7 +33,8 @@ struct msg_meta {
 
     msg_meta(const msg_meta &u);
     msg_meta(const msg_meta &&u);
-    msg_meta(std::string mt="", userid_t uid=0, groupid_t gid=0, int64_t mid=0, bot*pp=nullptr);
+    msg_meta(std::string mt = "", userid_t uid = 0, groupid_t gid = 0,
+             int64_t mid = 0, bot *pp = nullptr);
 };
 
 class bot {
@@ -67,7 +68,7 @@ public:
      */
     virtual std::string cq_send(const std::string &message,
                                 const msg_meta &conf) const;
-    
+
     virtual void cq_send_all_op(const std::string &message) = 0;
 
     /**

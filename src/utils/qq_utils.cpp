@@ -12,7 +12,8 @@ std::string get_stranger_name(const bot *p, userid_t user_id)
     std::string res = p->cq_send("get_stranger_info", input);
     input.clear();
     input = string_to_json(res);
-    if (input["data"].isNull()) return "";
+    if (input["data"].isNull())
+        return "";
     std::string name = input["data"]["nickname"].asString();
     return name;
 }
@@ -30,7 +31,8 @@ std::string get_group_member_name(const bot *p, userid_t user_id,
     if (input["data"].isNull())
         name = get_stranger_name(p, user_id);
     else
-        name = (!input["data"]["card"].isNull() && input["data"]["card"].asString().size() != 0)
+        name = (!input["data"]["card"].isNull() &&
+                input["data"]["card"].asString().size() != 0)
                    ? input["data"]["card"].asString()
                    : input["data"]["nickname"].asString();
     return name;
@@ -81,8 +83,8 @@ std::string get_folder_id(const bot *p, const groupid_t &group_id,
 /**
  * file: reletive path
  */
-void upload_file(bot *p, const fs::path &file,
-                 const groupid_t &group_id, const std::string &path)
+void upload_file(bot *p, const fs::path &file, const groupid_t &group_id,
+                 const std::string &path)
 {
     try {
         if (!is_folder_exist(p, group_id, path) &&
@@ -95,9 +97,7 @@ void upload_file(bot *p, const fs::path &file,
         std::string id = get_folder_id(p, group_id, path);
         Json::Value J;
         J["group_id"] = group_id;
-        J["file"] = (fs::current_path() / file)
-                        .lexically_normal()
-                        .string();
+        J["file"] = (fs::current_path() / file).lexically_normal().string();
         J["name"] = file.filename().string();
         J["folder"] = id;
         // cq_send(J.toStyledString(), "group", 0, group_id);
@@ -121,17 +121,19 @@ bool is_group_op(const bot *p, const groupid_t &group_id,
     J["group_id"] = group_id;
     J["user_id"] = user_id;
     J = string_to_json(p->cq_send("get_group_member_info", J));
-    if(J["data"].isNull()) return false;
+    if (J["data"].isNull())
+        return false;
     return J["data"]["role"].asString() != "member";
 }
 
 bool is_group_member(const bot *p, const groupid_t &group_id,
-                     const userid_t &user_id){
+                     const userid_t &user_id)
+{
     Json::Value J;
     J["group_id"] = group_id;
     J = string_to_json(p->cq_send("get_group_member_list", J));
     J = J["data"];
-    for(auto j : J) {
+    for (auto j : J) {
         if (j["user_id"].asUInt64() == user_id) {
             return true;
         }

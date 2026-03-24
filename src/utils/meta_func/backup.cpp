@@ -2,10 +2,8 @@
 #include "utils.h"
 #include <zip.h>
 
-void archivist::add_path(const std::string &name,
-                         const fs::path &path,
-                         const fs::path &rele_path,
-                         const std::string &passwd)
+void archivist::add_path(const std::string &name, const fs::path &path,
+                         const fs::path &rele_path, const std::string &passwd)
 {
     this->arc_list[name].emplace_back(path, rele_path, passwd);
 }
@@ -15,8 +13,7 @@ void archivist::remove_path(const std::string &name)
     this->arc_list.erase(name);
 }
 
-bool archivist::archive_add_file(zip_t *archive,
-                                 const fs::path &path,
+bool archivist::archive_add_file(zip_t *archive, const fs::path &path,
                                  const std::string &passwd,
                                  const fs::path &rele_path)
 {
@@ -51,8 +48,7 @@ bool archivist::archive_add_file(zip_t *archive,
     }
     return true;
 }
-bool archivist::archive_add_dir(zip_t *archive,
-                                const fs::path &path,
+bool archivist::archive_add_dir(zip_t *archive, const fs::path &path,
                                 const std::string &passwd,
                                 const fs::path &rele_path)
 {
@@ -64,8 +60,7 @@ bool archivist::archive_add_dir(zip_t *archive,
     }
     return true;
 }
-bool archivist::archive_add_path(zip_t *archive,
-                                 const fs::path &path,
+bool archivist::archive_add_path(zip_t *archive, const fs::path &path,
                                  const std::string &passwd,
                                  const fs::path &rele_path)
 {

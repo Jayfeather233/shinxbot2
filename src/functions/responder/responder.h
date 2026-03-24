@@ -13,7 +13,9 @@ private:
     std::map<groupid_t, bool> trigger_by;
 
     void save();
-    std::string get_reply_message(const std::string &message, const msg_meta &conf);
+    std::string get_reply_message(const std::string &message,
+                                  const msg_meta &conf);
+
 public:
     Responder();
     void process(std::string message, const msg_meta &conf);
