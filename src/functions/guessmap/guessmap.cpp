@@ -169,6 +169,9 @@ int guessmap::get_start_crop(const std::string &message) const
     if (message.rfind("*guess_start_ultra", 0) == 0) {
         return kUltraCrop;
     }
+    if (message.rfind("*guess_start_imp", 0) == 0) {
+        return get_random(8, 17);
+    }
     if (message.rfind("*guess_start_", 0) == 0) {
         std::string mode =
             trim(message.substr(std::string("*guess_start_").size()));
@@ -180,7 +183,7 @@ int guessmap::get_start_crop(const std::string &message) const
             mode.begin(), mode.end(), mode.begin(),
             [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
         if (!mode.empty() && mode != "easy" && mode != "hard" &&
-            mode != "ultra") {
+            mode != "ultra" && mode != "imp") {
             return get_random(16, 257);
         }
     }
@@ -960,18 +963,18 @@ void guessmap::process(std::string message, const msg_meta &conf)
         const bool solved_fast = (std::chrono::steady_clock::now() -
                                   state.started_at) <= std::chrono::seconds(30);
         const bool should_alien_react = is_first_guess_of_user || solved_fast;
+        if (should_alien_react) {
+            react_or_reply(conf, "128125", "外星人啊");
+        }
+        else {
+            react_or_reply(conf, "9989", "");
+        }
         if (build_reveal_image(state, out)) {
             send_finish_message(
                 conf, "你猜对了！答案是：" + entry.answer + "。", out);
         }
         else {
             conf.p->cq_send("你猜对了！答案是：" + entry.answer + "。", conf);
-        }
-        if (should_alien_react) {
-            react_or_reply(conf, "128125", "外星人啊");
-        }
-        else {
-            react_or_reply(conf, "9989", "");
         }
         cleanup_generated_images(id);
         cooldown_.erase(id);
@@ -984,7 +987,7 @@ void guessmap::process(std::string message, const msg_meta &conf)
 
 std::string guessmap::help()
 {
-    return "蔚蓝猜地图: *guess_start_easy/hard/ultra 或 "
+    return "蔚蓝猜地图: *guess_start_easy/hard/ultra/imp"
            "*guess_start_任意文本(16-256随机) | *guess <答案> | "
            "*guess_roll | *guess_hint | *guess_giveup | *guess_check";
 }

@@ -43,6 +43,35 @@ img::img()
 static std::mutex img_mutex;
 static std::mutex save_mutex;
 
+static bool is_uint64_token(const std::string &s)
+{
+    if (s.empty()) {
+        return false;
+    }
+    return std::all_of(s.begin(), s.end(),
+                       [](unsigned char c) { return std::isdigit(c) != 0; });
+}
+
+static bool parse_private_img_request(const std::string &message,
+                                      std::string &name, groupid_t &groupid,
+                                      std::string &index)
+{
+    std::istringstream iss(trim(message));
+    std::string gid_token;
+    if (!(iss >> name) || !(iss >> gid_token)) {
+        return false;
+    }
+    if (!is_uint64_token(gid_token)) {
+        return false;
+    }
+    groupid = my_string2uint64(gid_token);
+    if (groupid == 0) {
+        return false;
+    }
+    iss >> index;
+    return !name.empty();
+}
+
 void img::save()
 {
     std::lock_guard<std::mutex> lock_guard(save_mutex);
@@ -496,21 +525,24 @@ void img::process(std::string message, const msg_meta &conf)
     is_adding[conf.user_id] = std::make_tuple(false, 0, L"");
     is_deling[conf.user_id] = std::make_tuple(false, 0, L"");
     std::string name, indexs;
-    groupid_t groupid;
-    std::istringstream iss(message);
-    try {
-        if (conf.message_type == "private") {
-            iss >> name >> groupid >> indexs;
-            if (!is_in_group(groupid, conf.user_id, conf.p)) {
-                return;
-            }
+    groupid_t groupid = 0;
+    if (conf.message_type == "private") {
+        if (!parse_private_img_request(message, name, groupid, indexs)) {
+            return;
         }
-        else {
-            iss >> name >> indexs;
-            groupid = conf.group_id;
+        if (!is_in_group(groupid, conf.user_id, conf.p)) {
+            return;
         }
     }
-    catch (...) {
+    else {
+        std::istringstream iss(message);
+        if (!(iss >> name)) {
+            return;
+        }
+        iss >> indexs;
+        groupid = conf.group_id;
+    }
+    if (name.empty()) {
         return;
     }
     // fmt::print("img process name: {}, group: {}, indexs: {}\n", name,
@@ -621,7 +653,28 @@ void img::process(std::string message, const msg_meta &conf)
                         conf);
     }
 }
-bool img::check(std::string message, const msg_meta &conf) { return true; }
+
+bool img::check(std::string message, const msg_meta &conf)
+{
+    if (std::get<0>(is_adding[conf.user_id]) ||
+        std::get<0>(is_deling[conf.user_id])) {
+        return true;
+    }
+
+    std::string normalized = trim(message);
+    if (normalized.size() >= 5 && normalized.compare(0, 5, "美图 ") == 0) {
+        return true;
+    }
+
+    if (conf.message_type == "private") {
+        std::string name;
+        groupid_t groupid = 0;
+        std::string index;
+        return parse_private_img_request(normalized, name, groupid, index);
+    }
+
+    return true;
+}
 std::string img::help() { return "美图： 美图 帮助 - 列出所有美图命令"; }
 
 void img::set_backup_files(archivist *p, const std::string &name)
