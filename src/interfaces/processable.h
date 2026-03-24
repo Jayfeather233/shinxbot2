@@ -3,6 +3,12 @@
 #include "utils.h"
 #include <string>
 
+enum class help_level_t {
+    public_only,
+    group_admin,
+    bot_admin,
+};
+
 class processable {
 public:
     /**
@@ -15,6 +21,13 @@ public:
      */
     virtual bool check(std::string message, const msg_meta &conf) = 0;
     virtual std::string help() = 0;
+    virtual std::string help(const msg_meta &conf,
+                             help_level_t level = help_level_t::public_only)
+    {
+        (void)conf;
+        (void)level;
+        return help();
+    }
     virtual ~processable() {}
 
     virtual bool is_support_messageArr() { return false; }
@@ -34,14 +47,14 @@ public:
 };
 
 #ifdef DECLARE_FACTORY_FUNCTIONS
-    #undef DECLARE_FACTORY_FUNCTIONS
+#undef DECLARE_FACTORY_FUNCTIONS
 #endif
 #define DECLARE_FACTORY_FUNCTIONS(DerivedClass)                                \
     extern "C" processable *create_t() { return new DerivedClass(); }          \
     extern "C" void destroy_t(processable *p) { delete p; }
 
 #ifdef DECLARE_FACTORY_FUNCTIONS_HEADER
-    #undef DECLARE_FACTORY_FUNCTIONS_HEADER
+#undef DECLARE_FACTORY_FUNCTIONS_HEADER
 #endif
 #define DECLARE_FACTORY_FUNCTIONS_HEADER                                       \
     extern "C" processable *create_t();                                        \

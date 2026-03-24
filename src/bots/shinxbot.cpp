@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <csignal>
 #include <filesystem>
+#include <fmt/core.h>
 #include <httplib.h>
 #include <iomanip>
 #include <iostream>
@@ -13,7 +14,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <thread>
-#include <fmt/core.h>
 
 namespace fs = fs;
 
@@ -38,14 +38,13 @@ int shinxbot::start_server()
 
 void shinxbot::refresh_log_stream()
 {
-    std::time_t nt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    std::time_t nt =
+        std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     tm tt = *std::localtime(&nt);
 
-    std::string formatted_log = fmt::format("./log/{}/{:04}_{:02}_{:02}", 
-                                            botqq, 
-                                            tt.tm_year + 1900, 
-                                            tt.tm_mon + 1, 
-                                            tt.tm_mday);
+    std::string formatted_log =
+        fmt::format("./log/{}/{:04}_{:02}_{:02}", botqq, tt.tm_year + 1900,
+                    tt.tm_mon + 1, tt.tm_mday);
 
     if (!fs::exists(formatted_log.c_str())) {
         fs::create_directories(formatted_log.c_str());
@@ -55,9 +54,12 @@ void shinxbot::refresh_log_stream()
             LOG_output[i].close();
         }
     }
-    LOG_output[0] = std::ofstream(formatted_log + "/info.log", std::ios_base::app);
-    LOG_output[1] = std::ofstream(formatted_log + "/warn.log", std::ios_base::app);
-    LOG_output[2] = std::ofstream(formatted_log + "/erro.log", std::ios_base::app);
+    LOG_output[0] =
+        std::ofstream(formatted_log + "/info.log", std::ios_base::app);
+    LOG_output[1] =
+        std::ofstream(formatted_log + "/warn.log", std::ios_base::app);
+    LOG_output[2] =
+        std::ofstream(formatted_log + "/erro.log", std::ios_base::app);
 }
 
 template <typename T> void close_dl(void *handle, T *p)
@@ -120,7 +122,8 @@ void shinxbot::init()
     parse_json_to_set(J_op, op_list);
 
     // J_block: {"group_id": ["word1", "word2", ...}, ...}
-    Json::Value J_block = string_to_json(readfile("./config/blocklist.json", "{}"));
+    Json::Value J_block =
+        string_to_json(readfile("./config/blocklist.json", "{}"));
     for (auto &member : J_block.getMemberNames()) {
         groupid_t gid = std::stoull(member);
         group_blocklist[gid] = blockItem(J_block[member]);
@@ -146,8 +149,14 @@ void shinxbot::init()
     this->archive->set_default_pwd(std::to_string(this->botqq));
 }
 
-shinxbot::shinxbot(int recv_port, int send_port, std::string tk) : bot(recv_port, send_port, tk) {}
-shinxbot::shinxbot(const Json::Value &J) : bot(J["recv_port"].asInt(), J["send_port"].asInt(), J["token"].asString()) {}
+shinxbot::shinxbot(int recv_port, int send_port, std::string tk)
+    : bot(recv_port, send_port, tk)
+{
+}
+shinxbot::shinxbot(const Json::Value &J)
+    : bot(J["recv_port"].asInt(), J["send_port"].asInt(), J["token"].asString())
+{
+}
 
 bool shinxbot::is_op(const userid_t a) const
 {
@@ -157,18 +166,72 @@ bool shinxbot::is_op(const userid_t a) const
 bool shinxbot::meta_func(std::string message, const msg_meta &conf)
 {
     if (message == "bot.help") {
+        help_level_t help_level = help_level_t::public_only;
+        if (conf.message_type == "private" && is_op(conf.user_id)) {
+            help_level = help_level_t::bot_admin;
+        }
+        else if (conf.message_type == "group" &&
+                 is_group_op(conf.p, conf.group_id, conf.user_id)) {
+            help_level = help_level_t::group_admin;
+        }
         std::string help_message;
         for (auto funcx : functions) {
             processable *func = std::get<0>(funcx);
             std::string name = std::get<2>(funcx);
-            if (conf.message_type == "group" && group_blocklist[conf.group_id].is_blocked(name)) {
+            if (conf.message_type == "group" &&
+                group_blocklist[conf.group_id].is_blocked(name)) {
                 continue;
             }
-            if (func->help() != "")
-                help_message += func->help() + '\n';
+            std::string h = func->help(conf, help_level);
+            if (!trim(h).empty())
+                help_message += h + '\n';
         }
         help_message += "本Bot项目地址：https://github.com/"
                         "Jayfeather233/shinxbot2";
+        cq_send(help_message, conf);
+        return false;
+    }
+    else if (message == "bot.op_help") {
+        if (conf.message_type != "private") {
+            cq_send("OP-only help is only available in private chat.", conf);
+            return false;
+        }
+        if (!is_op(conf.user_id)) {
+            cq_send("Only OP can use bot.op_help", conf);
+            return false;
+        }
+
+        std::string help_message;
+        help_message += "OP core commands:\n"
+                        "bot.on\n"
+                        "bot.off\n"
+                        "bot.backup\n"
+                        "bot.load [function|event] name\n"
+                        "bot.unload [function|event] name\n"
+                        "bot.list_module\n"
+                        "\n";
+
+        for (auto funcx : functions) {
+            processable *func = std::get<0>(funcx);
+            std::string op_help = trim(func->help(conf, help_level_t::bot_admin));
+            if (op_help.empty()) {
+                continue;
+            }
+
+            std::string public_help =
+                trim(func->help(conf, help_level_t::public_only));
+            if (!public_help.empty() && op_help == public_help) {
+                continue;
+            }
+
+            if (!trim(op_help).empty()) {
+                help_message += op_help + '\n';
+            }
+        }
+
+        if (trim(help_message).empty()) {
+            help_message = "No OP-only help available.";
+        }
         cq_send(help_message, conf);
         return false;
     }
@@ -350,68 +413,87 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
             cq_send("useage: bot.unload [function|event] name", conf);
             return false;
         }
-    } else if (message == "bot.progress") {
+    }
+    else if (message == "bot.progress") {
         cq_send(descBar(), conf);
         return false;
-    } else if (trim(message) == "bot.blockclear" && conf.message_type == "group") {
-        if (is_group_op(conf.p, conf.group_id, conf.user_id) || is_op(conf.user_id)) {
+    }
+    else if (trim(message) == "bot.blockclear" &&
+             conf.message_type == "group") {
+        if (is_group_op(conf.p, conf.group_id, conf.user_id) ||
+            is_op(conf.user_id)) {
             group_blocklist[conf.group_id].clear();
             cq_send("已清除屏蔽功能", conf);
             save_blocklist();
             return false;
-        } else {
+        }
+        else {
             return true;
         }
-    } else if (message.find("bot.block ") == 0 && conf.message_type == "group") {
-        if (is_group_op(conf.p, conf.group_id, conf.user_id) || is_op(conf.user_id)) {
+    }
+    else if (message.find("bot.block ") == 0 && conf.message_type == "group") {
+        if (is_group_op(conf.p, conf.group_id, conf.user_id) ||
+            is_op(conf.user_id)) {
             std::istringstream iss(message.substr(9));
             std::string type;
-            while(iss >> type) {
+            while (iss >> type) {
                 group_blocklist[conf.group_id].add_block(type);
             }
             cq_send("已添加屏蔽功能", conf);
             save_blocklist();
             return false;
-        } else {
+        }
+        else {
             return true;
         }
-    } else if (message.find("bot.unblock ") == 0 && conf.message_type == "group") {
-        if (is_group_op(conf.p, conf.group_id, conf.user_id) || is_op(conf.user_id)) {
+    }
+    else if (message.find("bot.unblock ") == 0 &&
+             conf.message_type == "group") {
+        if (is_group_op(conf.p, conf.group_id, conf.user_id) ||
+            is_op(conf.user_id)) {
             std::istringstream iss(message.substr(11));
             std::string type;
-            while(iss >> type) {
+            while (iss >> type) {
                 group_blocklist[conf.group_id].remove_block(type);
             }
             cq_send("已移除屏蔽功能", conf);
             save_blocklist();
             return false;
-        } else {
+        }
+        else {
             return true;
         }
-    } else if (message.find("bot.white ") == 0 && conf.message_type == "group") {
-        if (is_group_op(conf.p, conf.group_id, conf.user_id) || is_op(conf.user_id)) {
+    }
+    else if (message.find("bot.white ") == 0 && conf.message_type == "group") {
+        if (is_group_op(conf.p, conf.group_id, conf.user_id) ||
+            is_op(conf.user_id)) {
             std::istringstream iss(message.substr(9));
             std::string type;
-            while(iss >> type) {
+            while (iss >> type) {
                 group_blocklist[conf.group_id].add_white(type);
             }
             cq_send("已添加白名单功能", conf);
             save_blocklist();
             return false;
-        } else {
+        }
+        else {
             return true;
         }
-    } else if (message.find("bot.unwhite ") == 0 && conf.message_type == "group") {
-        if (is_group_op(conf.p, conf.group_id, conf.user_id) || is_op(conf.user_id)) {
+    }
+    else if (message.find("bot.unwhite ") == 0 &&
+             conf.message_type == "group") {
+        if (is_group_op(conf.p, conf.group_id, conf.user_id) ||
+            is_op(conf.user_id)) {
             std::istringstream iss(message.substr(11));
             std::string type;
-            while(iss >> type) {
+            while (iss >> type) {
                 group_blocklist[conf.group_id].remove_white(type);
             }
             cq_send("已移除白名单功能", conf);
             save_blocklist();
             return false;
-        } else {
+        }
+        else {
             return true;
         }
     }
@@ -468,7 +550,8 @@ void shinxbot::input_process(std::string *input)
             std::string messageStr = messageArr_to_string(J["message"]);
             int64_t message_id = J["message_id"].asInt64();
             std::string message_type = J["message_type"].asString();
-            if (message_type == "group" || message_type == "private" || message_type == "internal") {
+            if (message_type == "group" || message_type == "private" ||
+                message_type == "internal") {
                 userid_t user_id = 0;
                 groupid_t group_id = 0;
                 if (J.isMember("group_id")) {
@@ -483,7 +566,8 @@ void shinxbot::input_process(std::string *input)
                     for (auto funcx : functions) {
                         processable *func = std::get<0>(funcx);
                         std::string name = std::get<2>(funcx);
-                        if (message_type == "group" && group_blocklist[group_id].is_blocked(name)) {
+                        if (message_type == "group" &&
+                            group_blocklist[group_id].is_blocked(name)) {
                             continue;
                         }
                         try {
@@ -525,7 +609,8 @@ void shinxbot::input_process(std::string *input)
         }
     }
     else if (post_type == "meta_event") {
-        if (J.isMember("meta_event_type") && J["meta_event_type"].asString() == "heartbeat") {
+        if (J.isMember("meta_event_type") &&
+            J["meta_event_type"].asString() == "heartbeat") {
             recorder->inform();
         }
     }

@@ -58,14 +58,14 @@ void birthday::process(std::string message, const msg_meta &conf)
     if (command == "date.add") {
         std::string who, date;
         std::ostringstream oss_output;
-        while(iss >> date){
+        while (iss >> date) {
             getline(iss, who);
             who = trim(who);
             if (date.size() == 4 && !who.empty()) {
                 mmdd u;
                 try {
                     u = (mmdd){who, std::stoi(date.substr(0, 2)),
-                            std::stoi(date.substr(2, 2))};
+                               std::stoi(date.substr(2, 2))};
                 }
                 catch (...) {
                     oss_output << fmt::format("{} 日期不是数字\n", date);
@@ -75,11 +75,11 @@ void birthday::process(std::string message, const msg_meta &conf)
                     birthdays[conf.group_id].push_back(u);
 
                     std::sort(birthdays[conf.group_id].begin(),
-                            birthdays[conf.group_id].end(),
-                            [](const mmdd &a, const mmdd &b) {
-                                return (a.mm < b.mm) ||
-                                        (a.mm == b.mm && a.dd < b.dd);
-                            });
+                              birthdays[conf.group_id].end(),
+                              [](const mmdd &a, const mmdd &b) {
+                                  return (a.mm < b.mm) ||
+                                         (a.mm == b.mm && a.dd < b.dd);
+                              });
                     oss_output << fmt::format("加入 {} 的日期 {}\n", who, date);
                     save();
                 }
@@ -172,7 +172,30 @@ bool birthday::check(std::string message, const msg_meta &conf)
 {
     return (message.find("date.") == 0 && conf.message_type == "group");
 }
-std::string birthday::help() { return "日期提醒。 date.help"; }
+std::string birthday::help()
+{
+    return "日期提醒。\n"
+           "date.add MMDD event\n"
+           "date.list\n"
+           "date.send";
+}
+
+std::string birthday::help(const msg_meta &conf, help_level_t level)
+{
+    if (level == help_level_t::group_admin && conf.message_type == "group" &&
+        is_group_op(conf.p, conf.group_id, conf.user_id)) {
+        return "日期提醒。\n"
+               "date.add MMDD event\n"
+               "date.del event\n"
+               "date.list\n"
+               "date.send\n"
+               "date.inf.add days\n"
+               "date.inf.del days\n"
+               "date.inf.list";
+    }
+
+    return help();
+}
 
 void birthday::send_upcoming_msg(const std::tm &localTime, bot *p,
                                  groupid_t group_idx)

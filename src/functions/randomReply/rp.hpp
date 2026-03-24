@@ -6,12 +6,14 @@
 
 class RP : public processable {
 private:
-    std::map<userid_t, std::pair<uint32_t, std::string>> reply_content; // user_id -> <possible, messsage>
+    std::map<userid_t, std::pair<uint32_t, std::string>>
+        reply_content; // user_id -> <possible, messsage>
 public:
     RP();
     void process(std::string message, const msg_meta &conf);
     bool check(std::string message, const msg_meta &conf);
     std::string help();
+    std::string help(const msg_meta &conf, help_level_t level);
     void save();
 };
 
