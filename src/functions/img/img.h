@@ -5,11 +5,11 @@
 #include <map>
 #include <set>
 
-template <typename T1, typename T2>
-class bi_map {
+template <typename T1, typename T2> class bi_map {
 private:
     std::map<T1, std::vector<T2>> mp1;
     std::map<T2, std::vector<T1>> mp2;
+
 public:
     void insert(const T1 &a, const T2 &b)
     {
@@ -30,7 +30,7 @@ public:
             mp1.erase(it);
         }
     }
-    void erase_by_second(const T2 &b) 
+    void erase_by_second(const T2 &b)
     {
         auto it = mp2.find(b);
         if (it != mp2.end()) {
@@ -53,13 +53,14 @@ public:
         }
         return keys;
     }
-    const std::vector<T2>& get_by_first(const T1 &a) const
+    const std::vector<T2> &get_by_first(const T1 &a) const
     {
         static const std::vector<T2> empty;
         auto it = mp1.find(a);
         if (it != mp1.end()) {
             return it->second;
-        } else {
+        }
+        else {
             return empty;
         }
     }
@@ -72,13 +73,14 @@ public:
         }
         return keys;
     }
-    const std::vector<T1>& get_by_second(const T2 &b) const
+    const std::vector<T1> &get_by_second(const T2 &b) const
     {
         static const std::vector<T1> empty;
         auto it = mp2.find(b);
-        if (it != mp2.end()) {  
+        if (it != mp2.end()) {
             return it->second;
-        } else {
+        }
+        else {
             return empty;
         }
     }
@@ -90,35 +92,27 @@ private:
     bi_map<std::string, groupid_t> uuid_groupid; // uuid -> groupids
 
     std::map<std::string, size_t> image_size; // uuid->count
-    std::vector<std::string> image_list; // all uuids
+    std::vector<std::string> image_list;      // all uuids
     std::vector<std::string> default_image_list;
 
     std::map<userid_t, std::tuple<bool, groupid_t, std::wstring>> is_adding;
     std::map<userid_t, std::tuple<bool, groupid_t, std::wstring>> is_deling;
 
     bool process_command(std::string message, const msg_meta &conf);
-    void add_images(const std::wstring &message,
-                    const std::string &name,
-                    const groupid_t &groupid,
-                    const msg_meta &conf);
+    void add_images(const std::wstring &message, const std::string &name,
+                    const groupid_t &groupid, const msg_meta &conf);
 
-    void del_images(const std::wstring &name,
-                    const groupid_t &groupid,
-                    const std::string &index,
-                    const msg_meta &conf);
-    bool process_add_images(const std::wstring &msg,
-                            const std::string &name,
-                            const groupid_t &groupid,
-                            const msg_meta &conf);
-    bool process_del_images(const std::wstring &name,
-                            const groupid_t &groupid,
-                            const std::string &index,
-                            const msg_meta &conf);
+    void del_images(const std::wstring &name, const groupid_t &groupid,
+                    const std::string &index, const msg_meta &conf);
+    bool process_add_images(const std::wstring &msg, const std::string &name,
+                            const groupid_t &groupid, const msg_meta &conf);
+    bool process_del_images(const std::wstring &name, const groupid_t &groupid,
+                            const std::string &index, const msg_meta &conf);
 
 public:
     img();
     void save();
-    
+
     void process(std::string message, const msg_meta &conf);
     bool check(std::string message, const msg_meta &conf);
     std::string help();

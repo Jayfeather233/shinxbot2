@@ -3,7 +3,8 @@
 
 #include <iostream>
 
-void warn_recorder::process_command(std::string command, const msg_meta &conf) {
+void warn_recorder::process_command(std::string command, const msg_meta &conf)
+{
     if (command.find("clear") == 0) {
         userid_t user_id;
         user_id = my_string2uint64(command.substr(5));
@@ -20,30 +21,36 @@ void warn_recorder::process_command(std::string command, const msg_meta &conf) {
         size_t space_pos = command.find(' ');
         if (space_pos == std::string::npos) {
             if (command[0] != '[') {
-                conf.p->cq_send("参数错误。请使用 /warn.del [qq] [index] 格式", conf);
+                conf.p->cq_send("参数错误。请使用 /warn.del [qq] [index] 格式",
+                                conf);
                 return;
-            } else {
+            }
+            else {
                 space_pos = command.find(']');
             }
         }
         userid_t user_id;
         user_id = my_string2uint64(command.substr(0, space_pos));
         if (user_id == 0) {
-            conf.p->cq_send("参数错误。请使用 /warn.del [qq] [index] 格式", conf);
+            conf.p->cq_send("参数错误。请使用 /warn.del [qq] [index] 格式",
+                            conf);
             return;
         }
         size_t index;
         try {
             index = std::stoul(command.substr(space_pos + 1)) - 1;
-        } catch (...) {
-            conf.p->cq_send("参数错误。请使用 /warn.del [qq] [index] 格式", conf);
+        }
+        catch (...) {
+            conf.p->cq_send("参数错误。请使用 /warn.del [qq] [index] 格式",
+                            conf);
             return;
         }
         if (index >= warns[conf.group_id][user_id].size()) {
             conf.p->cq_send("参数错误。索引超出范围", conf);
             return;
         }
-        warns[conf.group_id][user_id].erase(warns[conf.group_id][user_id].begin() + index);
+        warns[conf.group_id][user_id].erase(
+            warns[conf.group_id][user_id].begin() + index);
         save();
         conf.p->cq_send("已删除该条警告记录", conf);
     }
@@ -62,7 +69,8 @@ void warn_recorder::process(std::string message, const msg_meta &conf)
         if (message[0] != '[') {
             conf.p->cq_send("参数错误。请使用 /warn [qq] [msg] 格式", conf);
             return;
-        } else {
+        }
+        else {
             space_pos = message.find(']');
         }
     }
@@ -76,7 +84,9 @@ void warn_recorder::process(std::string message, const msg_meta &conf)
     warns[conf.group_id][user_id].push_back(warn_msg);
     save();
     std::ostringstream oss;
-    oss << fmt::format("已警告 {} {} 次\n", get_username(conf.p, user_id, conf.group_id), warns[conf.group_id][user_id].size());
+    oss << fmt::format("已警告 {} {} 次\n",
+                       get_username(conf.p, user_id, conf.group_id),
+                       warns[conf.group_id][user_id].size());
     for (size_t i = 0; i < warns[conf.group_id][user_id].size(); i++) {
         oss << fmt::format("{}. {}\n", i + 1, warns[conf.group_id][user_id][i]);
     }
@@ -118,7 +128,8 @@ warn_recorder::warn_recorder()
                     warns[group_id][user_id].push_back(warn.asString());
                 }
             }
-        } catch (...) {
+        }
+        catch (...) {
             continue;
         }
     }
@@ -126,12 +137,20 @@ warn_recorder::warn_recorder()
 
 bool warn_recorder::check(std::string message, const msg_meta &conf)
 {
-    return message.find("/warn") == 0 && is_group_op(conf.p, conf.group_id, conf.user_id);
+    return message.find("/warn") == 0 &&
+           is_group_op(conf.p, conf.group_id, conf.user_id);
 }
 
-std::string warn_recorder::help()
+std::string warn_recorder::help() { return "用户警告记录。"; }
+
+std::string warn_recorder::help(const msg_meta &conf, help_level_t level)
 {
-    return "用户警告记录。管理使用/warn qq msg";
+    if (level != help_level_t::group_admin || conf.message_type != "group" ||
+        !is_group_op(conf.p, conf.group_id, conf.user_id)) {
+        return help();
+    }
+
+    return "用户警告记录。管理使用 /warn qq msg";
 }
 
 DECLARE_FACTORY_FUNCTIONS(warn_recorder)

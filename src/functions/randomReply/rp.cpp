@@ -50,9 +50,10 @@ void RP::process(std::string message, const msg_meta &conf)
         reply_content.erase(user_id);
         conf.p->cq_send("Reply removed successfully.", conf);
         save();
-    } else if (message.find("rp.add ") == 0 &&
-        (is_group_op(conf.p, conf.group_id, conf.user_id) ||
-         conf.p->is_op(conf.user_id))) {
+    }
+    else if (message.find("rp.add ") == 0 &&
+             (is_group_op(conf.p, conf.group_id, conf.user_id) ||
+              conf.p->is_op(conf.user_id))) {
         // Command format: rp.add userid possi message
         size_t space1 = message.find(' ', 7);
         if (space1 == std::string::npos) {
@@ -133,9 +134,23 @@ void RP::process(std::string message, const msg_meta &conf)
 std::string RP::help()
 {
     return "Automatic Reply Bot:\n"
-           "- Add a reply: rp.add <userid> <possibility in %> <message>\n"
            "- Replies are triggered automatically when a message is received "
            "from the specified user.";
+}
+
+std::string RP::help(const msg_meta &conf, help_level_t level)
+{
+    if (level == help_level_t::group_admin && conf.message_type == "group" &&
+        is_group_op(conf.p, conf.group_id, conf.user_id)) {
+        return "Automatic Reply Bot:\n"
+               "- Add a reply: rp.add <userid> <possibility in %> <message>\n"
+               "- Delete a reply: rp.del <userid>\n"
+               "- List replies: rp.list\n"
+               "- Replies are triggered automatically when a message is "
+               "received from the specified user.";
+    }
+
+    return help();
 }
 
 DECLARE_FACTORY_FUNCTIONS(RP)

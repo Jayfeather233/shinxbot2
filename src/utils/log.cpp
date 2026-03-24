@@ -1,9 +1,9 @@
 #include "bot.h"
 #include <chrono>
 #include <ctime>
+#include <fmt/core.h>
 #include <iomanip>
 #include <iostream>
-#include <fmt/core.h>
 
 std::string LOG_name[3] = {"INFO", "WARNING", "ERROR"};
 

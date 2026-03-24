@@ -45,25 +45,22 @@ std::string bot::cq_send(const std::string &end_point,
                          const Json::Value &J) const
 {
     return do_post((std::string) "127.0.0.1", send_port,
-                   (std::string) "/" + end_point, false, J, {{"Authorization", "Bearer " + token}});
+                   (std::string) "/" + end_point, false, J,
+                   {{"Authorization", "Bearer " + token}});
 }
 
 std::string bot::cq_get(const std::string &end_point) const
 {
     return do_get((std::string) "127.0.0.1", send_port,
-                  (std::string) "/" + end_point, false, {{"Authorization", "Bearer " + token}});
+                  (std::string) "/" + end_point, false,
+                  {{"Authorization", "Bearer " + token}});
 }
 
 void bot::setlog(LOG type, std::string message) {}
 
 userid_t bot::get_botqq() const { return botqq; }
 
-
-void bot::registerBar(BarInfo *p) {
-    pb.addBar(p);
-}
-std::string bot::descBar() {
-    return pb.desc();
-}
+void bot::registerBar(BarInfo *p) { pb.addBar(p); }
+std::string bot::descBar() { return pb.desc(); }
 
 bot::~bot() {}

@@ -30,7 +30,8 @@ int64_t my_string2int64(const std::wstring &s)
         else if (L'0' <= s[i] && s[i] <= L'9') {
             ans = ans * 10 + s[i] - L'0';
             is_digit = true;
-        } else if(is_digit){
+        }
+        else if (is_digit) {
             break;
         }
     }
@@ -48,7 +49,8 @@ uint64_t my_string2uint64(const std::wstring &s)
         else if (L'0' <= s[i] && s[i] <= L'9') {
             ans = ans * 10 + s[i] - L'0';
             is_digit = true;
-        } else if(is_digit){
+        }
+        else if (is_digit) {
             break;
         }
     }
@@ -68,7 +70,8 @@ int64_t my_string2int64(const std::string &s)
         else if ('0' <= s[i] && s[i] <= '9') {
             ans = ans * 10 + s[i] - '0';
             is_digit = true;
-        } else if(is_digit){
+        }
+        else if (is_digit) {
             break;
         }
     }
@@ -86,7 +89,8 @@ uint64_t my_string2uint64(const std::string &s)
         else if ('0' <= s[i] && s[i] <= '9') {
             ans = ans * 10 + s[i] - '0';
             is_digit = true;
-        } else if(is_digit){
+        }
+        else if (is_digit) {
             break;
         }
     }

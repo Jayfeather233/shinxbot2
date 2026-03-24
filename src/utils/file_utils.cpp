@@ -75,7 +75,9 @@ void command_download(const std::string &httpAddress,
     }
     p /= fileName;
     // std::cout<<p.string()<<std::endl;
-    std::string command = fmt::format("curl -o \"{}\" {} \"{}\" > /dev/null 2>&1", p.string(), proxy ? "" : "--noproxy '*'", httpAddress);
+    std::string command =
+        fmt::format("curl -o \"{}\" {} \"{}\" > /dev/null 2>&1", p.string(),
+                    proxy ? "" : "--noproxy '*'", httpAddress);
 
     int ret = system(command.c_str());
     if (ret) {

@@ -1,10 +1,10 @@
 #pragma once
 
 #include "processable.h"
-#include <vector>
 #include <map>
+#include <vector>
 
-class gemini : public processable{
+class gemini : public processable {
 private:
     std::vector<std::string> keys;
     std::vector<std::string>::iterator nowkey;
@@ -13,6 +13,7 @@ private:
     std::map<std::string, Json::Value> mode_prompt;
 
     std::map<uint64_t, Json::Value> history[2];
+
 public:
     gemini();
     void shrink_prompt_size(uint64_t id, bool is_vision);

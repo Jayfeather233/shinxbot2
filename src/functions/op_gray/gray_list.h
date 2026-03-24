@@ -7,6 +7,7 @@
 class gray_list : public processable {
 private:
     std::map<long, Json::Value> g_list;
+
 public:
     gray_list();
     void save();

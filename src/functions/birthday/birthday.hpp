@@ -2,8 +2,8 @@
 
 #include "processable.h"
 #include "utils.h"
-#include <set>
 #include <mutex>
+#include <set>
 
 struct mmdd {
     std::string name;
@@ -51,7 +51,8 @@ private:
     std::map<groupid_t, std::vector<mmdd>> birthdays;
     std::mutex mutex_;
     bool has_sent = true;
-    void send_upcoming_msg(const std::tm &localTime, bot *p, groupid_t group_idx = 0);
+    void send_upcoming_msg(const std::tm &localTime, bot *p,
+                           groupid_t group_idx = 0);
 
 public:
     birthday();
@@ -64,6 +65,7 @@ public:
     void process(std::string message, const msg_meta &conf);
     bool check(std::string message, const msg_meta &conf);
     std::string help();
+    std::string help(const msg_meta &conf, help_level_t level);
     ~birthday();
     void check_date(bot *p);
     void set_callback(std::function<void(std::function<void(bot *p)>)> f);

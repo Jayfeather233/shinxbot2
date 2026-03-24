@@ -184,7 +184,7 @@ int get_random(int mini, int maxi);
  * get a random float number [mini, maxi)
  */
 float get_random_f(float mini, float maxi);
-std::mt19937& get_engine();
+std::mt19937 &get_engine();
 
 /**
  * download a image from a http address.

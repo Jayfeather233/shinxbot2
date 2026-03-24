@@ -1,18 +1,23 @@
 #include "friendadd.h"
-#include "utils.h"
+#include "internal_message.hpp"
 
 void friendadd::process(bot *p, Json::Value J)
 {
-    Json::Value res;
-    res["flag"] = J["flag"];
-    res["approve"] = true;
-    p->cq_send("set_friend_add_request", res);
-    p->setlog(LOG::INFO,
-              "Friend add: " + std::to_string(J["user_id"].asUInt64()));
+    if (!J.isMember("flag")) {
+        return;
+    }
+
+    Json::Value w = internal_message::make(
+        internal_message::kApproveFriendRequest, J["flag"].asString(), 0,
+        J.isMember("user_id") ? J["user_id"].asUInt64() : 0);
+
+    p->input_process(new std::string(w.toStyledString()));
 }
 bool friendadd::check(bot *p, Json::Value J)
 {
-    return J.isMember("request_type") &&
+    (void)p;
+    return J.isMember("post_type") && J.isMember("request_type") &&
+           J["post_type"].asString() == "request" &&
            J["request_type"].asString() == "friend";
 }
 

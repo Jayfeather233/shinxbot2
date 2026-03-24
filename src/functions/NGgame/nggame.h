@@ -1,6 +1,4 @@
 #include "processable.h"
-#include <algorithm>
-#include <chrono>
 #include <map>
 #include <vector>
 
@@ -8,14 +6,15 @@ enum gameState { idle, join, init, work };
 
 typedef struct Player {
     userid_t id;
-    Player *pre;
-    Player *nex;
+    userid_t pre_id;
+    userid_t nex_id;
     std::string word;
     bool alive;
     Player(userid_t user_id)
     {
         id = user_id;
-        pre = nex = NULL;
+        pre_id = 0;
+        nex_id = 0;
         word = "";
         alive = true;
     }
@@ -24,9 +23,11 @@ typedef struct Player {
 class NGGame {
 private:
     gameState state;
-    std::map<groupid_t, player_t *> ng;
+    std::map<userid_t, player_t> ng;
 
 public:
+    NGGame() : state(gameState::idle) {}
+
     // player action
     bool join(userid_t user_id);
     bool set(userid_t user_id, std::string word);
@@ -48,6 +49,7 @@ public:
     std::string get_info(userid_t user_id, const msg_meta &conf);
     std::string overall(const msg_meta &conf);
     std::vector<userid_t> get_lazy();
+    std::vector<userid_t> get_players();
 
     bool is_alive(userid_t user_id);
     bool check_ng(std::string content, userid_t user_id);
@@ -57,8 +59,6 @@ public:
     size_t alive_cnt();
     size_t total_cnt();
     size_t dead_cnt();
-
-    ~NGGame();
 };
 
 class NGgame : public processable {

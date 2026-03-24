@@ -9,7 +9,10 @@
 
 static std::mutex m;
 
-BarInfo::BarInfo(float pg, const std::string &dc) : progress(pg), desc(dc), f(nullptr), b(nullptr) {}
+BarInfo::BarInfo(float pg, const std::string &dc)
+    : progress(pg), desc(dc), f(nullptr), b(nullptr)
+{
+}
 void BarInfo::setProgress(float pg) { progress = pg; }
 void BarInfo::setDesc(const std::string &d) { this->desc = d; }
 void BarInfo::setBar(float pg, const std::string &d)
@@ -20,10 +23,11 @@ void BarInfo::setBar(float pg, const std::string &d)
 BarInfo::~BarInfo()
 {
     std::lock_guard<std::mutex> lock(m);
-    if(b != nullptr) b->f = f;
-    if(f != nullptr) f->b = b;
+    if (b != nullptr)
+        b->f = f;
+    if (f != nullptr)
+        f->b = b;
 }
-
 
 progressBar::progressBar()
 {
@@ -36,7 +40,9 @@ void progressBar::addBar(BarInfo *u)
 {
     std::lock_guard<std::mutex> lock(m);
     if (u->f != nullptr) {
-        set_global_log(LOG::INFO, fmt::format("A Progress Bar: {} registered twice!", u->desc));
+        set_global_log(
+            LOG::INFO,
+            fmt::format("A Progress Bar: {} registered twice!", u->desc));
         return;
     }
     u->f = tail.f;
@@ -66,9 +72,8 @@ std::string progressBar::desc()
                 oss << "░";
         }
 
-        oss << "] "
-            << std::fixed << std::setprecision(0)
-            << progress * 100 << "%\n";
+        oss << "] " << std::fixed << std::setprecision(0) << progress * 100
+            << "%\n";
 
         p = p->b;
     }
@@ -78,6 +83,7 @@ std::string progressBar::desc()
 progressBar::~progressBar()
 {
     if (root.b != &tail || tail.f != &root) {
-        set_global_log(LOG::ERROR, "progressBar list not properly released. May result in Segmentation fault.");
+        set_global_log(LOG::ERROR, "progressBar list not properly released. "
+                                   "May result in Segmentation fault.");
     }
 }

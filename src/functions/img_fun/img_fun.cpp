@@ -107,14 +107,19 @@ void img_fun::process(std::string message, const msg_meta &conf)
     else {
         if (it != is_input.end()) {
             is_input.erase(it);
-        } else {
+        }
+        else {
             conf.p->cq_send("图来", conf);
             is_input[conf.user_id] = proc_type;
         }
         return;
     }
 
-    conf.p->setlog(LOG::INFO, fmt::format("img_fun at u{} g{}：type={}, para1={}, para2={}", conf.user_id, conf.group_id, proc_type.type, (int)proc_type.para1, (int)proc_type.para2));
+    conf.p->setlog(
+        LOG::INFO,
+        fmt::format("img_fun at u{} g{}：type={}, para1={}, para2={}",
+                    conf.user_id, conf.group_id, proc_type.type,
+                    (int)proc_type.para1, (int)proc_type.para2));
     is_input.erase(conf.user_id);
     std::string filepath = "./resource/download/" + filename;
     download(cq_decode(fileurl), "./resource/download/", filename);
@@ -134,20 +139,23 @@ void img_fun::process(std::string message, const msg_meta &conf)
         if (proc_type.type == img_fun_type::MIRROR) {
             filename += "_mir.gif";
             float prog = 0.2;
-            mirrorImage(img_list, proc_type.para1, proc_type.para2,
-                        [&](float delta_p) { p.setProgress(prog += delta_p * 0.7); });
+            mirrorImage(
+                img_list, proc_type.para1, proc_type.para2,
+                [&](float delta_p) { p.setProgress(prog += delta_p * 0.7); });
         }
         else if (proc_type.type == img_fun_type::ROTATE) {
             filename += "_rot.gif";
             float prog = 0.2;
-            img_list = rotateImage(img, proc_type.para1, proc_type.para2,
-                                   [&](float delta_p) { p.setProgress(prog += delta_p * 0.7); });
+            img_list = rotateImage(
+                img, proc_type.para1, proc_type.para2,
+                [&](float delta_p) { p.setProgress(prog += delta_p * 0.7); });
         }
         else if (proc_type.type == img_fun_type::KALEIDO) {
             filename += "_kal.gif";
             float prog = 0.2;
-            kaleido(img_list, proc_type.para1, proc_type.para2,
-                    [&](float delta_p) { p.setProgress(prog += delta_p * 0.7); });
+            kaleido(
+                img_list, proc_type.para1, proc_type.para2,
+                [&](float delta_p) { p.setProgress(prog += delta_p * 0.7); });
         }
         p.setBar(0.9, "图片处理完成，保存中");
         Magick::writeImages(img_list.begin(), img_list.end(),
@@ -162,8 +170,9 @@ void img_fun::process(std::string message, const msg_meta &conf)
         else if (proc_type.type == img_fun_type::KALEIDO) {
             filename += "_kal.png";
             float prog = 0.2;
-            kaleido(img, proc_type.para1, proc_type.para2,
-                [&](float delta_p) { p.setProgress(prog += delta_p * 0.7); });
+            kaleido(img, proc_type.para1, proc_type.para2, [&](float delta_p) {
+                p.setProgress(prog += delta_p * 0.7);
+            });
         }
         img.write("./resource/download/" + filename);
         p.setBar(0.9, "图片处理完成，发送中");
@@ -173,7 +182,8 @@ void img_fun::process(std::string message, const msg_meta &conf)
                     conf);
     fs::remove("./resource/download/" + filename);
     fs::remove(filepath);
-    conf.p->setlog(LOG::INFO, fmt::format("img_fun done at u{} g{}", conf.user_id, conf.group_id));
+    conf.p->setlog(LOG::INFO, fmt::format("img_fun done at u{} g{}",
+                                          conf.user_id, conf.group_id));
     return;
 }
 bool img_fun::check(std::string message, const msg_meta &conf)

@@ -1,11 +1,11 @@
 #pragma once
 
+#include "bot.h"
 #include <atomic>
 #include <chrono>
 #include <functional>
 #include <thread>
 #include <vector>
-#include "bot.h"
 
 class Timer {
 private:
