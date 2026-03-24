@@ -1,12 +1,10 @@
 #include "m_change_f.h"
+#include "internal_message.hpp"
 #include "utils.h"
 
-#include <iostream>
-#include <fstream>
-#include <jsoncpp/json/json.h>
 #include <fmt/core.h>
+#include <jsoncpp/json/json.h>
 
-#include <atomic>
 #include <mutex>
 #include <thread>
 
@@ -14,14 +12,11 @@ const std::string WELCOME_MESSAGE_FILE = "./config/welcome_messages.json";
 
 static std::mutex group_mutex;
 
-m_change_f::m_change_f() {
-    load_welcome_messages();
-}
-m_change_f::~m_change_f() {
-    save_welcome_messages();
-}
+m_change_f::m_change_f() { load_welcome_messages(); }
+m_change_f::~m_change_f() { save_welcome_messages(); }
 
-void m_change_f::save_welcome_messages() {
+void m_change_f::save_welcome_messages()
+{
     Json::Value root;
     for (const auto &pair : group_welcome_messages) {
         root[std::to_string(pair.first)] = wstring_to_string(pair.second);
@@ -30,26 +25,33 @@ void m_change_f::save_welcome_messages() {
 
     writefile(WELCOME_MESSAGE_FILE, root.toStyledString());
 }
-void m_change_f::load_welcome_messages(){
-    Json::Value root = string_to_json(readfile(WELCOME_MESSAGE_FILE, "{\"default\": \"\"}"));
+void m_change_f::load_welcome_messages()
+{
+    Json::Value root =
+        string_to_json(readfile(WELCOME_MESSAGE_FILE, "{\"default\": \"\"}"));
     for (const auto &group : root.getMemberNames()) {
         try {
             groupid_t group_id = std::stoull(group);
-            group_welcome_messages[group_id] = string_to_wstring(root[group].asString());
-        } catch (const std::exception &e) {
+            group_welcome_messages[group_id] =
+                string_to_wstring(root[group].asString());
+        }
+        catch (const std::exception &e) {
             ;
         }
     }
     default_welcome_message = string_to_wstring(root["default"].asString());
 }
-std::wstring m_change_f::get_welcome_message(groupid_t group_id){
+std::wstring m_change_f::get_welcome_message(groupid_t group_id)
+{
     std::lock_guard<std::mutex> lock(group_mutex);
     if (group_welcome_messages.find(group_id) != group_welcome_messages.end()) {
         return group_welcome_messages[group_id];
     }
     return default_welcome_message;
 }
-std::wstring m_change_f::format_message(const std::wstring &message, const msg_meta &conf) {
+std::wstring m_change_f::format_message(const std::wstring &message,
+                                        const msg_meta &conf)
+{
     std::wstring formatted_message = message;
     std::string username = get_username(conf.p, conf.user_id, conf.group_id);
     size_t pos = formatted_message.find(L"{{username}}");
@@ -64,13 +66,15 @@ void m_change_f::process(std::string message, const msg_meta &conf)
 {
     std::wstring message_w = string_to_wstring(message);
     if (conf.message_type == "internal") {
-        std::wstring welcome_message = trim(this->format_message(this->get_welcome_message(conf.group_id), conf));
+        std::wstring welcome_message = trim(this->format_message(
+            this->get_welcome_message(conf.group_id), conf));
         if (!welcome_message.empty()) {
             std::lock_guard<std::mutex> lock(group_mutex);
             auto &state = group_state[conf.group_id];
             state.last_join = std::chrono::steady_clock::now();
 
-            if (state.timer_running) return;
+            if (state.timer_running)
+                return;
             state.timer_running = true;
             std::thread([this, conf, welcome_message]() {
                 groupid_t gid = conf.group_id;
@@ -86,15 +90,16 @@ void m_change_f::process(std::string message, const msg_meta &conf)
                         break;
                     }
                 }
-                conf.p->cq_send(
-                    wstring_to_string(welcome_message),
-                    (msg_meta){std::string("group"), conf.user_id, conf.group_id, conf.message_id, conf.p}
-                );
-
+                conf.p->cq_send(wstring_to_string(welcome_message),
+                                (msg_meta){std::string("group"), conf.user_id,
+                                           conf.group_id, conf.message_id,
+                                           conf.p});
             }).detach();
         }
-    } else {
-        if (conf.p->is_op(conf.user_id) == false && is_group_op(conf.p, conf.group_id, conf.user_id) == false) {
+    }
+    else {
+        if (conf.p->is_op(conf.user_id) == false &&
+            is_group_op(conf.p, conf.group_id, conf.user_id) == false) {
             conf.p->cq_send("你没有权限设置入群消息", conf);
             return;
         }
@@ -103,28 +108,48 @@ void m_change_f::process(std::string message, const msg_meta &conf)
             std::lock_guard<std::mutex> lock(group_mutex);
             this->group_welcome_messages[conf.group_id] = new_msg;
             this->save_welcome_messages();
-            conf.p->setlog(LOG::INFO, fmt::format("{} 设置入群消息: {}", conf.group_id, wstring_to_string(new_msg)));
-            std::wstring test_msg = trim(this->format_message(this->get_welcome_message(conf.group_id), conf));
-            conf.p->cq_send(fmt::format("设置入群消息成功!\n{}", wstring_to_string(test_msg)), conf);
-        } else if (message_w.find(L"删除入群消息") == 0) {
+            conf.p->setlog(LOG::INFO,
+                           fmt::format("{} 设置入群消息: {}", conf.group_id,
+                                       wstring_to_string(new_msg)));
+            std::wstring test_msg = trim(this->format_message(
+                this->get_welcome_message(conf.group_id), conf));
+            conf.p->cq_send(fmt::format("设置入群消息成功!\n{}",
+                                        wstring_to_string(test_msg)),
+                            conf);
+        }
+        else if (message_w.find(L"删除入群消息") == 0) {
             std::lock_guard<std::mutex> lock(group_mutex);
             group_welcome_messages[conf.group_id] = L"";
             this->save_welcome_messages();
-            conf.p->setlog(LOG::INFO, fmt::format("{} 删除入群消息", conf.group_id));
+            conf.p->setlog(LOG::INFO,
+                           fmt::format("{} 删除入群消息", conf.group_id));
             conf.p->cq_send("删除入群消息成功", conf);
             return;
-        } else {
+        }
+        else {
             conf.p->cq_send("未知命令，请使用 '设置入群消息 [消息内容]'", conf);
         }
     }
 }
 bool m_change_f::check(std::string message, const msg_meta &conf)
 {
-    return conf.group_id != 0 && (
-        message.find("设置入群消息") == 0
-        || (conf.message_type == "internal" && message == "m_change_f")
-        || message.find("删除入群消息") == 0);
+    return conf.group_id != 0 &&
+           (message.find("设置入群消息") == 0 ||
+            (conf.message_type == "internal" &&
+             conf.message_id == internal_message::kMemberChangeWelcome) ||
+            message.find("删除入群消息") == 0);
 }
-std::string m_change_f::help() { return "入群提示词。\n    设置入群消息 [后接入群提示消息，{{username}}代表用户名]\n    删除入群消息"; }
+std::string m_change_f::help() { return "入群提示词。"; }
+
+std::string m_change_f::help(const msg_meta &conf, help_level_t level)
+{
+    if (level != help_level_t::group_admin || conf.message_type != "group" ||
+        !is_group_op(conf.p, conf.group_id, conf.user_id)) {
+        return help();
+    }
+
+    return "入群提示词。\n    设置入群消息 "
+           "[后接入群提示消息，{{username}}代表用户名]\n    删除入群消息";
+}
 
 DECLARE_FACTORY_FUNCTIONS(m_change_f)
