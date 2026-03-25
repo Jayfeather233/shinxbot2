@@ -78,8 +78,11 @@ gpt3_5::gpt3_5()
         MAX_TOKEN = res["MAX_TOKEN"].asInt();
         MAX_REPLY = res["MAX_REPLY"].asInt();
         RED_LINE = res["RED_LINE"].asInt();
+        base_url = res.get("base_url", "https://api.openai.com").asString();
+        model_name = res.get("model", "gpt-3.5-turbo").asString();
     }
     is_open = true;
+    is_debug = false;
     key_cycle = 0;
 
     if (fs::exists("./config/gpt3_5")) {
@@ -290,7 +293,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
 
     // history[id] = J;
     // J = Json::Value();
-    J["model"] = "gpt-3.5-turbo-1106";
+    J["model"] = model_name;
     Json::Value K = mode_prompt[pre_default[id]];
     auto it = history.find(id);
     if (it != history.end()) {
@@ -304,7 +307,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     J["temperature"] = 0.7;
     J["max_tokens"] = MAX_REPLY;
     try {
-        J = string_to_json(do_post("https://api.openai.com",
+        J = string_to_json(do_post(base_url,
                                    "/v1/chat/completions", false, J,
                                    {{"Content-Type", "application/json"},
                                     {"Authorization", "Bearer " + key[keyid]}},
