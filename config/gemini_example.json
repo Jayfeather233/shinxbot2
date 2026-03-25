@@ -8,6 +8,7 @@
     "modes": {
         "default": []
     },
+    "show_user_id_info": "Note: [User: ID] prefix is automatically added to identify users in group chats (delete this line)",
     "black_list": [
         "这是要屏蔽的词"
     ]

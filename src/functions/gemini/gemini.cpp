@@ -180,11 +180,11 @@ void gemini::shrink_prompt_size(uint64_t u, bool is_vision)
     }
 }
 
-std::string gemini::generate_text(std::string message, uint64_t id)
+std::string gemini::generate_text(std::string message, uint64_t id, uint64_t user_id)
 {
     Json::Value J;
     J["role"] = "user";
-    J["parts"][0]["text"] = message;
+    J["parts"][0]["text"] = "[User: " + std::to_string(user_id) + "] " + message;
     history[0][id].append(J);
     J.clear();
     J["contents"] = history[0][id];
@@ -208,7 +208,7 @@ std::string gemini::generate_text(std::string message, uint64_t id)
     }
     return str_ans;
 }
-std::string gemini::generate_image(std::string message, uint64_t id)
+std::string gemini::generate_image(std::string message, uint64_t id, uint64_t user_id)
 {
     int cnt = 0;
     size_t index = -1, index2 = -1;
@@ -240,7 +240,7 @@ std::string gemini::generate_image(std::string message, uint64_t id)
             image2base64((std::string) "./resource/download/" + fn);
         J["role"] = "user";
         J["parts"][0]["text"] =
-            message.substr(0, index) + message.substr(index2 + 1);
+            "[User: " + std::to_string(user_id) + "] " + message.substr(0, index) + message.substr(index2 + 1);
         J["parts"][1]["inline_data"]["mime_type"] = img.first;
         J["parts"][1]["inline_data"]["data"] = img.second;
         // history[1][id].append(J);
@@ -288,7 +288,7 @@ void gemini::process(std::string message, const msg_meta &conf)
             cq_send(conf.p, help_msg, conf);
             return;
         }
-        result = generate_image(message, id);
+        result = generate_image(message, id, conf.user_id);
     }
     else {
         if (message.find(".reset") == 0) {
@@ -300,7 +300,7 @@ void gemini::process(std::string message, const msg_meta &conf)
             cq_send(conf.p, help_msg, conf);
             return;
         }
-        result = generate_text(message, id);
+        result = generate_text(message, id, conf.user_id);
     }
     cq_send(conf.p, result, conf);
 }
