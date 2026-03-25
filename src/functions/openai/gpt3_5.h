@@ -1,3 +1,7 @@
+#include "processable.h"
+
+#include <jsoncpp/json/json.h>
+#include <map>
 #include <set>
 #include <vector>
 
