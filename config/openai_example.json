@@ -1,4 +1,6 @@
 {
+    "base_url": "https://api.openai.com",
+    "model": "gpt-3.5-turbo-1106",
     "keys": ["abcdefg"],
     "mode": [
         "a1", "so the default mode will be a1(delete this)",

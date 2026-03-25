@@ -19,6 +19,8 @@ private:
     std::map<std::string, Json::Value> mode_prompt;
     std::vector<std::string> key;
     size_t key_cycle;
+    std::string base_url;
+    std::string model_name;
 
 public:
     gpt3_5();
