@@ -183,11 +183,8 @@ std::string auto_approve::help(const msg_meta &conf, help_level_t level)
         return "";
     }
 
-    return "approve: OP-only auto approve controls\n"
-           "approve.help\n"
-           "approve.status\n"
-           "approve.friend on|off\n"
-           "approve.invite on|off";
+    return "approve: OP-only auto approve controls. Use approve.help for full "
+           "usage.";
 }
 
 DECLARE_FACTORY_FUNCTIONS(auto_approve)
