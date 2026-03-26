@@ -50,7 +50,8 @@ void react_or_reply(const msg_meta &conf, const std::string &emoji_id,
         Json::Value j;
         j["message_id"] = conf.message_id;
         j["emoji_id"] = emoji_id;
-        Json::Value r = string_to_json(conf.p->cq_send("set_msg_emoji_like", j));
+        Json::Value r =
+            string_to_json(conf.p->cq_send("set_msg_emoji_like", j));
         ok = r["status"].asString() == "ok";
     }
     catch (...) {
@@ -84,10 +85,7 @@ std::string guessletter_detail_help()
 }
 } // namespace
 
-guessletter::guessletter()
-{
-    load_bank();
-}
+guessletter::guessletter() { load_bank(); }
 
 bool guessletter::is_ascii_alpha_num(char c)
 {
@@ -103,7 +101,8 @@ std::string guessletter::norm_key(const std::string &s)
         if (std::isspace(static_cast<unsigned char>(c))) {
             continue;
         }
-        out.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
+        out.push_back(
+            static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
     }
     return out;
 }
@@ -115,13 +114,11 @@ std::string guessletter::norm_answer(const std::string &s)
     out.reserve(w.size());
     for (wchar_t c : w) {
         wchar_t lc = std::towlower(c);
-        if (lc == L' ' || lc == L'\t' || lc == L'\r' || lc == L'\n' ||
-            lc == L'.' || lc == L',' || lc == L'，' || lc == L'。' ||
-            lc == L'！' || lc == L'!' || lc == L'：' || lc == L':' ||
-            lc == L'-' || lc == L'_') {
-            continue;
+        // Keep only useful core chars so guesses are tolerant to punctuation.
+        if ((lc >= L'0' && lc <= L'9') || (lc >= L'a' && lc <= L'z') ||
+            (lc >= 0x4E00 && lc <= 0x9FFF)) {
+            out.push_back(lc);
         }
-        out.push_back(lc);
     }
     return wstring_to_string(out);
 }
@@ -172,7 +169,8 @@ bool guessletter::is_admin(const msg_meta &conf) const
     return false;
 }
 
-guessletter::session &guessletter::get_or_create_session(groupid_t gid, userid_t host)
+guessletter::session &guessletter::get_or_create_session(groupid_t gid,
+                                                         userid_t host)
 {
     auto it = sessions_.find(gid);
     if (it == sessions_.end()) {
@@ -186,24 +184,26 @@ guessletter::session &guessletter::get_or_create_session(groupid_t gid, userid_t
 
 bool guessletter::in_session(const session &s, userid_t uid) const
 {
-    return std::find(s.players.begin(), s.players.end(), uid) != s.players.end();
+    return std::find(s.players.begin(), s.players.end(), uid) !=
+           s.players.end();
 }
 
 std::string guessletter::render_question_line(int idx, const question &q,
-                                            const msg_meta &conf) const
+                                              const msg_meta &conf) const
 {
     std::ostringstream oss;
     oss << idx + 1 << ". " << spaced_mask(q.shown);
     if (q.solved) {
-        std::string solver = q.solved_by ? display_name_in_group(conf, q.solved_by)
-                                         : "系统";
+        std::string solver =
+            q.solved_by ? display_name_in_group(conf, q.solved_by) : "系统";
         std::string cn = trim(q.cn_answer.empty() ? q.answer : q.cn_answer);
         oss << "\n[" << solver << "]: " << cn;
     }
     return oss.str();
 }
 
-std::string guessletter::render_board(const session &s, const msg_meta &conf) const
+std::string guessletter::render_board(const session &s,
+                                      const msg_meta &conf) const
 {
     std::ostringstream oss;
     oss << "题板(" << s.questions.size() << ")\n";
@@ -254,7 +254,7 @@ std::string guessletter::render_opened_letters(const session &s) const
 }
 
 std::string guessletter::render_scoreboard(const session &s,
-                                         const msg_meta &conf) const
+                                           const msg_meta &conf) const
 {
     std::vector<std::pair<userid_t, int>> rows;
     rows.reserve(s.scores.size());
@@ -282,7 +282,8 @@ std::string guessletter::render_scoreboard(const session &s,
     return trim(oss.str());
 }
 
-std::vector<guessletter::question> guessletter::build_questions(const session &s) const
+std::vector<guessletter::question>
+guessletter::build_questions(const session &s) const
 {
     std::vector<question> pool;
     std::string mode = s.range;
@@ -432,16 +433,16 @@ void guessletter::process(std::string message, const msg_meta &conf)
         s.questions = build_questions(s);
         if (s.questions.empty()) {
             s.started = false;
-            conf.p->cq_send(
-                "题库为空，请先离线生成: python3 "
-                "src/functions/guessletter/gen_guessletter_bank.py",
-                conf);
+            conf.p->cq_send("题库为空，请先离线生成: python3 "
+                            "src/functions/guessletter/gen_guessletter_bank.py",
+                            conf);
             return;
         }
         s.scores.clear();
         s.opened_letters.clear();
         s.last_open_at.clear();
-        conf.p->cq_send("自由模式开始：无需加入，任何成员都可开字母或猜题。", conf);
+        conf.p->cq_send("自由模式开始：无需加入，任何成员都可开字母或猜题。",
+                        conf);
         conf.p->cq_send(render_board(s, conf), conf);
         return;
     }
@@ -462,8 +463,9 @@ void guessletter::process(std::string message, const msg_meta &conf)
         if (!in_session(s, conf.user_id)) {
             return;
         }
-        s.players.erase(std::remove(s.players.begin(), s.players.end(), conf.user_id),
-                        s.players.end());
+        s.players.erase(
+            std::remove(s.players.begin(), s.players.end(), conf.user_id),
+            s.players.end());
         if (s.players.empty()) {
             sessions_.erase(conf.group_id);
             conf.p->cq_send("所有玩家已退出，房间已关闭。", conf);
@@ -569,10 +571,9 @@ void guessletter::process(std::string message, const msg_meta &conf)
         }
         s.questions = build_questions(s);
         if (s.questions.empty()) {
-            conf.p->cq_send(
-                "题库为空，请先离线生成: python3 "
-                "src/functions/guessletter/gen_guessletter_bank.py",
-                conf);
+            conf.p->cq_send("题库为空，请先离线生成: python3 "
+                            "src/functions/guessletter/gen_guessletter_bank.py",
+                            conf);
             return;
         }
         s.scores.clear();
@@ -612,9 +613,10 @@ void guessletter::process(std::string message, const msg_meta &conf)
         if (!s.started) {
             return;
         }
-        std::string row_s = starts_with(lower_cmd, "reveal ")
-                                ? trim(cmd.substr(std::string("reveal ").size()))
-                                : trim(cmd.substr(std::string("揭露 ").size()));
+        std::string row_s =
+            starts_with(lower_cmd, "reveal ")
+                ? trim(cmd.substr(std::string("reveal ").size()))
+                : trim(cmd.substr(std::string("揭露 ").size()));
         int row = (int)my_string2int64(row_s) - 1;
         if (row < 0 || row >= (int)s.questions.size()) {
             conf.p->cq_send("题号无效。", conf);
@@ -623,9 +625,9 @@ void guessletter::process(std::string message, const msg_meta &conf)
         s.questions[row].solved = true;
         s.questions[row].shown = s.questions[row].key;
         s.questions[row].solved_by = 0;
-        conf.p->cq_send(fmt::format("揭露第 {} 题：{}", row + 1,
-                                    s.questions[row].answer),
-                        conf);
+        conf.p->cq_send(
+            fmt::format("揭露第 {} 题：{}", row + 1, s.questions[row].answer),
+            conf);
         if (all_solved(s)) {
             conf.p->cq_send(render_scoreboard(s, conf), conf);
             sessions_.erase(conf.group_id);
@@ -666,16 +668,18 @@ void guessletter::process(std::string message, const msg_meta &conf)
             s.last_open_at[conf.user_id] = now;
         }
 
-        std::string open_body = starts_with(lower_cmd, "open ")
-                                    ? trim(cmd.substr(std::string("open ").size()))
-                                    : trim(cmd.substr(2));
+        std::string open_body =
+            starts_with(lower_cmd, "open ")
+                ? trim(cmd.substr(std::string("open ").size()))
+                : trim(cmd.substr(2));
         std::string letter = trim(open_body);
         if (letter.empty()) {
             conf.p->cq_send("用法: *kai open <letter>", conf);
             return;
         }
 
-        char ch = static_cast<char>(std::tolower(static_cast<unsigned char>(letter[0])));
+        char ch = static_cast<char>(
+            std::tolower(static_cast<unsigned char>(letter[0])));
         bool opened = false;
         for (auto &q : s.questions) {
             if (q.solved) {
@@ -696,8 +700,8 @@ void guessletter::process(std::string message, const msg_meta &conf)
         if (!s.free_mode) {
             advance_turn(s);
         }
-        const std::string tip = opened ? "已开出该字母（全题同步）"
-                                       : "该字母不存在或已全部打开";
+        const std::string tip =
+            opened ? "已开出该字母（全题同步）" : "该字母不存在或已全部打开";
         conf.p->cq_send(tip + "\n" + render_board(s, conf), conf);
         return;
     }
@@ -707,7 +711,8 @@ void guessletter::process(std::string message, const msg_meta &conf)
             return;
         }
         if (!s.free_mode && !in_session(s, conf.user_id)) {
-            conf.p->cq_send("普通模式下需先加入游戏（*kai join）后才能猜题。", conf);
+            conf.p->cq_send("普通模式下需先加入游戏（*kai join）后才能猜题。",
+                            conf);
             return;
         }
         std::string body = starts_with(lower_cmd, "guess ")

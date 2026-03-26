@@ -20,7 +20,8 @@ static std::string help_message =
 // todo: 美图 加入默认 gid name - 将图集变成默认图集
 img::img()
 {
-    Json::Value J = string_to_json(readfile("./config/img.json", "{}"));
+    Json::Value J = string_to_json(
+        readfile(bot_config_path("features/img/img.json"), "{}"));
     for (const auto &item : J["default_images"]) {
         default_image_list.push_back(item.asString());
     }
@@ -106,7 +107,8 @@ void img::save()
         }
         J["belongs"][std::to_string(it)] = uuid_array;
     }
-    writefile("./config/img.json", J.toStyledString());
+    writefile(bot_config_path(nullptr, "features/img/img.json"),
+              J.toStyledString());
 }
 
 void img::add_images(const std::wstring &message, const std::string &name,
@@ -147,7 +149,7 @@ void img::add_images(const std::wstring &message, const std::string &name,
         std::string image =
             wstring_to_string(message.substr(index2, index3 - index2));
         conf.p->setlog(LOG::INFO, "img add image url found: " + image);
-        fs::path dir_path = "./resource/mt/" + uuid;
+        fs::path dir_path = fs::path(bot_resource_path(nullptr, "mt")) / uuid;
         fs::create_directories(dir_path);
         download(cq_decode(image), dir_path.string(),
                  std::to_string(image_size[uuid]));
@@ -235,7 +237,7 @@ void img::del_images(const std::wstring &name, const groupid_t &groupid,
     size_t count = 0;
     size_t index_num = 0;
     if (index == "all") {
-        fs::path dir_path = "./resource/mt/" + uuid;
+        fs::path dir_path = fs::path(bot_resource_path(nullptr, "mt")) / uuid;
         if (fs::exists(dir_path)) {
             fs::remove_all(dir_path);
         }
@@ -265,7 +267,7 @@ void img::del_images(const std::wstring &name, const groupid_t &groupid,
         return;
     }
 
-    fs::path dir_path = "./resource/mt/" + uuid;
+    fs::path dir_path = fs::path(bot_resource_path(nullptr, "mt")) / uuid;
     if (!fs::exists(dir_path)) {
         conf.p->cq_send("图集不存在", conf);
         return;
@@ -396,7 +398,7 @@ bool img::process_command(std::string message, const msg_meta &conf)
             J_send["message_id"] = conf.message_id;
             J_send["user_id"] = conf.user_id;
             J_send["group_id"] = group_id;
-            conf.p->input_process(new std::string(J_send.toStyledString()));
+            conf.p->input_process(J_send.toStyledString());
             return true;
         }
     }
@@ -614,7 +616,7 @@ void img::process(std::string message, const msg_meta &conf)
         J_send["message_id"] = conf.message_id;
         J_send["user_id"] = conf.user_id;
         J_send["group_id"] = conf.group_id;
-        conf.p->input_process(new std::string(J_send.toStyledString()));
+        conf.p->input_process(J_send.toStyledString());
         conf.p->setlog(LOG::INFO, fmt::format("美图 {} all by {}", name,
                                               std::to_string(conf.user_id)));
         return;
@@ -641,15 +643,23 @@ void img::process(std::string message, const msg_meta &conf)
     }
     conf.p->setlog(LOG::INFO, "img at group " + std::to_string(conf.group_id));
     if (index < static_cast<int64_t>(img_size1)) {
-        conf.p->cq_send("[CQ:image,file=file://" + get_local_path() +
-                            "/resource/mt/" + *it_group + "/" +
-                            std::to_string(index) + ",id=40000]",
-                        conf);
+        conf.p->cq_send(
+            "[CQ:image,file=file://" +
+                fs::absolute(fs::path(bot_resource_path(
+                                 nullptr, "mt/" + *it_group + "/" +
+                                              std::to_string(index))))
+                    .string() +
+                ",id=40000]",
+            conf);
     }
     else {
-        conf.p->cq_send("[CQ:image,file=file://" + get_local_path() +
-                            "/resource/mt/" + *it_default + "/" +
-                            std::to_string(index - img_size1) + ",id=40000]",
+        const auto default_idx = std::to_string(index - img_size1);
+        conf.p->cq_send("[CQ:image,file=file://" +
+                            fs::absolute(fs::path(bot_resource_path(
+                                             nullptr, "mt/" + *it_default +
+                                                          "/" + default_idx)))
+                                .string() +
+                            ",id=40000]",
                         conf);
     }
 }
@@ -679,7 +689,7 @@ std::string img::help() { return "美图： 美图 帮助 - 列出所有美图�
 
 void img::set_backup_files(archivist *p, const std::string &name)
 {
-    p->add_path(name, "./resource/mt/", "resource/mt/");
+    p->add_path(name, bot_resource_path(nullptr, "mt") + "/", "resource/mt/");
 }
 
 DECLARE_FACTORY_FUNCTIONS(img)

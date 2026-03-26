@@ -152,8 +152,6 @@ std::string bili_decode::help() { return "对av和BV号，下载封面图和视�
 
 bool bili_decode::is_support_messageArr() { return true; }
 
-/// deprecated below
-
 void bili_decode::process(std::string message, const msg_meta &conf)
 {
     Json::Value raw_info;

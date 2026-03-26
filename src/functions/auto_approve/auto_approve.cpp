@@ -3,7 +3,8 @@
 #include "utils.h"
 
 namespace {
-constexpr const char *AUTO_APPROVE_CONFIG_FILE = "./config/auto_approve.json";
+const std::string AUTO_APPROVE_CONFIG_FILE =
+    bot_config_path(nullptr, "features/auto_approve/auto_approve.json");
 
 bool starts_with(const std::string &s, const std::string &prefix)
 {

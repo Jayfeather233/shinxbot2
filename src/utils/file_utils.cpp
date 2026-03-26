@@ -113,12 +113,12 @@ void download(const std::string &httpAddress, const fs::path &filePath,
         set_global_log(LOG::ERROR, "At download from" + httpAddress + " to " +
                                        (filePath / fileName).string() +
                                        ", Exception occurred: " + e.what());
-        throw e;
+        throw;
     }
     catch (const std::string &e) {
         set_global_log(LOG::ERROR, "At download from" + httpAddress + " to " +
                                        (filePath / fileName).string() +
                                        ", Exception occurred: " + e);
-        throw e;
+        throw;
     }
 }

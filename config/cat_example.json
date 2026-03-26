@@ -1,6 +1,0 @@
-{
-  "note": "cat function stores per-user save files under ./config/cats/",
-  "user_list_example": [
-    123456789
-  ]
-}

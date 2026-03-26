@@ -9,9 +9,9 @@ try:
 except Exception:
     HAS_PYPINYIN = False
 
-ROOT = Path(__file__).resolve().parents[1]
-MAPS = ROOT / "config/guessmap/maps.json"
-OUT = ROOT / "config/guessletter/letterbank.json"
+ROOT = Path(__file__).resolve().parents[3]
+MAPS = ROOT / "config/features/guessmap/maps.json"
+OUT = ROOT / "config/features/guessletter/letterbank.json"
 
 
 def norm_key(s: str) -> str:

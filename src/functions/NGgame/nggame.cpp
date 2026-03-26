@@ -775,9 +775,6 @@ void NGgame::process(std::string message, const msg_meta &conf)
     }
 }
 
-std::string NGgame::help()
-{
-    return "NG 游戏：不要说挑战！详细帮助：*ng help";
-}
+std::string NGgame::help() { return "NG 游戏：不要说挑战！详细帮助：*ng help"; }
 
 DECLARE_FACTORY_FUNCTIONS(NGgame)

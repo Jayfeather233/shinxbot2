@@ -2,7 +2,8 @@
 
 #include "utils.h"
 
-static std::string config_path = "./config/randomReply.json";
+static std::string config_path =
+    bot_config_path(nullptr, "features/randomReply/randomReply.json");
 
 RP::RP()
 {

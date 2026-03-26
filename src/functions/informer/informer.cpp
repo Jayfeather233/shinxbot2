@@ -212,7 +212,8 @@ void informer::save()
             Ja.append(J);
         }
     }
-    writefile("./config/informer.json", Ja.toStyledString());
+    writefile(bot_config_path(nullptr, "features/informer/informer.json"),
+              Ja.toStyledString());
 }
 
 informer::informer() { read(); }
@@ -220,7 +221,8 @@ informer::~informer() { save(); }
 
 void informer::read()
 {
-    Json::Value res = string_to_json(readfile("./config/informer.json", "[]"));
+    Json::Value res = string_to_json(readfile(
+        bot_config_path(nullptr, "features/informer/informer.json"), "[]"));
     for (auto u : res) {
         this->inform_tuplelist[u["id"].asUInt64()].push_back(std::make_tuple(
             u["1"].asBool(), u["2"].asString(), u["3"].asString()));

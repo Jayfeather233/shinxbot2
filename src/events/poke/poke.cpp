@@ -4,7 +4,8 @@
 poke::poke()
 {
     Json::Value J = string_to_json(
-        readfile("./config/poke.json", "{\"users\": [], \"groups\": []}"));
+        readfile(bot_config_path(nullptr, "features/poke/poke.json"),
+                 "{\"users\": [], \"groups\": []}"));
     parse_json_to_set(J["users"], no_poke_users);
     parse_json_to_set(J["groups"], no_poke_groups);
     minInterval = std::chrono::seconds(3);

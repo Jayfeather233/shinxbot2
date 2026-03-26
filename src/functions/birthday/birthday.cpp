@@ -10,7 +10,8 @@ date.list\
 
 birthday::birthday()
 {
-    Json::Value Ja = string_to_json(readfile("./config/birthday.json", "{}"));
+    Json::Value Ja = string_to_json(readfile(
+        bot_config_path(nullptr, "features/birthday/birthday.json"), "{}"));
     for (const std::string &uid : Ja.getMemberNames()) {
         groupid_t uuid = std::stoull(uid);
         if (uuid == 0) {
@@ -41,7 +42,8 @@ void birthday::save()
         Jaa[std::to_string(it.first)] = Ja;
     }
     Jaa["0"] = parse_set_to_json(inform_interval);
-    writefile("./config/birthday.json", Jaa.toStyledString());
+    writefile(bot_config_path(nullptr, "features/birthday/birthday.json"),
+              Jaa.toStyledString());
 }
 
 /*

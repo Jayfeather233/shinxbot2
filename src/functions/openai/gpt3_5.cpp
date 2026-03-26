@@ -35,11 +35,15 @@ std::mutex gptlock[MAX_KEYS];
 
 gpt3_5::gpt3_5()
 {
-    if (!fs::exists("./config/openai.json")) {
+    const std::string openai_conf_path =
+        bot_config_path(nullptr, "features/openai/openai.json");
+    const std::string gpt_history_dir = bot_config_path(nullptr, "gpt3_5");
+
+    if (!fs::exists(openai_conf_path)) {
         std::cout << "Please config your openai key in openai.json (and "
                      "restart) OR see openai_example.json"
                   << std::endl;
-        std::ofstream of("./config/openai.json", std::ios::out);
+        std::ofstream of(openai_conf_path, std::ios::out);
         of << "{"
               "\"keys\": [\"\"],"
               "\"mode\": [\"default\"],"
@@ -53,7 +57,7 @@ gpt3_5::gpt3_5()
         of.close();
     }
     else {
-        std::string ans = readfile("./config/openai.json");
+        std::string ans = readfile(openai_conf_path);
 
         Json::Value res = string_to_json(ans);
 
@@ -85,8 +89,8 @@ gpt3_5::gpt3_5()
     is_debug = false;
     key_cycle = 0;
 
-    if (fs::exists("./config/gpt3_5")) {
-        fs::path gpt_files = "./config/gpt3_5";
+    if (fs::exists(gpt_history_dir)) {
+        fs::path gpt_files = gpt_history_dir;
         fs::directory_iterator di(gpt_files);
         for (auto &entry : di) {
             if (entry.is_regular_file()) {
@@ -115,7 +119,8 @@ void gpt3_5::save_file()
     for (std::string u : modes) {
         J[u] = mode_prompt[u];
     }
-    writefile("./config/openai.json", J.toStyledString());
+    writefile(bot_config_path(nullptr, "features/openai/openai.json"),
+              J.toStyledString());
 }
 
 int64_t getlength(const Json::Value &J)
@@ -166,8 +171,9 @@ void gpt3_5::save_history(int64_t id)
     Json::Value J;
     J["pre_prompt"] = pre_default[id];
     J["history"] = history[id];
-    writefile("./config/gpt3_5/" + std::to_string(id) + ".json",
-              J.toStyledString());
+    writefile(
+        bot_config_path(nullptr, "gpt3_5/" + std::to_string(id) + ".json"),
+        J.toStyledString());
 }
 
 void gpt3_5::process(std::string message, const msg_meta &conf)
@@ -309,8 +315,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     J["temperature"] = 0.7;
     J["max_tokens"] = MAX_REPLY;
     try {
-        J = string_to_json(do_post(base_url,
-                                   "/v1/chat/completions", false, J,
+        J = string_to_json(do_post(base_url, "/v1/chat/completions", false, J,
                                    {{"Content-Type", "application/json"},
                                     {"Authorization", "Bearer " + key[keyid]}},
                                    true));

@@ -61,7 +61,7 @@ std::string do_get(const std::string &httpaddr, int port,
                    const std::map<std::string, std::string> &headers = {},
                    const bool proxy_flg = false);
 
-std::pair<std::string, std::string> split_http_addr(const std::string addr);
+std::pair<std::string, std::string> split_http_addr(const std::string &addr);
 
 /**
  * use longest common subsequence to calculate the similarity of two strings
@@ -135,7 +135,11 @@ userid_t get_botqq(const bot *p);
  * like: /usr/home/name/bot/
  */
 std::string get_local_path();
-void input_process(bot *p, std::string *input);
+void input_process(bot *p, const std::string &input);
+std::string bot_config_path(const bot *p, const fs::path &relative);
+std::string bot_resource_path(const bot *p, const fs::path &relative);
+std::string bot_config_path(const fs::path &relative);
+std::string bot_resource_path(const fs::path &relative);
 
 std::wstring string_to_wstring(const std::string &u);
 std::string wstring_to_string(const std::wstring &u);

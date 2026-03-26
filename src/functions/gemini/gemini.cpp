@@ -126,11 +126,14 @@ const std::string help_msg =
 
 gemini::gemini()
 {
-    if (!fs::exists("./config/gemini.json")) {
+    const std::string gemini_conf_path =
+        bot_config_path(nullptr, "features/gemini/gemini.json");
+
+    if (!fs::exists(gemini_conf_path)) {
         std::cout << "Please config your gemini key in gemini.json (and "
                      "restart) OR see gemini_example.json"
                   << std::endl;
-        std::ofstream of("./config/gemini.json", std::ios::out);
+        std::ofstream of(gemini_conf_path, std::ios::out);
         of << "{"
               "\"keys\": [\"\"],"
               "\"mode\": [\"default\"],"
@@ -140,8 +143,7 @@ gemini::gemini()
         of.close();
     }
     else {
-        Json::Value conf =
-            string_to_json(readfile("./config/gemini.json", "{}"));
+        Json::Value conf = string_to_json(readfile(gemini_conf_path, "{}"));
         Json::ArrayIndex sz = conf["keys"].size();
         for (Json::ArrayIndex i = 0; i < sz; ++i) {
             keys.push_back(conf["keys"][i].asString());
@@ -223,7 +225,7 @@ std::string gemini::generate_image(std::string message, uint64_t id, uint64_t us
             ++index2;
         }
         download(cq_decode(message.substr(index, index2 - index)),
-                 "./resource/download/", fn);
+                 bot_resource_path(nullptr, "download") + "/", fn);
         cnt++;
         break;
     }
@@ -237,7 +239,7 @@ std::string gemini::generate_image(std::string message, uint64_t id, uint64_t us
     }
     else {
         std::pair<std::string, std::string> img =
-            image2base64((std::string) "./resource/download/" + fn);
+            image2base64(bot_resource_path(nullptr, "download/" + fn));
         J["role"] = "user";
         J["parts"][0]["text"] =
             "[User: " + std::to_string(user_id) + "] " + message.substr(0, index) + message.substr(index2 + 1);

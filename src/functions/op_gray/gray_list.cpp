@@ -3,7 +3,8 @@
 
 gray_list::gray_list()
 {
-    Json::Value J = string_to_json(readfile("./config/g_list.json", "{}"));
+    Json::Value J = string_to_json(readfile(
+        bot_config_path(nullptr, "features/op_gray/g_list.json"), "{}"));
     for (std::string group_id_s : J.getMemberNames()) {
         groupid_t group_id = my_string2uint64(group_id_s);
         g_list[group_id] = J[group_id_s];
@@ -16,7 +17,8 @@ void gray_list::save()
     for (auto it : g_list) {
         J[std::to_string(it.first)] = it.second;
     }
-    writefile("./config/g_list.json", J.toStyledString());
+    writefile(bot_config_path(nullptr, "features/op_gray/g_list.json"),
+              J.toStyledString());
 }
 
 void gray_list::process(std::string message, const msg_meta &conf)

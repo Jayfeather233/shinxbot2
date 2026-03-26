@@ -11,8 +11,9 @@ std::string int_to_hex = "0123456789ABCDEF";
 
 r_color::r_color()
 {
-    if (!fs::exists("./resource/r_color/")) {
-        fs::create_directories("./resource/r_color/");
+    const std::string color_dir = bot_resource_path(nullptr, "r_color");
+    if (!fs::exists(color_dir)) {
+        fs::create_directories(color_dir);
     }
 }
 
@@ -77,8 +78,8 @@ void r_color::process(std::string message, const msg_meta &conf)
                        Magick::CenterGravity);
 
         // Save the image
-        image.write((std::string) "./resource/r_color/" + name.substr(1) +
-                    ".png");
+        image.write(
+            bot_resource_path(nullptr, "r_color/" + name.substr(1) + ".png"));
     }
     catch (std::exception &error) {
         conf.p->setlog(LOG::ERROR, error.what());
@@ -87,9 +88,10 @@ void r_color::process(std::string message, const msg_meta &conf)
     std::string enc_name = httplib::detail::encode_path(name.substr(1));
 
     conf.p->cq_send(
-        fmt::format(
-            "[CQ:image,file=file://{}/resource/r_color/{}.png,id=40000]",
-            get_local_path(), enc_name),
+        fmt::format("[CQ:image,file=file://{},id=40000]",
+                    fs::absolute(fs::path(bot_resource_path(
+                                     nullptr, "r_color/" + enc_name + ".png")))
+                        .string()),
         conf);
     conf.p->setlog(LOG::INFO, fmt::format("r_color at group {} by {}",
                                           conf.group_id, conf.user_id));

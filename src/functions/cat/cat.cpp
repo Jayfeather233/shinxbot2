@@ -67,7 +67,9 @@ std::string Cat::get_humanread_info()
 
 void Cat::save_cat()
 {
-    writefile("./config/cats/" + std::to_string(_id) + ".json", getinfo());
+    writefile(bot_config_path(nullptr, "features/cat/users/" +
+                                           std::to_string(_id) + ".json"),
+              getinfo());
 }
 
 Cat::Cat(const std::string &name, userid_t user_id) : _id(user_id)
@@ -88,8 +90,8 @@ Cat::Cat(userid_t user_id) : _id(user_id)
     if (user_id == 0)
         return;
 
-    std::string ans =
-        readfile("./config/cats/" + std::to_string(_id) + ".json");
+    std::string ans = readfile(bot_config_path(
+        nullptr, "features/cat/users/" + std::to_string(_id) + ".json"));
 
     if (ans != "") {
         Json::Value J = string_to_json(ans);

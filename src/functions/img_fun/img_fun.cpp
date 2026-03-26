@@ -121,8 +121,9 @@ void img_fun::process(std::string message, const msg_meta &conf)
                     conf.user_id, conf.group_id, proc_type.type,
                     (int)proc_type.para1, (int)proc_type.para2));
     is_input.erase(conf.user_id);
-    std::string filepath = "./resource/download/" + filename;
-    download(cq_decode(fileurl), "./resource/download/", filename);
+    const std::string download_dir = bot_resource_path(nullptr, "download");
+    std::string filepath = download_dir + "/" + filename;
+    download(cq_decode(fileurl), download_dir + "/", filename);
     p.setBar(0.2, "图片处理中");
     Magick::Image img;
     bool mgif = false;
@@ -159,7 +160,7 @@ void img_fun::process(std::string message, const msg_meta &conf)
         }
         p.setBar(0.9, "图片处理完成，保存中");
         Magick::writeImages(img_list.begin(), img_list.end(),
-                            "./resource/download/" + filename);
+                            download_dir + "/" + filename);
         p.setBar(0.9, "图片处理完成，发送中");
     }
     else {
@@ -174,13 +175,15 @@ void img_fun::process(std::string message, const msg_meta &conf)
                 p.setProgress(prog += delta_p * 0.7);
             });
         }
-        img.write("./resource/download/" + filename);
+        img.write(download_dir + "/" + filename);
         p.setBar(0.9, "图片处理完成，发送中");
     }
-    conf.p->cq_send("[CQ:image,file=file://" + get_local_path() +
-                        "/resource/download/" + filename + ",id=40000]",
-                    conf);
-    fs::remove("./resource/download/" + filename);
+    conf.p->cq_send(
+        "[CQ:image,file=file://" +
+            fs::absolute(fs::path(download_dir + "/" + filename)).string() +
+            ",id=40000]",
+        conf);
+    fs::remove(download_dir + "/" + filename);
     fs::remove(filepath);
     conf.p->setlog(LOG::INFO, fmt::format("img_fun done at u{} g{}",
                                           conf.user_id, conf.group_id));
