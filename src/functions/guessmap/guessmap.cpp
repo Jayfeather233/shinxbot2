@@ -95,6 +95,19 @@ static void erase_first_path(std::vector<std::string> &paths,
     }
 }
 
+static std::string guessmap_detail_help()
+{
+    return "蔚蓝猜地图\n"
+           "*guess_start_easy/hard/ultra/imp: 开始猜图\n"
+           "*guess_start_任意文本: 随机难度开始（16-256）\n"
+           "*guess <答案>: 提交答案\n"
+           "*guess_roll: 同尺寸换位置\n"
+           "*guess_hint: 扩大提示范围\n"
+           "*guess_giveup: 放弃并揭晓答案\n"
+           "*guess_check: 检查题库状态\n"
+           "*guess_help: 查看本帮助";
+}
+
 static std::pair<std::string, std::string>
 parse_collection_and_hall(const std::string &file_path)
 {
@@ -814,6 +827,11 @@ void guessmap::process(std::string message, const msg_meta &conf)
 
     std::lock_guard<std::mutex> guard(lock_);
 
+    if (message == "*guess_help") {
+        conf.p->cq_send(guessmap_detail_help(), conf);
+        return;
+    }
+
     if (is_start_cmd(message)) {
         load_maps();
         auto it = sessions_.find(id);
@@ -987,9 +1005,7 @@ void guessmap::process(std::string message, const msg_meta &conf)
 
 std::string guessmap::help()
 {
-    return "蔚蓝猜地图: *guess_start_easy/hard/ultra/imp"
-           "*guess_start_任意文本(16-256随机) | *guess <答案> | "
-           "*guess_roll | *guess_hint | *guess_giveup | *guess_check";
+    return "蔚蓝猜地图：根据截图猜蔚蓝地图！详细帮助：*guess_help";
 }
 
 DECLARE_FACTORY_FUNCTIONS(guessmap)

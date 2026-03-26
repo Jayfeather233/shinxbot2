@@ -39,10 +39,16 @@ Json::Value catmain::get_text() { return cat_text; }
 
 void catmain::process(std::string message, const msg_meta &conf)
 {
+    bool is_new_prefix = message.rfind("*cat", 0) == 0;
+    bool is_old_prefix = message.find("&#91;cat&#93;") == 0;
+    if (is_new_prefix) {
+        message = "&#91;cat&#93;" + message.substr(4);
+    }
+
     if (message == "&#91;cat&#93;.help") {
         conf.p->cq_send("An interactive cat!\n"
                         "First use adopt to have one.\n"
-                        "Then you can play, feed and so on!(start with[cat])",
+                        "Then you can play, feed and so on!(start with *cat)",
                         conf);
         return;
     }
@@ -88,7 +94,7 @@ void catmain::process(std::string message, const msg_meta &conf)
         auto it = cat_map.find(conf.user_id);
         if (it == cat_map.end()) {
             conf.p->cq_send("You don't have one!\n"
-                            "Use [cat].adopt name to get a cute cat!",
+                            "Use *cat.adopt name to get a cute cat!",
                             conf);
             return;
         }
@@ -99,8 +105,10 @@ void catmain::process(std::string message, const msg_meta &conf)
 }
 bool catmain::check(std::string message, const msg_meta &conf)
 {
-    return message.find("&#91;cat&#93;") == 0;
+    (void)conf;
+    return message.rfind("*cat", 0) == 0 ||
+           message.find("&#91;cat&#93;") == 0;
 }
-std::string catmain::help() { return "online cat. &#91;cat&#93;.help"; }
+std::string catmain::help() { return "online cat. *cat.help"; }
 
 DECLARE_FACTORY_FUNCTIONS(catmain)

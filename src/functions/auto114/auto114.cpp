@@ -65,6 +65,10 @@ std::string auto114::getans(int64_t input)
 
 void auto114::process(std::string message, const msg_meta &conf)
 {
+    if (message.rfind("*homo ", 0) == 0) {
+        message = "homo " + message.substr(6);
+    }
+
     Json::Value J;
     J["message_id"] = conf.message_id;
     conf.p->cq_send("mark_msg_as_read", J);
@@ -84,8 +88,9 @@ void auto114::process(std::string message, const msg_meta &conf)
 }
 bool auto114::check(std::string message, const msg_meta &conf)
 {
-    return message.find("homo ") == 0;
+    (void)conf;
+    return message.rfind("*homo ", 0) == 0 || message.find("homo ") == 0;
 }
-std::string auto114::help() { return "恶臭数字论证器： homo+数字"; }
+std::string auto114::help() { return "恶臭数字论证器：*homo <数字>"; }
 
 DECLARE_FACTORY_FUNCTIONS(auto114)
