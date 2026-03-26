@@ -284,7 +284,9 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     is_lock[keyid] = true;
     Json::Value J, user_input_J, ign;
     user_input_J["role"] = "user";
-    user_input_J["content"] = "[User: " + std::to_string(conf.user_id) + "] " + message;
+    std::string nickname = get_stranger_name(conf.p, conf.user_id);
+    user_input_J["content"] = "[User: " + std::to_string(conf.user_id) + "(" +
+                              nickname + ")] " + message;
     // J = history[id];
     // while(getlength(J) > MAX_TOKEN - MAX_REPLY){
     //     J.removeIndex(0, &ign);
