@@ -17,8 +17,8 @@ private:
 public:
     gemini();
     void shrink_prompt_size(uint64_t id, bool is_vision);
-    std::string generate_image(std::string message, uint64_t id);
-    std::string generate_text(std::string message, uint64_t id);
+    std::string generate_text(std::string message, uint64_t id, uint64_t user_id);
+    std::string generate_image(std::string message, uint64_t id, uint64_t user_id);
     size_t get_tokens(const Json::Value &history);
     void process(std::string message, const msg_meta &conf);
     bool check(std::string message, const msg_meta &conf);

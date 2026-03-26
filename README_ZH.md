@@ -24,9 +24,9 @@
 
 - 图片处理：对称、旋转、万花筒
 
-- openai的 `gpt-3.5-turbo` API支持
+- openai的 `gpt-3.5-turbo` API支持，且支持在消息中自动注入 `[User: ID]` 前缀以便 AI 识别群聊中的不同用户。
 
-- google的 `gemini-pro[-vision]` API支持，[url](https://ai.google.dev/docs)
+- google的 `gemini-pro[-vision]` API支持，同样支持在消息中自动注入 `[User: ID]` 前缀，[url](https://ai.google.dev/docs)
 
 - StableDiffusion的 `SDXL-Turbo` API支持，[url](https://sdxlturbo.ai/)
 
