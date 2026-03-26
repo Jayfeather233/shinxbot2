@@ -64,6 +64,23 @@ std::wstring m_change_f::format_message(const std::wstring &message,
 
 void m_change_f::process(std::string message, const msg_meta &conf)
 {
+    if (message == "welcome.help") {
+        const bool can_manage = conf.p->is_op(conf.user_id) ||
+                                is_group_op(conf.p, conf.group_id,
+                                            conf.user_id);
+        if (!can_manage) {
+            conf.p->cq_send("入群欢迎词为管理员功能", conf);
+            return;
+        }
+
+        conf.p->cq_send("入群欢迎词帮助\n"
+                        "welcome.help\n"
+                        "设置入群消息 [后接入群提示消息，{{username}}代表用户名]\n"
+                        "删除入群消息",
+                        conf);
+        return;
+    }
+
     std::wstring message_w = string_to_wstring(message);
     if (conf.message_type == "internal") {
         std::wstring welcome_message = trim(this->format_message(
@@ -169,22 +186,25 @@ void m_change_f::flush_welcome_queue(bot *p)
 bool m_change_f::check(std::string message, const msg_meta &conf)
 {
     return conf.group_id != 0 &&
-           (message.find("设置入群消息") == 0 ||
+           (message == "welcome.help" || message.find("设置入群消息") == 0 ||
             (conf.message_type == "internal" &&
              conf.message_id == internal_message::kMemberChangeWelcome) ||
             message.find("删除入群消息") == 0);
 }
-std::string m_change_f::help() { return "入群提示词。"; }
+std::string m_change_f::help() { return ""; }
 
 std::string m_change_f::help(const msg_meta &conf, help_level_t level)
 {
-    if (level != help_level_t::group_admin || conf.message_type != "group" ||
-        !is_group_op(conf.p, conf.group_id, conf.user_id)) {
-        return help();
+    if (level == help_level_t::bot_admin) {
+        return "入群欢迎词管理（管理员）。帮助：welcome.help";
     }
 
-    return "入群提示词。\n    设置入群消息 "
-           "[后接入群提示消息，{{username}}代表用户名]\n    删除入群消息";
+    if (level == help_level_t::group_admin && conf.message_type == "group" &&
+        is_group_op(conf.p, conf.group_id, conf.user_id)) {
+        return "入群欢迎词管理（管理员）。帮助：welcome.help";
+    }
+
+    return "";
 }
 
 DECLARE_FACTORY_FUNCTIONS(m_change_f)

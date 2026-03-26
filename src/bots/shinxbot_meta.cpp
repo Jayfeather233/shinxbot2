@@ -55,7 +55,7 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
         }
 
         std::string help_message;
-        help_message += "OP core commands:\n"
+        help_message += "-----OP core commands-----\n"
                         "bot.on\n"
                         "bot.off\n"
                         "bot.backup\n"
@@ -63,7 +63,7 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
                         "bot.unload [function|event] name\n"
                         "bot.list_alias\n"
                         "bot.list_module\n"
-                        "\n";
+                        "-----Feature commands-----";
 
         for (auto funcx : functions) {
             processable *func = std::get<0>(funcx);
@@ -153,29 +153,47 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
             loaded_ev.insert(std::get<2>(u));
         }
 
+        std::vector<std::string> loaded_fn_names;
+        std::vector<std::string> unloaded_fn_names;
+        for (const auto &n : fn_names) {
+            if (loaded_fn.find(n) != loaded_fn.end()) {
+                loaded_fn_names.push_back(n);
+            }
+            else {
+                unloaded_fn_names.push_back(n);
+            }
+        }
+
+        std::vector<std::string> loaded_ev_names;
+        std::vector<std::string> unloaded_ev_names;
+        for (const auto &n : ev_names) {
+            if (loaded_ev.find(n) != loaded_ev.end()) {
+                loaded_ev_names.push_back(n);
+            }
+            else {
+                unloaded_ev_names.push_back(n);
+            }
+        }
+
         std::ostringstream oss;
         oss << "function aliases(" << fn_names.size() << "):\n";
-        for (const auto &n : fn_names) {
-            oss << "  " << n;
-            if (loaded_fn.find(n) != loaded_fn.end()) {
-                oss << " [loaded]";
-            }
-            if (enabled_functions.find(n) != enabled_functions.end()) {
-                oss << " [module_load]";
-            }
-            oss << "\n";
+        oss << "  loaded(" << loaded_fn_names.size() << "):\n";
+        for (const auto &n : loaded_fn_names) {
+            oss << "    " << n << "\n";
+        }
+        oss << "  unloaded(" << unloaded_fn_names.size() << "):\n";
+        for (const auto &n : unloaded_fn_names) {
+            oss << "    " << n << "\n";
         }
 
         oss << "event aliases(" << ev_names.size() << "):\n";
-        for (const auto &n : ev_names) {
-            oss << "  " << n;
-            if (loaded_ev.find(n) != loaded_ev.end()) {
-                oss << " [loaded]";
-            }
-            if (enabled_events.find(n) != enabled_events.end()) {
-                oss << " [module_load]";
-            }
-            oss << "\n";
+        oss << "  loaded(" << loaded_ev_names.size() << "):\n";
+        for (const auto &n : loaded_ev_names) {
+            oss << "    " << n << "\n";
+        }
+        oss << "  unloaded(" << unloaded_ev_names.size() << "):\n";
+        for (const auto &n : unloaded_ev_names) {
+            oss << "    " << n << "\n";
         }
 
         cq_send(trim(oss.str()), conf);

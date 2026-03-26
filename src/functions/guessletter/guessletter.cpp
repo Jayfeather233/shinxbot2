@@ -67,6 +67,7 @@ void react_or_reply(const msg_meta &conf, const std::string &emoji_id,
 std::string guessletter_detail_help()
 {
     return "蔚蓝开字母\n"
+           "*kai.help: 查看本帮助\n"
            "*kai create: 创建房间\n"
            "*kai go: 直接开始自由模式（无需加入）\n"
            "*kai join: 加入房间\n"
@@ -374,7 +375,7 @@ bool guessletter::check(std::string message, const msg_meta &conf)
 
 std::string guessletter::help()
 {
-    return "蔚蓝开字母：轮流开字母并抢答地图名。详细帮助：*kai help";
+    return "蔚蓝开字母：轮流开字母并抢答地图名。帮助：*kai.help";
 }
 
 void guessletter::process(std::string message, const msg_meta &conf)
@@ -403,7 +404,8 @@ void guessletter::process(std::string message, const msg_meta &conf)
     std::lock_guard<std::mutex> guard(lock_);
     session &s = get_or_create_session(conf.group_id, conf.user_id);
 
-    if (cmd.empty() || lower_cmd == "help" || cmd == "帮助") {
+    if (cmd.empty() || lower_cmd == "help" || lower_cmd == ".help" ||
+        cmd == "帮助") {
         conf.p->cq_send(guessletter_detail_help(), conf);
         return;
     }

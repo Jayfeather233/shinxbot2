@@ -617,7 +617,7 @@ bool nonogram::check(std::string message, const msg_meta &conf)
 }
 std::string nonogram::help()
 {
-    return "nonogram游戏，输入 *nonogram [1~3] 开始游戏";
+    return "nonogram 游戏：输入 *nonogram [1~3] 开始。帮助：*nonogram.help";
 }
 
 DECLARE_FACTORY_FUNCTIONS(nonogram)

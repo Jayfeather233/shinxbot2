@@ -61,25 +61,32 @@ void shinxbot::load_module_filter_config()
     const bool has_functions =
         J.isMember("functions") && J["functions"].isArray();
     const bool has_events = J.isMember("events") && J["events"].isArray();
+    bool changed = false;
 
     if (has_functions) {
         parse_json_to_set(J["functions"], enabled_functions);
     }
+    else {
+        auto fn_names = list_available_module_names(false);
+        enabled_functions =
+            std::set<std::string>(fn_names.begin(), fn_names.end());
+        changed = true;
+    }
+
     if (has_events) {
         parse_json_to_set(J["events"], enabled_events);
     }
-
-    if (!cfg_exists || (!has_functions && !has_events)) {
-        auto fn_names = list_available_module_names(false);
+    else {
         auto ev_names = list_available_module_names(true);
-        enabled_functions =
-            std::set<std::string>(fn_names.begin(), fn_names.end());
-        enabled_events =
-            std::set<std::string>(ev_names.begin(), ev_names.end());
+        enabled_events = std::set<std::string>(ev_names.begin(), ev_names.end());
+        changed = true;
+    }
+
+    if (!cfg_exists || changed) {
         save_module_filter_config();
         set_global_log(
             LOG::INFO,
-            "Initialized module_load.json with all modules: functions=" +
+            "Initialized/updated module_load.json: functions=" +
                 std::to_string(enabled_functions.size()) +
                 ", events=" + std::to_string(enabled_events.size()));
     }
