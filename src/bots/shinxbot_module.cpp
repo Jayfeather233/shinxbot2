@@ -174,8 +174,21 @@ bool shinxbot::handle_bot_load(const std::string &message, const msg_meta &conf)
         return false;
     }
 
+    auto contains_name = [](const std::vector<std::string> &arr,
+                            const std::string &target) {
+        return std::find(arr.begin(), arr.end(), target) != arr.end();
+    };
+
     if (type == "function") {
+        const auto available = list_available_module_names(false);
         for (const auto &n : names) {
+            if (!contains_name(available, n)) {
+                oss << "load " << n
+                    << " failed: module not found (use bot.list_alias)"
+                    << std::endl;
+                continue;
+            }
+
             bool found_loaded = false;
             for (size_t i = 0; i < functions.size(); ++i) {
                 if (std::get<2>(functions[i]) == n) {
@@ -218,7 +231,15 @@ bool shinxbot::handle_bot_load(const std::string &message, const msg_meta &conf)
     }
 
     if (type == "event") {
+        const auto available = list_available_module_names(true);
         for (const auto &n : names) {
+            if (!contains_name(available, n)) {
+                oss << "load " << n
+                    << " failed: module not found (use bot.list_alias)"
+                    << std::endl;
+                continue;
+            }
+
             bool found_loaded = false;
             for (size_t i = 0; i < events.size(); ++i) {
                 if (std::get<2>(events[i]) == n) {
