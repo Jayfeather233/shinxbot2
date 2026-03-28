@@ -13,6 +13,25 @@ bool starts_with(const std::string &s, const std::string &prefix)
            s.compare(0, prefix.size(), prefix) == 0;
 }
 
+void append_unique_answer(std::vector<std::string> &dst,
+                          const std::string &candidate)
+{
+    const std::string t = trim(candidate);
+    if (t.empty()) {
+        return;
+    }
+    const std::string nk = guessletter::norm_answer(t);
+    if (nk.empty()) {
+        return;
+    }
+    for (const auto &it : dst) {
+        if (guessletter::norm_answer(it) == nk) {
+            return;
+        }
+    }
+    dst.push_back(t);
+}
+
 std::string to_lower_ascii(std::string s)
 {
     for (char &c : s) {
@@ -63,27 +82,43 @@ void react_or_reply(const msg_meta &conf, const std::string &emoji_id,
                         conf);
     }
 }
+std::string norm_answer_local(const std::string &s)
+{
+    std::wstring w = string_to_wstring(s);
+    std::wstring out;
+    out.reserve(w.size());
+    for (wchar_t c : w) {
+        wchar_t lc = std::towlower(c);
+        if ((lc >= L'0' && lc <= L'9') || (lc >= L'a' && lc <= L'z') ||
+            (lc >= 0x4E00 && lc <= 0x9FFF)) {
+            out.push_back(lc);
+        }
+    }
+    return wstring_to_string(out);
+}
 
 std::string guessletter_detail_help()
 {
     return "蔚蓝开字母\n"
            "*kai.help: 查看本帮助\n"
            "*kai create: 创建房间\n"
-           "*kai go: 直接开始自由模式（无需加入）\n"
-           "*kai join: 加入房间\n"
-           "*kai quit: 退出房间\n"
-           "*kai count N: 设置题目数量\n"
-           "*kai range pinyin|english|mixed|scope: 设置题目范围\n"
-           "*kai scope <name>: 切换到指定合集（如 StrawberryJam）\n"
-           "*kai scopes: 查看可用合集\n"
-           "*kai start: 开始游戏\n"
-           "*kai open <letter>: 开字母\n"
-           "*kai guess <row> <answer>: 抢答某一题\n"
-           "*kai score: 查看本局积分榜\n"
-           "*kai status: 查看题板\n"
-           "*kai abort: 终止游戏\n"
-           "*kai reveal <row>: 揭露某一题";
-}
+           "*kai go: 直接开始自由模式（无需加入）\n" const std::string nk =
+               norm_answer_local(t);
+    "*kai quit: 退出房间\n"
+    "*kai count N: 设置题目数量\n"
+    "*kai range pinyin|english|mixed: 设置题型\n"
+    "*kai scope <name>: 切换到指定合集（如 StrawberryJam）\n" if (
+        norm_answer_local(it) == nk)
+    {
+        "*kai scopes: 查看可用合集\n"
+        "*kai start: 开始游戏\n"
+        "*kai open <letter>: 开字母\n"
+        "*kai guess <row> <answer>: 抢答某一题\n"
+        "*kai score: 查看本局积分榜\n"
+        "*kai status: 查看题板\n"
+        "*kai abort: 终止游戏\n"
+        "*kai reveal <row>: 揭露某一题";
+    }
 } // namespace
 
 guessletter::guessletter() { load_bank(); }
@@ -150,6 +185,15 @@ bool guessletter::load_bank()
         e.en_name = trim(it.get("en_name", "").asString());
         e.pinyin_key = norm_key(it.get("pinyin_key", "").asString());
         e.english_key = norm_key(it.get("english_key", "").asString());
+        e.aliases.clear();
+        if (it.isMember("aliases") && it["aliases"].isArray()) {
+            for (const auto &a : it["aliases"]) {
+                const std::string alias = trim(a.asString());
+                if (!alias.empty()) {
+                    e.aliases.push_back(alias);
+                }
+            }
+        }
         if (e.cn_name.empty() && e.en_name.empty()) {
             continue;
         }
@@ -208,6 +252,8 @@ std::string guessletter::render_board(const session &s,
 {
     std::ostringstream oss;
     oss << "题板(" << s.questions.size() << ")\n";
+    oss << "题型: " << s.range
+        << " | 合集: " << (trim(s.scope).empty() ? "all" : s.scope) << "\n";
     for (size_t i = 0; i < s.questions.size(); ++i) {
         oss << render_question_line((int)i, s.questions[i], conf) << "\n";
     }
@@ -287,14 +333,20 @@ std::vector<guessletter::question>
 guessletter::build_questions(const session &s) const
 {
     std::vector<question> pool;
-    std::string mode = s.range;
-    std::string mode_norm = norm_key(mode);
+    std::string mode = norm_key(s.range);
+    if (mode != "pinyin" && mode != "english" && mode != "mixed") {
+        mode = "pinyin";
+    }
+    const bool allow_pinyin = mode == "pinyin" || mode == "mixed";
+    const bool allow_english = mode == "english" || mode == "mixed";
+
+    std::string scope_norm = norm_key(s.scope);
+    const bool use_scope_filter =
+        !scope_norm.empty() && scope_norm != "all" && scope_norm != "*";
 
     for (const auto &e : bank_) {
-        if (mode != "mixed" && mode != "pinyin" && mode != "english") {
-            if (norm_key(e.scope) != mode_norm) {
-                continue;
-            }
+        if (use_scope_filter && norm_key(e.scope) != scope_norm) {
+            continue;
         }
 
         auto make_shown = [&](const std::string &key) {
@@ -306,25 +358,31 @@ guessletter::build_questions(const session &s) const
             return shown;
         };
 
-        if ((mode == "mixed" || mode == "pinyin" ||
-             (mode != "english" && mode != "pinyin" && mode != "mixed")) &&
-            !e.cn_name.empty() && !e.pinyin_key.empty()) {
+        if (allow_pinyin && !e.cn_name.empty() && !e.pinyin_key.empty()) {
             question q;
             q.answer = e.cn_name;
             q.cn_answer = e.cn_name;
             q.key = e.pinyin_key;
             q.shown = make_shown(q.key);
+            append_unique_answer(q.accepted_answers, e.cn_name);
+            append_unique_answer(q.accepted_answers, e.en_name);
+            for (const auto &a : e.aliases) {
+                append_unique_answer(q.accepted_answers, a);
+            }
             pool.push_back(q);
         }
 
-        if ((mode == "mixed" || mode == "english" ||
-             (mode != "english" && mode != "pinyin" && mode != "mixed")) &&
-            !e.en_name.empty() && !e.english_key.empty()) {
+        if (allow_english && !e.en_name.empty() && !e.english_key.empty()) {
             question q;
             q.answer = e.en_name;
             q.cn_answer = e.cn_name.empty() ? e.en_name : e.cn_name;
             q.key = e.english_key;
             q.shown = make_shown(q.key);
+            append_unique_answer(q.accepted_answers, e.en_name);
+            append_unique_answer(q.accepted_answers, e.cn_name);
+            for (const auto &a : e.aliases) {
+                append_unique_answer(q.accepted_answers, a);
+            }
             pool.push_back(q);
         }
     }
@@ -435,8 +493,8 @@ void guessletter::process(std::string message, const msg_meta &conf)
         s.questions = build_questions(s);
         if (s.questions.empty()) {
             s.started = false;
-            conf.p->cq_send("题库为空，请先离线生成: python3 "
-                            "src/functions/guessletter/gen_guessletter_bank.py",
+            conf.p->cq_send("题库为空，请编辑: "
+                            "config/features/guessletter/letterbank.json",
                             conf);
             return;
         }
@@ -513,8 +571,15 @@ void guessletter::process(std::string message, const msg_meta &conf)
         else if (r == "混合") {
             r = "mixed";
         }
+        else {
+            r = to_lower_ascii(r);
+        }
+        if (r != "pinyin" && r != "english" && r != "mixed") {
+            conf.p->cq_send("范围仅支持: pinyin|english|mixed", conf);
+            return;
+        }
         s.range = r;
-        conf.p->cq_send("范围已设置为: " + r, conf);
+        conf.p->cq_send("题型已设置为: " + r, conf);
         return;
     }
 
@@ -528,7 +593,12 @@ void guessletter::process(std::string message, const msg_meta &conf)
             conf.p->cq_send("用法: *kai scope <name>", conf);
             return;
         }
-        s.range = sc;
+        if (to_lower_ascii(sc) == "all" || sc == "*") {
+            s.scope = "all";
+            conf.p->cq_send("已取消合集限制。", conf);
+            return;
+        }
+        s.scope = sc;
         conf.p->cq_send("已切换到合集范围: " + sc, conf);
         return;
     }
@@ -573,8 +643,8 @@ void guessletter::process(std::string message, const msg_meta &conf)
         }
         s.questions = build_questions(s);
         if (s.questions.empty()) {
-            conf.p->cq_send("题库为空，请先离线生成: python3 "
-                            "src/functions/guessletter/gen_guessletter_bank.py",
+            conf.p->cq_send("题库为空，请编辑: "
+                            "config/features/guessletter/letterbank.json",
                             conf);
             return;
         }
@@ -736,7 +806,15 @@ void guessletter::process(std::string message, const msg_meta &conf)
             return;
         }
 
-        if (norm_answer(answer) == norm_answer(s.questions[row].answer)) {
+        bool solved = false;
+        for (const auto &cand : s.questions[row].accepted_answers) {
+            if (norm_answer(answer) == norm_answer(cand)) {
+                solved = true;
+                break;
+            }
+        }
+
+        if (solved) {
             s.questions[row].solved = true;
             s.questions[row].shown = s.questions[row].key;
             s.questions[row].solved_by = conf.user_id;
