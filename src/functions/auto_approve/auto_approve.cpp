@@ -90,6 +90,7 @@ void auto_approve::process(std::string message, const msg_meta &conf)
 
             Json::Value res;
             res["flag"] = flag;
+            res["sub_type"] = "add";
             res["approve"] = true;
             conf.p->cq_send("set_friend_add_request", res);
             conf.p->setlog(LOG::INFO, "friend add approved by " +
@@ -108,6 +109,7 @@ void auto_approve::process(std::string message, const msg_meta &conf)
 
             Json::Value res;
             res["flag"] = flag;
+            res["sub_type"] = "invite";
             res["approve"] = true;
             conf.p->cq_send("set_group_add_request", res);
             conf.p->setlog(LOG::INFO, "group invite approved in group " +
