@@ -7,9 +7,11 @@
 auto114::auto114()
 {
     len = 0;
+    const std::string homodata_path =
+        bot_resource_path(nullptr, "auto114/homodata.txt");
 
     std::ifstream afile;
-    afile.open("./data/homodata.txt", std::ios::in);
+    afile.open(homodata_path, std::ios::in);
 
     if (afile.is_open()) {
         while (!afile.eof()) {
@@ -21,7 +23,7 @@ auto114::auto114()
         afile.close();
     }
     else {
-        set_global_log(LOG::ERROR, "Missing file: ./data/homodata.txt");
+        set_global_log(LOG::ERROR, "Missing file: " + homodata_path);
     }
 }
 

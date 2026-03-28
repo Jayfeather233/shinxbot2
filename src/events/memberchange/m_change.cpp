@@ -42,7 +42,7 @@ void m_change::process(bot *p, Json::Value J)
             internal_message::kMemberChangeWelcome, "",
             J["group_id"].asUInt64(), J["user_id"].asUInt64());
 
-        p->input_process(new std::string(w.toStyledString()));
+        p->input_process(w.toStyledString());
 
         p->setlog(LOG::INFO, "member increase in group " +
                                  std::to_string(J["group_id"].asUInt64()) +

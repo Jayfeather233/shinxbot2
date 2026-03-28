@@ -50,7 +50,7 @@ public:
     bot() = delete;
     bot(bot &bot) = delete;
     bot(bot &&bot) = delete;
-    bot(int recv_port, int send_port, std::string tk);
+    bot(int recv_port, int send_port, const std::string &tk);
 
     /**
      * Starter of the bot.
@@ -92,10 +92,13 @@ public:
      */
     virtual userid_t get_botqq() const;
 
+    virtual std::string getConfigDir() const;
+    virtual std::string getResourceDir() const;
+
     /**
      * receive a message, how to process
      */
-    virtual void input_process(std::string *input) = 0;
+    virtual void input_process(const std::string &input) = 0;
 
     virtual void registerBar(BarInfo *p);
     virtual std::string descBar();

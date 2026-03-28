@@ -115,7 +115,7 @@ std::wstring cq_decode(const std::wstring &input)
     return result;
 }
 
-std::pair<std::string, std::string> split_http_addr(const std::string addr)
+std::pair<std::string, std::string> split_http_addr(const std::string &addr)
 {
     size_t p = addr.find("/");
     while (p != addr.npos && ((p > 0 && addr[p - 1] == '/') ||

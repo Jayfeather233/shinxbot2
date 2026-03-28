@@ -1,7 +1,11 @@
 #!/bin/bash
+set -euo pipefail
 
 cd /workspace
-./build.sh
-./build_features.sh
+
+if [ "${SKIP_BUILD:-0}" != "1" ]; then
+	./build.sh
+	./build_features.sh
+fi
 
 tail -f /dev/null

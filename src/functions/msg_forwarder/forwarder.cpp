@@ -11,7 +11,8 @@ inline bool check_valid(const point_t &a, const point_t &b)
 
 forwarder::forwarder()
 {
-    Json::Value J = string_to_json(readfile("./config/forwarder.json", "[]"));
+    Json::Value J = string_to_json(readfile(
+        bot_config_path(nullptr, "features/forwarder/forwarder.json"), "[]"));
     for (Json::Value j : J) {
         point_t from, to;
         from = std::make_pair<groupid_t, userid_t>(
@@ -33,7 +34,8 @@ void forwarder::save()
         J["to"]["user_id"] = it.second.second;
         Ja.append(J);
     }
-    writefile("./config/forwarder.json", Ja.toStyledString());
+    writefile(bot_config_path(nullptr, "features/forwarder/forwarder.json"),
+              Ja.toStyledString());
 }
 
 size_t forwarder::configure(std::string message, const msg_meta &conf)

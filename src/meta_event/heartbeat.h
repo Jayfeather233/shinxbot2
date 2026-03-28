@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <filesystem>
 #include <iostream>
@@ -14,15 +15,17 @@ private:
     bool is_recorded;
     bool recovering;
     std::time_t las_time;
+    std::atomic<bool> running_{true};
 
     void start_recover();
 
 public:
-    heartBeat(const std::vector<std::string> &commands);
+    explicit heartBeat(const std::vector<std::string> &commands);
     heartBeat() = delete;
     heartBeat(heartBeat &) = delete;
     heartBeat(heartBeat &&) = delete;
     heartBeat operator=(heartBeat) = delete;
     void run();
+    void stop();
     void inform();
 };

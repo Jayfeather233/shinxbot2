@@ -118,12 +118,13 @@ static void ng_react_or_reply(const msg_meta &conf, const std::string &emoji_id,
 static std::string ng_detail_help()
 {
     return "NG 游戏：\n"
+           "*ng.help - 查看帮助\n"
            "*ng create - 创建房间\n"
            "*ng join - 加入房间\n"
            "*ng start - 分配目标并进入设置词阶段\n"
            "*ng go - 全员设置完成后开始游戏\n"
            "*ng guess <词> - 自检并出局\n"
-           "*ng state | *ng quit [@用户] | *ng abort | *ng help\n"
+           "*ng state | *ng quit [@用户] | *ng abort\n"
            "不要说挑战！想办法设局让群友不经意间说出量身设计的NG词吧~";
 }
 
@@ -492,6 +493,10 @@ void NGgame::process(std::string message, const msg_meta &conf)
                 is_ng_command = true;
                 cmd = trim(normalized.substr(4));
             }
+            else if (starts_with(normalized, "*ng.")) {
+                is_ng_command = true;
+                cmd = trim(normalized.substr(3));
+            }
         }
 
         if (is_ng_command && starts_with(cmd, "guess")) {
@@ -729,12 +734,12 @@ void NGgame::process(std::string message, const msg_meta &conf)
             return;
         }
 
-        if (cmd == "help") {
+        if (cmd == "help" || cmd == ".help") {
             send_msg_ng(conf.p, gid, 0, ng_detail_help());
             return;
         }
 
-        send_msg_ng(conf.p, gid, 0, "未知命令，请使用 *ng help 查看帮助。");
+        send_msg_ng(conf.p, gid, 0, "未知命令，请使用 *ng.help 查看帮助。");
         return;
     }
 
@@ -777,7 +782,7 @@ void NGgame::process(std::string message, const msg_meta &conf)
 
 std::string NGgame::help()
 {
-    return "NG 游戏：不要说挑战！详细帮助：*ng help";
+    return "NG 游戏：不要说挑战。帮助：*ng.help";
 }
 
 DECLARE_FACTORY_FUNCTIONS(NGgame)

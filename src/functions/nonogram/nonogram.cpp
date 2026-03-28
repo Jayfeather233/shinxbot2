@@ -21,7 +21,8 @@ void nonogram::load()
 {
     Json::Value J;
     try {
-        J = string_to_json(readfile("./config/nonogram.json", "[]"));
+        J = string_to_json(readfile(
+            bot_config_path(nullptr, "features/nonogram/nonogram.json"), "[]"));
     }
     catch (...) {
         set_global_log(LOG::WARNING, "Failed to load nonogram levels");
@@ -108,7 +109,8 @@ void nonogram::generate_puzzle_image(
             ->size();
     max_row_clues += 1;
     max_col_clues += 1;
-    size_t img_size_row = 50 * (rows + (max_row_clues / 2 + 1)) + 50; // +50 for padding
+    size_t img_size_row =
+        50 * (rows + (max_row_clues / 2 + 1)) + 50; // +50 for padding
     size_t img_size_col = 50 * (cols + (max_col_clues / 2 + 1)) + 50;
     size_t row_header_size = 50 * (max_row_clues / 2 + 1);
     size_t col_header_size = 50 * (max_col_clues / 2 + 1);
@@ -174,12 +176,15 @@ void nonogram::send_puzzle(std::shared_ptr<nonogram_level> level,
                            const msg_meta &conf)
 {
     std::string uuid = generate_uuid();
+    const std::string puzzle_path =
+        bot_resource_path(nullptr, "nonogram/" + uuid + ".png");
     generate_puzzle_image(level->get_row_clues(), level->get_col_clues(),
-                          "./resource/nonogram/" + uuid + ".png");
-    conf.p->cq_send("[CQ:image,file=file://" + get_local_path() +
-                        "/resource/nonogram/" + uuid + ".png,id=40000]",
+                          puzzle_path);
+    conf.p->cq_send("[CQ:image,file=file://" +
+                        fs::absolute(fs::path(puzzle_path)).string() +
+                        ",id=40000]",
                     conf);
-    fs::remove("./resource/nonogram/" + uuid + ".png");
+    fs::remove(puzzle_path);
 }
 
 inline bool is_painted_color(const Magick::ColorRGB color)
@@ -354,7 +359,8 @@ nonogram::get_user_data(std::string filename,
             ->size();
     max_row_clues += 1;
     max_col_clues += 1;
-    size_t img_size_row = 50 * (rows + (max_row_clues / 2 + 1)) + 50; // +50 for padding
+    size_t img_size_row =
+        50 * (rows + (max_row_clues / 2 + 1)) + 50; // +50 for padding
     size_t img_size_col = 50 * (cols + (max_col_clues / 2 + 1)) + 50;
     size_t row_header_size = 50 * (max_row_clues / 2 + 1);
     size_t col_header_size = 50 * (max_col_clues / 2 + 1);
@@ -512,9 +518,10 @@ void nonogram::process(std::string message, const msg_meta &conf)
         return;
     }
     std::string uuid = generate_uuid();
-    std::string filename = "./resource/nonogram/" + uuid + ".png";
+    const std::string nonogram_dir = bot_resource_path(nullptr, "nonogram");
+    std::string filename = nonogram_dir + "/" + uuid + ".png";
     try {
-        download(cq_decode(img), "./resource/nonogram/", uuid + ".png");
+        download(cq_decode(img), nonogram_dir + "/", uuid + ".png");
     }
     catch (...) {
         conf.p->setlog(LOG::WARNING, "Failed to download image: " + img);
@@ -610,7 +617,7 @@ bool nonogram::check(std::string message, const msg_meta &conf)
 }
 std::string nonogram::help()
 {
-    return "nonogram游戏，输入 *nonogram [1~3] 开始游戏";
+    return "nonogram 游戏：输入 *nonogram [1~3] 开始。帮助：*nonogram.help";
 }
 
 DECLARE_FACTORY_FUNCTIONS(nonogram)

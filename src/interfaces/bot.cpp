@@ -21,8 +21,8 @@ msg_meta::msg_meta(std::string mt, userid_t uid, groupid_t gid, int64_t mid,
 {
 }
 
-bot::bot(int recv_port, int send_port, std::string tk)
-    : receive_port(recv_port), send_port(send_port), token(tk)
+bot::bot(int recv_port, int send_port, const std::string &tk)
+    : receive_port(recv_port), send_port(send_port), token(tk), botqq(0)
 {
 }
 
@@ -59,6 +59,10 @@ std::string bot::cq_get(const std::string &end_point) const
 void bot::setlog(LOG type, std::string message) {}
 
 userid_t bot::get_botqq() const { return botqq; }
+
+std::string bot::getConfigDir() const { return "./config"; }
+
+std::string bot::getResourceDir() const { return "./resource"; }
 
 void bot::registerBar(BarInfo *p) { pb.addBar(p); }
 std::string bot::descBar() { return pb.desc(); }

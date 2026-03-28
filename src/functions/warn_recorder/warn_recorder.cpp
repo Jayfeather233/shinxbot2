@@ -106,13 +106,16 @@ void warn_recorder::save()
         }
         J[std::to_string(group_pair.first)] = group_val;
     }
-    writefile("./config/warns.json", J.toStyledString());
+    writefile(bot_config_path(nullptr, "features/warn_recorder/warns.json"),
+              J.toStyledString());
 }
 warn_recorder::warn_recorder()
 {
     Json::Value J;
     try {
-        J = string_to_json(readfile("./config/warns.json", "{}"));
+        J = string_to_json(readfile(
+            bot_config_path(nullptr, "features/warn_recorder/warns.json"),
+            "{}"));
     }
     catch (...) {
         return;

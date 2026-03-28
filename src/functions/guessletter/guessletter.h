@@ -47,7 +47,8 @@ private:
     std::unordered_map<groupid_t, session> sessions_;
     std::mutex lock_;
 
-    const std::string bank_path_ = "./config/guessletter/letterbank.json";
+    const std::string bank_path_ =
+        bot_config_path("features/guessletter/letterbank.json");
 
     bool load_bank();
     static std::string norm_key(const std::string &s);

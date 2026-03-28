@@ -2,15 +2,29 @@
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 
-static std::string birth_help_msg = "\
-date.add MMDD event\n\
-date.del event\n\
-date.list\
-";
+static std::string birthday_public_detail_help()
+{
+    return "日期提醒帮助\n"
+           "date.help\n"
+           "date.add MMDD event\n"
+           "date.list\n"
+           "date.send";
+}
+
+static std::string birthday_admin_detail_help()
+{
+    return birthday_public_detail_help() +
+           "\n"
+           "date.del event\n"
+           "date.inf.add days\n"
+           "date.inf.del days\n"
+           "date.inf.list";
+}
 
 birthday::birthday()
 {
-    Json::Value Ja = string_to_json(readfile("./config/birthday.json", "{}"));
+    Json::Value Ja = string_to_json(readfile(
+        bot_config_path(nullptr, "features/birthday/birthday.json"), "{}"));
     for (const std::string &uid : Ja.getMemberNames()) {
         groupid_t uuid = std::stoull(uid);
         if (uuid == 0) {
@@ -41,7 +55,8 @@ void birthday::save()
         Jaa[std::to_string(it.first)] = Ja;
     }
     Jaa["0"] = parse_set_to_json(inform_interval);
-    writefile("./config/birthday.json", Jaa.toStyledString());
+    writefile(bot_config_path(nullptr, "features/birthday/birthday.json"),
+              Jaa.toStyledString());
 }
 
 /*
@@ -54,6 +69,15 @@ void birthday::process(std::string message, const msg_meta &conf)
     std::istringstream iss(trim(message));
     std::string command;
     iss >> command;
+    const bool can_manage = conf.p->is_op(conf.user_id) ||
+                            is_group_op(conf.p, conf.group_id, conf.user_id);
+
+    if (command == "date.help") {
+        conf.p->cq_send(can_manage ? birthday_admin_detail_help()
+                                   : birthday_public_detail_help(),
+                        conf);
+        return;
+    }
 
     if (command == "date.add") {
         std::string who, date;
@@ -98,8 +122,7 @@ void birthday::process(std::string message, const msg_meta &conf)
         return;
     }
     else if (command == "date.del") {
-        if (!conf.p->is_op(conf.user_id) &&
-            !is_group_op(conf.p, conf.group_id, conf.user_id)) {
+        if (!can_manage) {
             conf.p->cq_send("只有管理员可以哦", conf);
             return;
         }
@@ -136,8 +159,7 @@ void birthday::process(std::string message, const msg_meta &conf)
         send_upcoming_msg(localTime, conf.p, conf.group_id);
     }
     else if (command == "date.inf.add") {
-        if (!conf.p->is_op(conf.user_id) &&
-            !is_group_op(conf.p, conf.group_id, conf.user_id)) {
+        if (!can_manage) {
             conf.p->cq_send("只有管理员可以哦", conf);
             return;
         }
@@ -148,8 +170,7 @@ void birthday::process(std::string message, const msg_meta &conf)
         save();
     }
     else if (command == "date.inf.del") {
-        if (!conf.p->is_op(conf.user_id) &&
-            !is_group_op(conf.p, conf.group_id, conf.user_id)) {
+        if (!can_manage) {
             conf.p->cq_send("只有管理员可以哦", conf);
             return;
         }
@@ -165,7 +186,7 @@ void birthday::process(std::string message, const msg_meta &conf)
             conf);
     }
     else {
-        conf.p->cq_send(birth_help_msg, conf);
+        conf.p->cq_send("未知命令，请使用 date.help 查看帮助", conf);
     }
 }
 bool birthday::check(std::string message, const msg_meta &conf)
@@ -174,24 +195,15 @@ bool birthday::check(std::string message, const msg_meta &conf)
 }
 std::string birthday::help()
 {
-    return "日期提醒。\n"
-           "date.add MMDD event\n"
-           "date.list\n"
-           "date.send";
+    return "日期提醒：记录群事件并定期提醒。帮助：date.help";
 }
 
 std::string birthday::help(const msg_meta &conf, help_level_t level)
 {
-    if (level == help_level_t::group_admin && conf.message_type == "group" &&
+    if (conf.message_type == "group" &&
+        level == help_level_t::group_admin &&
         is_group_op(conf.p, conf.group_id, conf.user_id)) {
-        return "日期提醒。\n"
-               "date.add MMDD event\n"
-               "date.del event\n"
-               "date.list\n"
-               "date.send\n"
-               "date.inf.add days\n"
-               "date.inf.del days\n"
-               "date.inf.list";
+        return "日期提醒（管理员可配置删除与提醒周期）。帮助：date.help";
     }
 
     return help();

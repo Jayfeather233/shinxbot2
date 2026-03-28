@@ -234,14 +234,17 @@ void Responder::save()
             J["trigger_by"][std::to_string(pair.first)] = pair.second ? 1 : 0;
         }
     }
-    writefile("./config/responder.json", J.toStyledString());
+    writefile(bot_config_path(nullptr, "features/responder/responder.json"),
+              J.toStyledString());
 }
 
 Responder::Responder()
 {
     Json::Value J;
     try {
-        J = string_to_json(readfile("./config/responder.json", "{}"));
+        J = string_to_json(readfile(
+            bot_config_path(nullptr, "features/responder/responder.json"),
+            "{}"));
     }
     catch (...) {
         return;
@@ -275,12 +278,14 @@ std::string Responder::help() { return "固定消息回复功能：reply.help"; 
 
 std::string substitute_image(std::string res)
 {
+    const std::string reply_dir = bot_resource_path("reply");
+    fs::create_directories(reply_dir);
     size_t pos = 0, pos2, pos_file, file_end, pos_url, url_end;
     while ((pos = res.find("[CQ:image", pos)) != std::string::npos) {
         pos2 = res.find("]", pos);
         if (pos2 == std::string::npos)
             break;
-        // download image into ./resource/reply/ and replace with
+        // download image into reply resource directory and replace with
         // [CQ:image,file=path]
         // [CQ:image,file=6AA2D5B11C7E295E597F3B2FD4B8DA6A.png,file_size=25914,sub_type=0,summary=,url=https://multimedia.nt.qq.com.cn/download?appid=1407&amp;fileid=EhQRn4b5aR_1IgECnZRSkB1eBRH8pxi6ygEg_woogeGpycCBkwMyBHByb2RQgL2jAVoQahNtvJKvteI2QkTRO5r_bHoCFrWCAQJuag&amp;rkey=CAESMCWmpmpkAP-qo8ncknjnBE0aQyAcvo5UCpcXGzO1taNxCiwH8pvTrjQqQxj3nyYZgg]
         pos_file = res.find("file=", pos);
@@ -300,12 +305,13 @@ std::string substitute_image(std::string res)
             url_end = pos2;
         }
         std::string url = res.substr(pos_url + 4, url_end - pos_url - 4);
-        std::string local_path = "./resource/reply/" + file;
+        std::string local_path = reply_dir + "/" + file;
         try {
-            download(cq_decode(url), "./resource/reply/", file);
+            download(cq_decode(url), reply_dir + "/", file);
             res.replace(pos, pos2 - pos + 1,
-                        "[CQ:image,file=file://" + get_local_path() +
-                            "/resource/reply/" + file + ",id=40000]");
+                        "[CQ:image,file=file://" +
+                            fs::absolute(fs::path(local_path)).string() +
+                            ",id=40000]");
         }
         catch (...) {
             pos = pos2 + 1;
@@ -316,14 +322,18 @@ std::string substitute_image(std::string res)
 }
 Json::Value substitue_image(const Json::Value &J)
 {
+    const std::string reply_dir = bot_resource_path("reply");
+    fs::create_directories(reply_dir);
     Json::Value res = J;
     for (Json::Value &item : res) {
         if (item["type"].asString() == "image") {
-            download(item["data"]["url"].asString(), "./resource/reply/",
+            download(item["data"]["url"].asString(), reply_dir + "/",
                      item["data"]["file"].asString());
             Json::Value parsed;
-            parsed["file"] = "file://" + get_local_path() + "/resource/reply/" +
-                             item["data"]["file"].asString();
+            parsed["file"] =
+                "file://" + fs::absolute(fs::path(reply_dir) /
+                                         item["data"]["file"].asString())
+                                .string();
             parsed["id"] = "40000";
             item["data"] = parsed;
         }
@@ -374,7 +384,7 @@ std::string Responder::get_reply_message(const std::string &message,
 
 void Responder::set_backup_files(archivist *p, const std::string &name)
 {
-    p->add_path(name, "./resource/reply/", "resource/reply/");
+    p->add_path(name, bot_resource_path("reply") + "/", "resource/reply/");
 }
 
 DECLARE_FACTORY_FUNCTIONS(Responder)

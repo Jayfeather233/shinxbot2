@@ -10,10 +10,6 @@
 
 namespace fs = std::filesystem;
 
-static const std::string kMapsJson = "./config/guessmap/maps.json";
-static const std::string kImagesRoot = "./resource/guessmap/images";
-static const std::string kCacheRoot = "./resource/guessmap";
-
 struct crop_region {
     int left = 0;
     int top = 0;
@@ -51,32 +47,6 @@ static crop_region get_center_16_9_region(int w, int h)
     return r;
 }
 
-static bool resolve_data_paths(std::string &maps_json, std::string &images_root)
-{
-    const std::vector<std::pair<std::string, std::string>> candidates = {
-        {"./config/guessmap/maps.json", "./resource/guessmap/images"},
-        {"../config/guessmap/maps.json", "../resource/guessmap/images"},
-        {"../../config/guessmap/maps.json", "../../resource/guessmap/images"},
-        {"./config/guessmap/maps.json", "./config/guessmap/images"},
-        {"../config/guessmap/maps.json", "../config/guessmap/images"},
-        {"../../config/guessmap/maps.json", "../../config/guessmap/images"},
-        {"./shinxbot2/config/guessmap/maps.json",
-         "./shinxbot2/resource/guessmap/images"},
-        {"./shinxbot2/config/guessmap/maps.json",
-         "./shinxbot2/config/guessmap/images"},
-    };
-
-    for (const auto &c : candidates) {
-        if (fs::exists(c.first) && fs::is_regular_file(c.first) &&
-            fs::exists(c.second) && fs::is_directory(c.second)) {
-            maps_json = fs::absolute(c.first).string();
-            images_root = fs::absolute(c.second).string();
-            return true;
-        }
-    }
-    return false;
-}
-
 static bool is_image_file(const fs::path &p)
 {
     std::string ext = p.extension().string();
@@ -98,14 +68,16 @@ static void erase_first_path(std::vector<std::string> &paths,
 static std::string guessmap_detail_help()
 {
     return "蔚蓝猜地图\n"
+           "*guess.help: 查看本帮助\n"
            "*guess_start_easy/hard/ultra/imp: 开始猜图\n"
            "*guess_start_任意文本: 随机难度开始（16-256）\n"
            "*guess <答案>: 提交答案\n"
            "*guess_roll: 同尺寸换位置\n"
            "*guess_hint: 扩大提示范围\n"
+           "*guess_cd: 查看当前每次提示需要猜测次数\n"
+           "*guess_cd 数字: 设置当前提示冷却\n"
            "*guess_giveup: 放弃并揭晓答案\n"
-           "*guess_check: 检查题库状态\n"
-           "*guess_help: 查看本帮助";
+           "*guess_check: 检查题库状态";
 }
 
 static std::pair<std::string, std::string>
@@ -133,12 +105,122 @@ parse_collection_and_hall(const std::string &file_path)
 
 guessmap::guessmap()
 {
-    fs::create_directories(kCacheRoot);
+    fs::create_directories(cache_root_dir());
+    load_cooldown_config();
     if (!load_maps()) {
-        set_global_log(
-            LOG::WARNING,
-            "guessmap: failed to load maps from ./config/guessmap/maps.json");
+        set_global_log(LOG::WARNING, "guessmap: failed to load maps from " +
+                                         maps_config_path());
     }
+}
+
+std::string guessmap::maps_config_path() const
+{
+    return (fs::path(config_dir_) / "features/guessmap/maps.json").string();
+}
+
+std::string guessmap::images_root_dir() const
+{
+    return (fs::path(resource_dir_) / "guessmap/images").string();
+}
+
+std::string guessmap::cache_root_dir() const
+{
+    return (fs::path(resource_dir_) / "guessmap").string();
+}
+
+std::string guessmap::cooldown_config_path() const
+{
+    return (fs::path(config_dir_) / "features/guessmap/cooldown.json").string();
+}
+
+void guessmap::sync_dirs_from_bot(const bot *p)
+{
+    if (p == nullptr) {
+        return;
+    }
+    const std::string new_cfg = p->getConfigDir();
+    const std::string new_res = p->getResourceDir();
+    if (new_cfg == config_dir_ && new_res == resource_dir_) {
+        return;
+    }
+    config_dir_ = new_cfg;
+    resource_dir_ = new_res;
+    fs::create_directories(cache_root_dir());
+    load_cooldown_config();
+}
+
+void guessmap::load_cooldown_config()
+{
+    assist_cooldown_guess_by_scope_.clear();
+    Json::Value root = string_to_json(readfile(cooldown_config_path(), "{}"));
+    if (!root.isObject()) {
+        return;
+    }
+
+    if (root.isMember("default_guess_cooldown") &&
+        root["default_guess_cooldown"].isInt()) {
+        int v = root["default_guess_cooldown"].asInt();
+        if (v < 0) {
+            v = 0;
+        }
+        assist_cooldown_guess_by_scope_["__default__"] = v;
+    }
+
+    if (root.isMember("scope") && root["scope"].isObject()) {
+        for (const auto &k : root["scope"].getMemberNames()) {
+            int v = root["scope"][k].asInt();
+            assist_cooldown_guess_by_scope_[k] = std::max(0, v);
+        }
+    }
+}
+
+void guessmap::save_cooldown_config() const
+{
+    Json::Value root(Json::objectValue);
+    auto it_default = assist_cooldown_guess_by_scope_.find("__default__");
+    root["default_guess_cooldown"] =
+        (it_default == assist_cooldown_guess_by_scope_.end())
+            ? kDefaultAssistGuessCooldown
+            : it_default->second;
+
+    Json::Value scope(Json::objectValue);
+    for (const auto &kv : assist_cooldown_guess_by_scope_) {
+        if (kv.first == "__default__") {
+            continue;
+        }
+        scope[kv.first] = kv.second;
+    }
+    root["scope"] = scope;
+    writefile(cooldown_config_path(), root.toStyledString(), false);
+}
+
+int guessmap::get_assist_cooldown_guess(const std::string &id) const
+{
+    auto it = assist_cooldown_guess_by_scope_.find(id);
+    if (it != assist_cooldown_guess_by_scope_.end()) {
+        return std::max(0, it->second);
+    }
+    auto it_default = assist_cooldown_guess_by_scope_.find("__default__");
+    if (it_default != assist_cooldown_guess_by_scope_.end()) {
+        return std::max(0, it_default->second);
+    }
+    return kDefaultAssistGuessCooldown;
+}
+
+int guessmap::available_assist_uses(const session_state &state,
+                                    int cooldown_guess) const
+{
+    if (cooldown_guess <= 0) {
+        return 1;
+    }
+    const int earned = state.total_guess_count / cooldown_guess;
+    return earned - state.assist_used_count;
+}
+
+bool guessmap::can_use_assist(const session_state &state,
+                              int cooldown_guess) const
+{
+    return available_assist_uses(state, cooldown_guess) > 0;
 }
 
 std::string guessmap::get_scope_id(const msg_meta &conf) const
@@ -266,9 +348,8 @@ void guessmap::record_recent_map(const std::string &id, size_t map_index)
 
 bool guessmap::load_maps()
 {
-    std::string maps_json = kMapsJson;
-    std::string images_root = kImagesRoot;
-    resolve_data_paths(maps_json, images_root);
+    std::string maps_json = maps_config_path();
+    std::string images_root = images_root_dir();
 
     Json::Value root = string_to_json(readfile(maps_json, "[]"));
     if (!root.isArray()) {
@@ -356,20 +437,20 @@ bool guessmap::is_nonsense(const Magick::Image &img) const
 
 std::string guessmap::cropped_output_path(const std::string &id) const
 {
-    fs::path p = fs::path(kCacheRoot) / (id + "_crop.png");
+    fs::path p = fs::path(cache_root_dir()) / (id + "_crop.png");
     return fs::absolute(p).string();
 }
 
 std::string guessmap::reveal_output_path(const std::string &id) const
 {
-    fs::path p = fs::path(kCacheRoot) / (id + "_reveal.png");
+    fs::path p = fs::path(cache_root_dir()) / (id + "_reveal.png");
     return fs::absolute(p).string();
 }
 
 std::string guessmap::hint_output_path(const std::string &id, int seq) const
 {
-    fs::path p =
-        fs::path(kCacheRoot) / (id + "_hint_" + std::to_string(seq) + ".png");
+    fs::path p = fs::path(cache_root_dir()) /
+                 (id + "_hint_" + std::to_string(seq) + ".png");
     return fs::absolute(p).string();
 }
 
@@ -443,9 +524,10 @@ bool guessmap::append_hint_image(session_state &state,
     return true;
 }
 
-bool guessmap::roll_hint(session_state &state, const std::string &id)
+bool guessmap::roll_hint(session_state &state, const std::string &id,
+                         bool ignore_usage_cap)
 {
-    if (state.roll_count >= kMaxRollCount) {
+    if (!ignore_usage_cap && state.roll_count >= kMaxRollCount) {
         return false;
     }
 
@@ -473,9 +555,10 @@ bool guessmap::roll_hint(session_state &state, const std::string &id)
     return append_hint_image(state, id);
 }
 
-bool guessmap::expand_hint(session_state &state, const std::string &id)
+bool guessmap::expand_hint(session_state &state, const std::string &id,
+                           bool ignore_usage_cap)
 {
-    if (state.hint_count >= kMaxHintCount) {
+    if (!ignore_usage_cap && state.hint_count >= kMaxHintCount) {
         return false;
     }
 
@@ -620,6 +703,7 @@ bool guessmap::start_game(const std::string &id, int crop_size)
         st.total_guess_count = 0;
         st.roll_count = 0;
         st.hint_count = 0;
+        st.assist_used_count = 0;
         st.image_seq = 0;
         st.current_track = 0;
         st.started_at = std::chrono::steady_clock::now();
@@ -826,8 +910,45 @@ void guessmap::process(std::string message, const msg_meta &conf)
     const std::string id = get_scope_id(conf);
 
     std::lock_guard<std::mutex> guard(lock_);
+    sync_dirs_from_bot(conf.p);
 
-    if (message == "*guess_help") {
+    if (message == "*guess_cd") {
+        const int cd = get_assist_cooldown_guess(id);
+        if (cd <= 0) {
+            conf.p->cq_send("当前提示冷却: 0（roll/hint 不受猜测次数限制）",
+                            conf);
+        }
+        else {
+            conf.p->cq_send("当前提示冷却: 每猜 " + std::to_string(cd) +
+                                " 次可使用 1 次 roll/hint（二选一）",
+                            conf);
+        }
+        return;
+    }
+
+    if (message.rfind("*guess_cd ", 0) == 0) {
+        bool can_set = conf.p->is_op(conf.user_id) ||
+                       (conf.message_type == "group" &&
+                        is_group_op(conf.p, conf.group_id, conf.user_id));
+        if (!can_set) {
+            conf.p->cq_send("只有群管理员或OP可以设置冷却", conf);
+            return;
+        }
+
+        std::string arg =
+            trim(message.substr(std::string("*guess_cd ").size()));
+        int cd = static_cast<int>(my_string2int64(arg));
+        if (cd < 0) {
+            conf.p->cq_send("冷却次数不能小于0", conf);
+            return;
+        }
+        assist_cooldown_guess_by_scope_[id] = cd;
+        save_cooldown_config();
+        conf.p->cq_send("已设置本会话提示冷却为: " + std::to_string(cd), conf);
+        return;
+    }
+
+    if (message == "*guess_help" || message == "*guess.help") {
         conf.p->cq_send(guessmap_detail_help(), conf);
         return;
     }
@@ -842,8 +963,8 @@ void guessmap::process(std::string message, const msg_meta &conf)
 
         const int crop = get_start_crop(message);
         if (!start_game(id, crop)) {
-            conf.p->cq_send("题库未就绪，请检查 ./resource/guessmap/images 与 "
-                            "./config/guessmap/maps.json",
+            conf.p->cq_send("题库未就绪，请检查 " + images_root_dir() + " 与 " +
+                                maps_config_path(),
                             conf);
             return;
         }
@@ -859,9 +980,21 @@ void guessmap::process(std::string message, const msg_meta &conf)
             return;
         }
 
-        if (!roll_hint(it->second, id)) {
+        const int cd = get_assist_cooldown_guess(id);
+        if (!can_use_assist(it->second, cd)) {
+            react_or_reply(conf, "424", "");
+            conf.p->cq_send("[CQ:reply,id=" + std::to_string(conf.message_id) +
+                                "]才刚提示过啦~再猜一猜！",
+                            conf);
+            return;
+        }
+
+        if (!roll_hint(it->second, id, cd <= 0)) {
             conf.p->cq_send("roll次数已达上限或无法继续roll。", conf);
             return;
+        }
+        if (cd > 0) {
+            it->second.assist_used_count += 1;
         }
         send_all_hint_images(conf, it->second,
                              "已重roll同尺寸新位置，以下是当前全部提示图：");
@@ -874,9 +1007,21 @@ void guessmap::process(std::string message, const msg_meta &conf)
             return;
         }
 
-        if (!expand_hint(it->second, id)) {
+        const int cd = get_assist_cooldown_guess(id);
+        if (!can_use_assist(it->second, cd)) {
+            react_or_reply(conf, "424", "");
+            conf.p->cq_send("[CQ:reply,id=" + std::to_string(conf.message_id) +
+                                "]才刚提示过啦~再猜一猜！",
+                            conf);
+            return;
+        }
+
+        if (!expand_hint(it->second, id, cd <= 0)) {
             conf.p->cq_send("hint次数已达上限或已到边界，无法继续扩大。", conf);
             return;
+        }
+        if (cd > 0) {
+            it->second.assist_used_count += 1;
         }
         send_all_hint_images(conf, it->second,
                              "已扩大提示范围，以下是当前全部提示图：");
@@ -1005,7 +1150,7 @@ void guessmap::process(std::string message, const msg_meta &conf)
 
 std::string guessmap::help()
 {
-    return "蔚蓝猜地图：根据截图猜蔚蓝地图！详细帮助：*guess_help";
+    return "蔚蓝猜地图：根据截图猜地图。帮助：*guess.help";
 }
 
 DECLARE_FACTORY_FUNCTIONS(guessmap)

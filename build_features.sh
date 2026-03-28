@@ -1,11 +1,12 @@
 #!/bin/bash
+set -euo pipefail
 
-cd ./src/functions
+pushd ./src/functions >/dev/null
 python3 generate_cmake.py
 ./make_all.sh
-cd ../..
+popd >/dev/null
 
-cd ./src/events
+pushd ./src/events >/dev/null
 python3 generate_cmake.py
 ./make_all.sh
-cd ../..
+popd >/dev/null
