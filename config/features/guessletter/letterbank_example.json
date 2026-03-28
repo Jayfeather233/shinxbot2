@@ -5,7 +5,11 @@
       "cn_name": "示例地图",
       "en_name": "Example Map",
       "pinyin_key": "sldt",
-      "english_key": "examplemap"
+      "english_key": "examplemap",
+      "aliases": [
+        "示例",
+        "emap"
+      ]
     }
   ]
 }

@@ -17,6 +17,7 @@ private:
         std::string en_name;
         std::string pinyin_key;
         std::string english_key;
+        std::vector<std::string> aliases;
     };
 
     struct question {
@@ -24,6 +25,7 @@ private:
         std::string cn_answer;
         std::string key;
         std::string shown;
+        std::vector<std::string> accepted_answers;
         bool solved = false;
         userid_t solved_by = 0;
     };
@@ -36,6 +38,7 @@ private:
         int round_idx = 0;
         int question_count = 5;
         std::string range = "pinyin";
+        std::string scope = "StrawberryJam";
         std::vector<question> questions;
         std::unordered_map<userid_t, int> scores;
         std::set<char> opened_letters;
