@@ -10,7 +10,13 @@ namespace fs = fs;
 
 bool shinxbot::meta_func(std::string message, const msg_meta &conf)
 {
-    const std::string normalized = trim(message);
+    std::string normalized = trim(message);
+    const std::string at_me = "[CQ:at,qq=" + std::to_string(get_botqq()) + "]";
+
+    const bool is_start_with_at_me = normalized.rfind(at_me, 0) == 0;
+    if (is_start_with_at_me) {
+        normalized = trim(normalized.substr(normalized.find(']') + 1));
+    }
 
     auto can_manage_group = [&]() {
         return is_group_op(conf.p, conf.group_id, conf.user_id) ||
@@ -300,7 +306,7 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
          [&]() { return is_op(conf.user_id); }},
         {"bot.progress", handle_bot_progress, []() { return true; }},
         {"bot.blockclear", handle_group_blockclear,
-         [&]() { return conf.message_type == "group"; }},
+         [&]() { return conf.message_type == "group" && is_start_with_at_me; }},
     };
 
     for (const auto &rule : exact_rules) {
@@ -321,13 +327,13 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
         {"bot.unload", [&]() { return handle_bot_unload(message, conf); },
          [&]() { return is_op(conf.user_id); }},
         {"bot.block ", handle_group_block,
-         [&]() { return conf.message_type == "group"; }},
+         [&]() { return conf.message_type == "group" && is_start_with_at_me; }},
         {"bot.unblock ", handle_group_unblock,
-         [&]() { return conf.message_type == "group"; }},
+         [&]() { return conf.message_type == "group" && is_start_with_at_me; }},
         {"bot.white ", handle_group_white,
-         [&]() { return conf.message_type == "group"; }},
+         [&]() { return conf.message_type == "group" && is_start_with_at_me; }},
         {"bot.unwhite ", handle_group_unwhite,
-         [&]() { return conf.message_type == "group"; }},
+         [&]() { return conf.message_type == "group" && is_start_with_at_me; }},
     };
 
     for (const auto &rule : prefix_rules) {

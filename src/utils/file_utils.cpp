@@ -38,6 +38,7 @@ std::string readfile(const fs::path &file_path,
         return ans;
     }
     else {
+        set_global_log(LOG::WARNING, "Reading file: " + file_path.string() + " not exist, using default content...");
         try {
             std::fstream ofile = openfile(file_path, std::ios::out);
             ofile << default_content;

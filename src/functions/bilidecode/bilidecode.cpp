@@ -45,26 +45,26 @@ void bili_decode::send_dec_info(const Json::Value &J, const msg_meta &conf)
 
 void bili_decode::process_string(std::string s, const msg_meta &conf)
 {
-    {
+    do {
         bv_result res = get_bv(s);
         if (res.first.empty())
-            return;
+            break;
         Json::Value raw_info = get_raw_info(res.first);
         if (raw_info["code"].asInt64() == 0) {
             send_dec_info(raw_info, conf);
             return;
         }
-    }
-    {
+    } while (0);
+    do {
         av_result res = get_av(s);
         if (res.first == 0)
-            return;
+            break;
         Json::Value raw_info = get_raw_info(res.first);
         if (raw_info["code"].asInt64() == 0) {
             send_dec_info(raw_info, conf);
             return;
         }
-    }
+    } while (0);
 }
 
 void bili_decode::process(Json::Value messageArr, const msg_meta &conf)
