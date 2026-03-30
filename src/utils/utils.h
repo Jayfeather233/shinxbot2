@@ -103,6 +103,8 @@ template <typename T> bool find_in_array(const Json::Value &Ja, const T &data)
     return false;
 }
 
+Json::Value expand_string_to_messageArr(std::string s);
+
 /**
  * Check if someone is the operator of *bot*
  */

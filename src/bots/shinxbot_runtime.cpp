@@ -89,6 +89,7 @@ void shinxbot::input_process(const std::string &input)
                 messageArr.append(J["message"]);
             }
             std::string messageStr = messageArr_to_string(J["message"]);
+            messageArr = expand_string_to_messageArr(messageStr);
             int64_t message_id = J["message_id"].asInt64();
             std::string message_type = J["message_type"].asString();
             if (message_type == "group" || message_type == "private" ||
@@ -126,23 +127,23 @@ void shinxbot::input_process(const std::string &input)
                         catch (const char *e) {
                             cq_send((std::string) "Throw an char*: " + e, conf);
                             setlog(LOG::ERROR,
-                                   (std::string) "Throw an char*: " + e);
+                                   name + ": Throw an char*: " + e);
                         }
                         catch (const std::string &e) {
                             cq_send("Throw an string: " + e, conf);
-                            setlog(LOG::ERROR, "Throw an string: " + e);
+                            setlog(LOG::ERROR, name + ": Throw an string: " + e);
                         }
                         catch (std::exception &e) {
                             cq_send((std::string) "Throw an exception: " +
                                         e.what(),
                                     conf);
                             setlog(LOG::ERROR,
-                                   (std::string) "Throw an exception: " +
+                                   name + ": Throw an exception: " +
                                        e.what());
                         }
                         catch (...) {
                             cq_send("Throw an unknown error", conf);
-                            setlog(LOG::ERROR, "Throw an unknown error");
+                            setlog(LOG::ERROR, name + ": Throw an unknown error");
                         }
                     }
                 }
