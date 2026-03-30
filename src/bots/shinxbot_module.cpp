@@ -350,3 +350,71 @@ bool shinxbot::handle_bot_unload(const std::string &message,
     cq_send("useage: bot.unload [function|event] name", conf);
     return false;
 }
+
+bool shinxbot::handle_bot_reload(const std::string &message,
+                                 const msg_meta &conf)
+{
+    std::istringstream iss(message.substr(10));
+    std::ostringstream oss;
+    std::string type;
+    iss >> type;
+
+    std::vector<std::string> names;
+    std::string name;
+    while (iss >> name) {
+        names.push_back(name);
+    }
+
+    if (type != "function") {
+        cq_send("useage: bot.reload function [name|all]", conf);
+        return false;
+    }
+
+    if (functions.empty()) {
+        cq_send("No loaded functions.", conf);
+        return false;
+    }
+
+    auto reload_one = [&](processable *func, const std::string &alias) {
+        bool ok = false;
+        try {
+            ok = func->reload(conf);
+        }
+        catch (...) {
+            ok = false;
+        }
+
+        if (ok) {
+            oss << "reload " << alias << " ok" << std::endl;
+        }
+        else {
+            oss << "reload " << alias << " skipped (stateless or unsupported)"
+                << std::endl;
+        }
+    };
+
+    if (names.empty() || (names.size() == 1 && names[0] == "all")) {
+        for (const auto &u : functions) {
+            reload_one(std::get<0>(u), std::get<2>(u));
+        }
+        cq_send(trim(oss.str()), conf);
+        return false;
+    }
+
+    for (const auto &target : names) {
+        bool found = false;
+        for (const auto &u : functions) {
+            if (std::get<2>(u) == target) {
+                reload_one(std::get<0>(u), target);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            oss << "reload " << target << " failed: not loaded" << std::endl;
+        }
+    }
+
+    cq_send(trim(oss.str()), conf);
+    return false;
+}

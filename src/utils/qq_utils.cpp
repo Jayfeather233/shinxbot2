@@ -48,6 +48,29 @@ std::string get_username(const bot *p, userid_t user_id, groupid_t group_id)
     }
 }
 
+userid_t extract_qq_from_at_segment(const std::string &seg)
+{
+    size_t qq_pos = seg.find("qq=");
+    if (qq_pos == std::string::npos) {
+        return 0;
+    }
+    qq_pos += 3;
+    size_t qq_end = seg.find_first_of(",]", qq_pos);
+    if (qq_end == std::string::npos || qq_end <= qq_pos) {
+        return 0;
+    }
+    return my_string2uint64(seg.substr(qq_pos, qq_end - qq_pos));
+}
+
+std::string display_name_in_group(const msg_meta &conf, userid_t user_id)
+{
+    std::string name = get_username(conf.p, user_id, conf.group_id);
+    if (!trim(name).empty()) {
+        return name;
+    }
+    return "用户" + std::to_string(user_id);
+}
+
 bool is_folder_exist(const bot *p, const groupid_t &group_id,
                      const std::string &path)
 {

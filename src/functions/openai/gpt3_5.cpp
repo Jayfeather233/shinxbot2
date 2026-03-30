@@ -6,6 +6,7 @@
 #include <iostream>
 #include <mutex>
 #include <regex>
+#include <sstream>
 
 /**
  * Overall API intro: https://platform.openai.com/docs/api-reference/chat/create
@@ -179,96 +180,131 @@ void gpt3_5::save_history(int64_t id)
 void gpt3_5::process(std::string message, const msg_meta &conf)
 {
     message = do_black(trim(message.substr(3)));
-    if (message.find(".test") == 0) {
-        conf.p->cq_send(message, conf);
-        return;
-    }
+    std::istringstream iss(message);
+    std::string command;
+    iss >> command;
+    std::string args;
+    getline(iss, args);
+    args = trim(args);
+
     int64_t id = conf.message_type == "group" ? (conf.group_id << 1)
                                               : ((conf.user_id << 1) | 1);
-    if (message.find(".reset") == 0 || message.find("reset") == 0) {
-        auto it = history.find(id);
-        if (it != history.end()) {
-            it->second.clear();
-        }
-        conf.p->cq_send("reset done.", conf);
-        save_history(id);
+
+    const std::vector<cmd_exact_rule> exact_rules = {
+        {".test",
+         [&]() {
+             conf.p->cq_send(message, conf);
+             return true;
+         }},
+        {".reset",
+         [&]() {
+             auto it = history.find(id);
+             if (it != history.end()) {
+                 it->second.clear();
+             }
+             conf.p->cq_send("reset done.", conf);
+             save_history(id);
+             return true;
+         }},
+        {"reset",
+         [&]() {
+             auto it = history.find(id);
+             if (it != history.end()) {
+                 it->second.clear();
+             }
+             conf.p->cq_send("reset done.", conf);
+             save_history(id);
+             return true;
+         }},
+        {".change",
+         [&]() {
+             if (conf.p->is_op(conf.user_id) || (id & 1)) {
+                 const std::string mode = args;
+                 bool flg = false;
+                 std::string res = "avaliable modes:";
+                 for (std::string u : modes) {
+                     res += " " + u;
+                     if (u == mode) {
+                         flg = true;
+                         history[id].clear();
+                         pre_default[id] = mode;
+                         conf.p->cq_send("change done.", conf);
+                         break;
+                     }
+                 }
+                 if (!flg) {
+                     conf.p->cq_send(res, conf);
+                 }
+             }
+             else {
+                 conf.p->cq_send("Not on op list.", conf);
+             }
+             save_history(id);
+             return true;
+         }},
+        {".sw",
+         [&]() {
+             if (conf.p->is_op(conf.user_id)) {
+                 is_open = !is_open;
+                 close_message = args;
+                 conf.p->cq_send("is_open: " + std::to_string(is_open), conf);
+             }
+             else {
+                 conf.p->cq_send("Not on op list.", conf);
+             }
+             return true;
+         }},
+        {".debug",
+         [&]() {
+             if (conf.p->is_op(conf.user_id)) {
+                 is_debug = !is_debug;
+                 conf.p->cq_send("is_debug: " + std::to_string(is_debug), conf);
+             }
+             else {
+                 conf.p->cq_send("Not on op list.", conf);
+             }
+             return true;
+         }},
+        {".set",
+         [&]() {
+             std::string reply = "Not on op list.";
+             if (conf.p->is_op(conf.user_id)) {
+                 std::string type;
+                 int64_t num = 0;
+                 std::istringstream arg_iss(args);
+                 if (!(arg_iss >> type >> num)) {
+                     conf.p->cq_send("Unknown type", conf);
+                     save_file();
+                     return true;
+                 }
+                 if (type == "reply") {
+                     MAX_REPLY = num;
+                     reply = "set MAX_REPLY to " + std::to_string(num);
+                 }
+                 else if (type == "token") {
+                     MAX_TOKEN = num;
+                     reply = "set MAX_TOKEN to " + std::to_string(num);
+                 }
+                 else if (type == "red") {
+                     RED_LINE = num;
+                     reply = "set RED_LINE to " + std::to_string(num);
+                 }
+                 else {
+                     reply = "Unknown type";
+                 }
+             }
+             conf.p->cq_send(reply, conf);
+             save_file();
+             return true;
+         }},
+    };
+
+    bool handled = false;
+    (void)cmd_try_dispatch(command, exact_rules, {}, handled);
+    if (handled) {
         return;
     }
-    if (message.find(".change") == 0) {
-        if (conf.p->is_op(conf.user_id) || (id & 1)) {
-            message = trim(message.substr(7));
-            bool flg = 0;
-            std::string res = "avaliable modes:";
-            for (std::string u : modes) {
-                res += " " + u;
-                if (u == message) {
-                    flg = true;
-                    history[id].clear();
-                    pre_default[id] = message;
-                    conf.p->cq_send("change done.", conf);
-                    break;
-                }
-            }
-            if (!flg) {
-                conf.p->cq_send(res, conf);
-            }
-        }
-        else {
-            conf.p->cq_send("Not on op list.", conf);
-        }
-        save_history(id);
-        return;
-    }
-    if (message.find(".sw") == 0) {
-        if (conf.p->is_op(conf.user_id)) {
-            is_open = !is_open;
-            close_message = trim(message.substr(3));
-            conf.p->cq_send("is_open: " + std::to_string(is_open), conf);
-        }
-        else {
-            conf.p->cq_send("Not on op list.", conf);
-        }
-        return;
-    }
-    if (message.find(".debug") == 0) {
-        if (conf.p->is_op(conf.user_id)) {
-            is_debug = !is_debug;
-            conf.p->cq_send("is_debug: " + std::to_string(is_debug), conf);
-        }
-        else {
-            conf.p->cq_send("Not on op list.", conf);
-        }
-        return;
-    }
-    if (message.find(".set") == 0) {
-        if (conf.p->is_op(conf.user_id)) {
-            std::string type;
-            int64_t num;
-            std::istringstream iss(message.substr(4));
-            iss >> type >> num;
-            if (type == "reply") {
-                MAX_REPLY = num;
-                message = "set MAX_REPLY to " + std::to_string(num);
-            }
-            else if (type == "token") {
-                MAX_TOKEN = num;
-                message = "set MAX_TOKEN to " + std::to_string(num);
-            }
-            else if (type == "red") {
-                RED_LINE = num;
-                message = "set RED_LINE to " + std::to_string(num);
-            }
-            else {
-                message = "Unknown type";
-            }
-        }
-        else {
-            message = "Not on op list.";
-        }
-        conf.p->cq_send(message, conf);
-        save_file();
-        return;
-    }
+
     if (key.size() == 0) {
         conf.p->cq_send("No avaliable key!", conf);
         return;
@@ -382,7 +418,8 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
 }
 bool gpt3_5::check(std::string message, const msg_meta &conf)
 {
-    return message.find(".ai") == 0;
+    (void)conf;
+    return cmd_match_prefix(message, {".ai"});
 }
 std::string gpt3_5::help() { return "Openai gpt3.5: start with .ai"; }
 

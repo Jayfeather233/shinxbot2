@@ -253,23 +253,23 @@ std::wstring guessmap::normalize(const std::string &text) const
 
 bool guessmap::is_start_cmd(const std::string &message) const
 {
-    return message.rfind("*guess_start", 0) == 0;
+    return cmd_match_prefix(message, {"*guess_start"});
 }
 
 int guessmap::get_start_crop(const std::string &message) const
 {
-    if (message.rfind("*guess_start_hard", 0) == 0) {
+    if (cmd_match_prefix(message, {"*guess_start_hard"})) {
         return kHardCrop;
     }
-    if (message.rfind("*guess_start_ultra", 0) == 0) {
+    if (cmd_match_prefix(message, {"*guess_start_ultra"})) {
         return kUltraCrop;
     }
-    if (message.rfind("*guess_start_imp", 0) == 0) {
+    if (cmd_match_prefix(message, {"*guess_start_imp"})) {
         return get_random(8, 17);
     }
-    if (message.rfind("*guess_start_", 0) == 0) {
-        std::string mode =
-            trim(message.substr(std::string("*guess_start_").size()));
+    std::string body;
+    if (cmd_strip_prefix(message, "*guess_start_", body)) {
+        std::string mode = body;
         size_t split = mode.find_first_of(" \t");
         if (split != std::string::npos) {
             mode = mode.substr(0, split);
@@ -287,11 +287,11 @@ int guessmap::get_start_crop(const std::string &message) const
 
 std::string guessmap::get_guess_arg(const std::string &message) const
 {
-    if (message.rfind("*guess", 0) != 0) {
+    std::string arg;
+    if (!cmd_strip_prefix(message, "*guess", arg)) {
         return "";
     }
-    std::string arg = message.substr(6);
-    return trim(arg);
+    return arg;
 }
 
 bool guessmap::is_cooldown_active(const std::string &id) const
@@ -900,8 +900,18 @@ void guessmap::send_finish_message(const msg_meta &conf,
 bool guessmap::check(std::string message, const msg_meta &conf)
 {
     (void)conf;
-    message = trim(message);
-    return message.rfind("*guess", 0) == 0;
+    return cmd_match_prefix(trim(message), {"*guess"});
+}
+
+bool guessmap::reload(const msg_meta &conf)
+{
+    std::lock_guard<std::mutex> guard(lock_);
+    sync_dirs_from_bot(conf.p);
+    sessions_.clear();
+    cooldown_.clear();
+    recent_map_history_.clear();
+    load_cooldown_config();
+    return load_maps();
 }
 
 void guessmap::process(std::string message, const msg_meta &conf)
@@ -912,7 +922,7 @@ void guessmap::process(std::string message, const msg_meta &conf)
     std::lock_guard<std::mutex> guard(lock_);
     sync_dirs_from_bot(conf.p);
 
-    if (message == "*guess_cd") {
+    auto handle_guess_cd = [&]() {
         const int cd = get_assist_cooldown_guess(id);
         if (cd <= 0) {
             conf.p->cq_send("当前提示冷却: 0（roll/hint 不受猜测次数限制）",
@@ -923,16 +933,16 @@ void guessmap::process(std::string message, const msg_meta &conf)
                                 " 次可使用 1 次 roll/hint（二选一）",
                             conf);
         }
-        return;
-    }
+        return true;
+    };
 
-    if (message.rfind("*guess_cd ", 0) == 0) {
+    auto handle_guess_cd_set = [&]() {
         bool can_set = conf.p->is_op(conf.user_id) ||
                        (conf.message_type == "group" &&
                         is_group_op(conf.p, conf.group_id, conf.user_id));
         if (!can_set) {
             conf.p->cq_send("只有群管理员或OP可以设置冷却", conf);
-            return;
+            return true;
         }
 
         std::string arg =
@@ -940,25 +950,25 @@ void guessmap::process(std::string message, const msg_meta &conf)
         int cd = static_cast<int>(my_string2int64(arg));
         if (cd < 0) {
             conf.p->cq_send("冷却次数不能小于0", conf);
-            return;
+            return true;
         }
         assist_cooldown_guess_by_scope_[id] = cd;
         save_cooldown_config();
         conf.p->cq_send("已设置本会话提示冷却为: " + std::to_string(cd), conf);
-        return;
-    }
+        return true;
+    };
 
-    if (message == "*guess_help" || message == "*guess.help") {
+    auto handle_guess_help = [&]() {
         conf.p->cq_send(guessmap_detail_help(), conf);
-        return;
-    }
+        return true;
+    };
 
-    if (is_start_cmd(message)) {
+    auto handle_guess_start = [&]() {
         load_maps();
         auto it = sessions_.find(id);
         if (it != sessions_.end() && it->second.active) {
             conf.p->cq_send("请先输入*guess_giveup结束目前的题目！", conf);
-            return;
+            return true;
         }
 
         const int crop = get_start_crop(message);
@@ -966,18 +976,18 @@ void guessmap::process(std::string message, const msg_meta &conf)
             conf.p->cq_send("题库未就绪，请检查 " + images_root_dir() + " 与 " +
                                 maps_config_path(),
                             conf);
-            return;
+            return true;
         }
         send_all_hint_images(
             conf, sessions_[id],
             "这个截图是出自哪张图呢？\n输入*guess 你的答案 以回答");
-        return;
-    }
+        return true;
+    };
 
-    if (message == "*guess_roll") {
+    auto handle_guess_roll = [&]() {
         auto it = sessions_.find(id);
         if (it == sessions_.end() || !it->second.active) {
-            return;
+            return true;
         }
 
         const int cd = get_assist_cooldown_guess(id);
@@ -986,25 +996,25 @@ void guessmap::process(std::string message, const msg_meta &conf)
             conf.p->cq_send("[CQ:reply,id=" + std::to_string(conf.message_id) +
                                 "]才刚提示过啦~再猜一猜！",
                             conf);
-            return;
+            return true;
         }
 
         if (!roll_hint(it->second, id, cd <= 0)) {
             conf.p->cq_send("roll次数已达上限或无法继续roll。", conf);
-            return;
+            return true;
         }
         if (cd > 0) {
             it->second.assist_used_count += 1;
         }
         send_all_hint_images(conf, it->second,
                              "已重roll同尺寸新位置，以下是当前全部提示图：");
-        return;
-    }
+        return true;
+    };
 
-    if (message == "*guess_hint") {
+    auto handle_guess_hint = [&]() {
         auto it = sessions_.find(id);
         if (it == sessions_.end() || !it->second.active) {
-            return;
+            return true;
         }
 
         const int cd = get_assist_cooldown_guess(id);
@@ -1013,22 +1023,22 @@ void guessmap::process(std::string message, const msg_meta &conf)
             conf.p->cq_send("[CQ:reply,id=" + std::to_string(conf.message_id) +
                                 "]才刚提示过啦~再猜一猜！",
                             conf);
-            return;
+            return true;
         }
 
         if (!expand_hint(it->second, id, cd <= 0)) {
             conf.p->cq_send("hint次数已达上限或已到边界，无法继续扩大。", conf);
-            return;
+            return true;
         }
         if (cd > 0) {
             it->second.assist_used_count += 1;
         }
         send_all_hint_images(conf, it->second,
                              "已扩大提示范围，以下是当前全部提示图：");
-        return;
-    }
+        return true;
+    };
 
-    if (message == "*guess_check") {
+    auto handle_guess_check = [&]() {
         load_maps();
         size_t img_count = 0;
         std::map<std::string, std::map<std::string, size_t>> grouped_counts;
@@ -1057,17 +1067,17 @@ void guessmap::process(std::string message, const msg_meta &conf)
             }
         }
         conf.p->cq_send(oss.str(), conf);
-        return;
-    }
+        return true;
+    };
 
-    if (message == "*guess_giveup") {
+    auto handle_guess_giveup = [&]() {
         auto it = sessions_.find(id);
         if (it == sessions_.end() || !it->second.active) {
-            return;
+            return true;
         }
         if (is_cooldown_active(id)) {
             conf.p->cq_send("刚开局，先猜一会再放弃吧。", conf);
-            return;
+            return true;
         }
 
         const session_state state = it->second;
@@ -1088,20 +1098,20 @@ void guessmap::process(std::string message, const msg_meta &conf)
         cleanup_generated_images(id);
         cooldown_.erase(id);
         sessions_.erase(id);
-        return;
-    }
+        return true;
+    };
 
-    if (message.rfind("*guess", 0) == 0) {
+    auto handle_guess_answer = [&]() {
         auto it = sessions_.find(id);
         if (it == sessions_.end() || !it->second.active) {
             react_or_reply(conf, "10068", "?");
-            return;
+            return true;
         }
 
         const std::string arg = get_guess_arg(message);
         if (arg.empty()) {
             react_or_reply(conf, "10068", "?");
-            return;
+            return true;
         }
 
         session_state &live_state = it->second;
@@ -1118,7 +1128,7 @@ void guessmap::process(std::string message, const msg_meta &conf)
                 send_all_hint_images(conf, state,
                                      "你的猜测是错误的！你的题目是：");
             }
-            return;
+            return true;
         }
 
         it->second.active = false;
@@ -1142,6 +1152,26 @@ void guessmap::process(std::string message, const msg_meta &conf)
         cleanup_generated_images(id);
         cooldown_.erase(id);
         sessions_.erase(id);
+        return true;
+    };
+
+    const std::vector<cmd_exact_rule> exact_rules = {
+        {"*guess_cd", handle_guess_cd},
+        {"*guess_help", handle_guess_help},
+        {"*guess.help", handle_guess_help},
+        {"*guess_roll", handle_guess_roll},
+        {"*guess_hint", handle_guess_hint},
+        {"*guess_check", handle_guess_check},
+        {"*guess_giveup", handle_guess_giveup},
+    };
+
+    const std::vector<cmd_prefix_rule> prefix_rules = {
+        {"*guess_cd ", handle_guess_cd_set},
+        {"*guess_start", handle_guess_start},
+        {"*guess", handle_guess_answer},
+    };
+
+    if (cmd_dispatch(message, exact_rules, prefix_rules)) {
         return;
     }
 

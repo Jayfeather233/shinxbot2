@@ -2,6 +2,7 @@
 #include "image_utils.h"
 
 #include <fstream>
+#include <sstream>
 
 /*
 // count_token
@@ -277,38 +278,51 @@ void gemini::process(std::string message, const msg_meta &conf)
 {
     uint64_t id = conf.message_type == "group" ? (conf.group_id << 1)
                                                : ((conf.user_id << 1) | 1);
-    message = message.substr(4);
+    message = trim(message.substr(4));
     std::string result;
-    if (message.find("vi") == 0) {
-        message = message.substr(2);
-        if (message.find(".reset") == 0) {
-            history[1][id].clear();
-            cq_send(conf.p, "clear done.", conf);
-            return;
-        }
-        else if (message.find(".help") == 0) {
-            cq_send(conf.p, help_msg, conf);
-            return;
-        }
+
+    bool is_vision = false;
+    std::string body;
+    if (cmd_strip_prefix(message, "vi", body)) {
+        is_vision = true;
+        message = body;
+    }
+
+    std::istringstream iss(message);
+    std::string command;
+    iss >> command;
+
+    const std::vector<cmd_exact_rule> exact_rules = {
+        {".reset",
+         [&]() {
+             history[is_vision ? 1 : 0][id].clear();
+             cq_send(conf.p, "clear done.", conf);
+             return true;
+         }},
+        {".help",
+         [&]() {
+             cq_send(conf.p, help_msg, conf);
+             return true;
+         }},
+    };
+    bool handled = false;
+    (void)cmd_try_dispatch(command, exact_rules, {}, handled);
+    if (handled) {
+        return;
+    }
+
+    if (is_vision) {
         result = generate_image(message, id, conf.user_id);
     }
     else {
-        if (message.find(".reset") == 0) {
-            history[0][id].clear();
-            cq_send(conf.p, "clear done.", conf);
-            return;
-        }
-        else if (message.find(".help") == 0) {
-            cq_send(conf.p, help_msg, conf);
-            return;
-        }
         result = generate_text(message, id, conf.user_id);
     }
     cq_send(conf.p, result, conf);
 }
 bool gemini::check(std::string message, const msg_meta &conf)
 {
-    return message.find(".gem") == 0;
+    (void)conf;
+    return cmd_match_prefix(message, {".gem"});
 }
 std::string gemini::help()
 {

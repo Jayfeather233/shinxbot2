@@ -25,11 +25,13 @@ private:
 public:
     informer();
     ~informer();
-    void process(std::string message, const msg_meta &conf);
-    bool check(std::string message, const msg_meta &conf);
-    std::string help();
+    void process(std::string message, const msg_meta &conf) override;
+    bool check(std::string message, const msg_meta &conf) override;
+    bool reload(const msg_meta &conf) override;
+    std::string help() override;
 
-    void set_callback(std::function<void(std::function<void(bot *p)>)> f);
+    void
+    set_callback(std::function<void(std::function<void(bot *p)>)> f) override;
 };
 
 DECLARE_FACTORY_FUNCTIONS_HEADER

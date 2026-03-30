@@ -56,6 +56,13 @@ void nonogram::reload()
     load();
 }
 
+bool nonogram::reload(const msg_meta &conf)
+{
+    (void)conf;
+    reload();
+    return true;
+}
+
 std::string nonogram::parse_image_url(std::string message)
 {
     size_t img_pos = message.find("[CQ:image");
@@ -424,7 +431,7 @@ void nonogram::process_command(std::string message, const msg_meta &conf)
         conf.p->cq_send("游戏已退出", conf);
         return;
     }
-    if (message.find("*nonogram") == 0) {
+    if (starts_with(message, "*nonogram")) {
         std::string index_str = trim(message.substr(9));
         int index = 0;
         if (index_str.empty()) {
@@ -477,7 +484,7 @@ void nonogram::process_command(std::string message, const msg_meta &conf)
 
 void nonogram::process(std::string message, const msg_meta &conf)
 {
-    if (message.find("*nonogram") == 0) {
+    if (starts_with(message, "*nonogram")) {
         process_command(message, conf);
         return;
     }
@@ -601,7 +608,7 @@ void nonogram::process(std::string message, const msg_meta &conf)
 }
 bool nonogram::check(std::string message, const msg_meta &conf)
 {
-    if (message.find("*nonogram") == 0) {
+    if (cmd_match_prefix(message, {"*nonogram"})) {
         return true;
     }
     if (conf.message_type == "group" &&

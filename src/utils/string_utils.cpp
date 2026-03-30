@@ -28,6 +28,18 @@ std::string trim(const std::string &u)
     return u.substr(fir, las - fir + 1);
 }
 
+bool starts_with(const std::string &s, const std::string &prefix)
+{
+    return s.size() >= prefix.size() &&
+           s.compare(0, prefix.size(), prefix) == 0;
+}
+
+bool starts_with(const std::wstring &s, const std::wstring &prefix)
+{
+    return s.size() >= prefix.size() &&
+           s.compare(0, prefix.size(), prefix) == 0;
+}
+
 std::wstring trim(const std::wstring &u)
 {
     size_t fir = u.find_first_not_of(w_whitespaces);
@@ -107,10 +119,10 @@ std::wstring cq_decode(const std::wstring &input)
     std::wregex rBracket(L"&#93;");
     std::wregex comma(L"&#44;");
 
-    std::wstring result = std::regex_replace(result, lBracket, L"[");
+    std::wstring result = std::regex_replace(input, lBracket, L"[");
     result = std::regex_replace(result, rBracket, L"]");
     result = std::regex_replace(result, comma, L",");
-    result = std::regex_replace(input, amp, L"&");
+    result = std::regex_replace(result, amp, L"&");
 
     return result;
 }

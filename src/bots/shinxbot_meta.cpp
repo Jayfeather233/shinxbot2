@@ -65,6 +65,7 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
                         "bot.on\n"
                         "bot.off\n"
                         "bot.backup\n"
+                        "bot.reload function [name|all]\n"
                         "bot.load [function|event] name\n"
                         "bot.unload [function|event] name\n"
                         "bot.list_alias\n"
@@ -287,59 +288,46 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
         }
     };
 
-    struct ExactRule {
-        std::string cmd;
-        std::function<bool()> handler;
-        std::function<bool()> condition;
+    const std::string cmdline = normalized;
+    const auto require_op = [&]() { return is_op(conf.user_id); };
+    const auto require_group = [&]() { return conf.message_type == "group"; };
+    const auto require_group_at_bot = [&]() {
+        return conf.message_type == "group" && is_start_with_at_me;
     };
 
-    const std::vector<ExactRule> exact_rules = {
-        {"bot.help", handle_bot_help, []() { return true; }},
-        {"bot.op_help", handle_bot_op_help, []() { return true; }},
-        {"bot.off", handle_bot_off, [&]() { return is_op(conf.user_id); }},
-        {"bot.on", handle_bot_on, [&]() { return is_op(conf.user_id); }},
-        {"bot.backup", handle_bot_backup,
-         [&]() { return is_op(conf.user_id); }},
-        {"bot.list_module", handle_bot_list_module,
-         [&]() { return is_op(conf.user_id); }},
-        {"bot.list_alias", handle_bot_list_alias,
-         [&]() { return is_op(conf.user_id); }},
-        {"bot.progress", handle_bot_progress, []() { return true; }},
-        {"bot.blockclear", handle_group_blockclear,
-         [&]() { return conf.message_type == "group" && is_start_with_at_me; }},
+    const std::vector<cmd_exact_rule> exact_rules = {
+        {"bot.help", handle_bot_help, {}},
+        {"bot.op_help", handle_bot_op_help, {}},
+        {"bot.off", handle_bot_off, {require_op}},
+        {"bot.on", handle_bot_on, {require_op}},
+        {"bot.backup", handle_bot_backup, {require_op}},
+        {"bot.list_module", handle_bot_list_module, {require_op}},
+        {"bot.list_alias", handle_bot_list_alias, {require_op}},
+        {"bot.progress", handle_bot_progress, {}},
+        {"bot.blockclear", handle_group_blockclear, {require_group_at_bot}},
     };
 
-    for (const auto &rule : exact_rules) {
-        if (normalized == rule.cmd && rule.condition()) {
-            return rule.handler();
-        }
-    }
-
-    struct PrefixRule {
-        std::string prefix;
-        std::function<bool()> handler;
-        std::function<bool()> condition;
+    const std::vector<cmd_prefix_rule> prefix_rules = {
+        {"bot.load",
+         [&]() { return handle_bot_load(cmdline, conf); },
+         {require_op}},
+        {"bot.reload",
+         [&]() { return handle_bot_reload(cmdline, conf); },
+         {require_op}},
+        {"bot.unload",
+         [&]() { return handle_bot_unload(cmdline, conf); },
+         {require_op}},
+        {"bot.block ", handle_group_block, {require_group_at_bot}},
+        {"bot.unblock ", handle_group_unblock, {require_group_at_bot}},
+        {"bot.white ", handle_group_white, {require_group_at_bot}},
+        {"bot.unwhite ", handle_group_unwhite, {require_group_at_bot}},
     };
 
-    const std::vector<PrefixRule> prefix_rules = {
-        {"bot.load", [&]() { return handle_bot_load(message, conf); },
-         [&]() { return is_op(conf.user_id); }},
-        {"bot.unload", [&]() { return handle_bot_unload(message, conf); },
-         [&]() { return is_op(conf.user_id); }},
-        {"bot.block ", handle_group_block,
-         [&]() { return conf.message_type == "group" && is_start_with_at_me; }},
-        {"bot.unblock ", handle_group_unblock,
-         [&]() { return conf.message_type == "group" && is_start_with_at_me; }},
-        {"bot.white ", handle_group_white,
-         [&]() { return conf.message_type == "group" && is_start_with_at_me; }},
-        {"bot.unwhite ", handle_group_unwhite,
-         [&]() { return conf.message_type == "group" && is_start_with_at_me; }},
-    };
-
-    for (const auto &rule : prefix_rules) {
-        if (message.find(rule.prefix) == 0 && rule.condition()) {
-            return rule.handler();
-        }
+    bool handled = false;
+    const bool route_result =
+        cmd_try_dispatch(cmdline, exact_rules, prefix_rules, handled);
+    if (handled) {
+        return route_result;
     }
 
     return true;

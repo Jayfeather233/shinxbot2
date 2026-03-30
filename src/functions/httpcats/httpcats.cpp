@@ -19,7 +19,8 @@ void httpcats::process(std::string message, const msg_meta &conf)
 }
 bool httpcats::check(std::string message, const msg_meta &conf)
 {
-    return message.find("httpcat") == 0;
+    (void)conf;
+    return cmd_match_prefix(message, {"httpcat"});
 }
 std::string httpcats::help()
 {

@@ -69,7 +69,7 @@ void ocr::process(std::string message, const msg_meta &conf)
 }
 bool ocr::check(std::string message, const msg_meta &conf)
 {
-    return message.find(".ocr") == 0 || message.find(".OCR") == 0 ||
+    return cmd_match_prefix(message, {".ocr", ".OCR"}) ||
            (in_queue.find(conf.user_id) != in_queue.end() &&
             in_queue[conf.user_id] == true);
 }

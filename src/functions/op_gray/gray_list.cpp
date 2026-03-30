@@ -67,8 +67,7 @@ void gray_list::process(std::string message, const msg_meta &conf)
 }
 bool gray_list::check(std::string message, const msg_meta &conf)
 {
-    return (message.find("添加灰名单") == 0 ||
-            message.find("加入灰名单") == 0) &&
+    return cmd_match_prefix(message, {"添加灰名单", "加入灰名单"}) &&
            conf.message_type == "group" &&
            is_group_op(conf.p, conf.group_id, conf.user_id);
 }

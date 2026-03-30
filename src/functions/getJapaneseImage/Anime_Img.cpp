@@ -27,7 +27,8 @@ void AnimeImg::process(std::string message, const msg_meta &conf)
 }
 bool AnimeImg::check(std::string message, const msg_meta &conf)
 {
-    return message == "来点二次元";
+    (void)conf;
+    return cmd_match_exact(message, {"来点二次元"});
 }
 std::string AnimeImg::help() { return "纸片人图片：来点二次元"; }
 

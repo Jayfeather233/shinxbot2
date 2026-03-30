@@ -80,7 +80,8 @@ void hhsh::process(std::string message, const msg_meta &conf)
 }
 bool hhsh::check(std::string message, const msg_meta &conf)
 {
-    return message.find("hhsh ") == 0;
+    (void)conf;
+    return cmd_match_prefix(message, {"hhsh "});
 }
 std::string hhsh::help() { return "首字母缩写识别： hhsh+缩写"; }
 

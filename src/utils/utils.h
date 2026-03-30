@@ -5,12 +5,14 @@
 #include "meta_func/timer.h"
 #include <filesystem>
 #include <fmt/core.h>
+#include <functional>
 #include <jsoncpp/json/json.h>
 #include <locale>
 #include <map>
 #include <random>
 #include <set>
 #include <string>
+#include <vector>
 
 namespace fs = std::filesystem;
 
@@ -153,6 +155,87 @@ std::string trim(const std::string &u);
  * delete white characters at the begin or end of a string
  */
 std::wstring trim(const std::wstring &u);
+
+/**
+ * Check whether a string starts with prefix.
+ */
+bool starts_with(const std::string &s, const std::string &prefix);
+bool starts_with(const std::wstring &s, const std::wstring &prefix);
+
+/**
+ * Check exact command against aliases.
+ */
+bool cmd_match_exact(const std::string &message,
+                     const std::vector<std::string> &commands);
+bool cmd_match_exact(const std::wstring &message,
+                     const std::vector<std::wstring> &commands);
+
+/**
+ * Check whether command starts with one of prefixes.
+ */
+bool cmd_match_prefix(const std::string &message,
+                      const std::vector<std::string> &prefixes);
+bool cmd_match_prefix(const std::wstring &message,
+                      const std::vector<std::wstring> &prefixes);
+
+/**
+ * Extract and trim body after a required prefix.
+ */
+bool cmd_strip_prefix(const std::string &message, const std::string &prefix,
+                      std::string &body_out);
+bool cmd_strip_prefix(const std::wstring &message, const std::wstring &prefix,
+                      std::wstring &body_out);
+
+/**
+ * Parse command body after one of command prefixes.
+ */
+bool cmd_parse_prefixed(const std::string &raw,
+                        const std::vector<std::string> &prefixes,
+                        std::string &cmd_out);
+bool cmd_parse_prefixed(const std::wstring &raw,
+                        const std::vector<std::wstring> &prefixes,
+                        std::wstring &cmd_out);
+
+using cmd_middleware_t = std::function<bool()>;
+
+struct cmd_exact_rule {
+    std::string cmd;
+    std::function<bool()> handler;
+    std::vector<cmd_middleware_t> middlewares;
+};
+
+struct cmd_prefix_rule {
+    std::string prefix;
+    std::function<bool()> handler;
+    std::vector<cmd_middleware_t> middlewares;
+};
+
+bool cmd_run_middlewares(const std::vector<cmd_middleware_t> &middlewares);
+
+// Try dispatch and preserve handler return value.
+// handled_out is set true only when a rule is matched.
+bool cmd_try_dispatch(const std::string &message,
+                      const std::vector<cmd_exact_rule> &exact_rules,
+                      const std::vector<cmd_prefix_rule> &prefix_rules,
+                      bool &handled_out);
+
+/**
+ * Dispatch command by exact and prefix rules.
+ * Returns true when any rule is matched and handled.
+ */
+bool cmd_dispatch(const std::string &message,
+                  const std::vector<cmd_exact_rule> &exact_rules,
+                  const std::vector<cmd_prefix_rule> &prefix_rules);
+
+/**
+ * Extract qq value from a CQ at segment like [CQ:at,qq=12345].
+ */
+userid_t extract_qq_from_at_segment(const std::string &seg);
+
+/**
+ * Resolve display name in group with user-id fallback.
+ */
+std::string display_name_in_group(const msg_meta &conf, userid_t user_id);
 
 /**
  * replace all old char to ne char

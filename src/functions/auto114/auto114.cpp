@@ -67,8 +67,9 @@ std::string auto114::getans(int64_t input)
 
 void auto114::process(std::string message, const msg_meta &conf)
 {
-    if (message.rfind("*homo ", 0) == 0) {
-        message = "homo " + message.substr(6);
+    std::string body;
+    if (cmd_strip_prefix(message, "*homo ", body)) {
+        message = "homo " + body;
     }
 
     Json::Value J;
@@ -91,7 +92,7 @@ void auto114::process(std::string message, const msg_meta &conf)
 bool auto114::check(std::string message, const msg_meta &conf)
 {
     (void)conf;
-    return message.rfind("*homo ", 0) == 0 || message.find("homo ") == 0;
+    return cmd_match_prefix(message, {"*homo ", "homo "});
 }
 std::string auto114::help() { return "恶臭数字论证器：*homo <数字>"; }
 

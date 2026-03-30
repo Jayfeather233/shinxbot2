@@ -7,10 +7,19 @@
 #include <sstream>
 
 namespace {
-bool starts_with(const std::string &s, const std::string &prefix)
+std::string norm_answer_local(const std::string &s)
 {
-    return s.size() >= prefix.size() &&
-           s.compare(0, prefix.size(), prefix) == 0;
+    std::wstring w = string_to_wstring(s);
+    std::wstring out;
+    out.reserve(w.size());
+    for (wchar_t c : w) {
+        wchar_t lc = std::towlower(c);
+        if ((lc >= L'0' && lc <= L'9') || (lc >= L'a' && lc <= L'z') ||
+            (lc >= 0x4E00 && lc <= 0x9FFF)) {
+            out.push_back(lc);
+        }
+    }
+    return wstring_to_string(out);
 }
 
 void append_unique_answer(std::vector<std::string> &dst,
@@ -20,12 +29,12 @@ void append_unique_answer(std::vector<std::string> &dst,
     if (t.empty()) {
         return;
     }
-    const std::string nk = guessletter::norm_answer(t);
+    const std::string nk = norm_answer_local(t);
     if (nk.empty()) {
         return;
     }
     for (const auto &it : dst) {
-        if (guessletter::norm_answer(it) == nk) {
+        if (norm_answer_local(it) == nk) {
             return;
         }
     }
@@ -52,15 +61,6 @@ std::string spaced_mask(const std::string &s)
     return oss.str();
 }
 
-std::string display_name_in_group(const msg_meta &conf, userid_t uid)
-{
-    std::string name = get_username(conf.p, uid, conf.group_id);
-    if (!trim(name).empty()) {
-        return name;
-    }
-    return "用户" + std::to_string(uid);
-}
-
 void react_or_reply(const msg_meta &conf, const std::string &emoji_id,
                     const std::string &fallback_text)
 {
@@ -82,43 +82,30 @@ void react_or_reply(const msg_meta &conf, const std::string &emoji_id,
                         conf);
     }
 }
-std::string norm_answer_local(const std::string &s)
-{
-    std::wstring w = string_to_wstring(s);
-    std::wstring out;
-    out.reserve(w.size());
-    for (wchar_t c : w) {
-        wchar_t lc = std::towlower(c);
-        if ((lc >= L'0' && lc <= L'9') || (lc >= L'a' && lc <= L'z') ||
-            (lc >= 0x4E00 && lc <= 0x9FFF)) {
-            out.push_back(lc);
-        }
-    }
-    return wstring_to_string(out);
-}
-
 std::string guessletter_detail_help()
 {
     return "蔚蓝开字母\n"
            "*kai.help: 查看本帮助\n"
            "*kai create: 创建房间\n"
-           "*kai go: 直接开始自由模式（无需加入）\n" const std::string nk =
-               norm_answer_local(t);
-    "*kai quit: 退出房间\n"
-    "*kai count N: 设置题目数量\n"
-    "*kai range pinyin|english|mixed: 设置题型\n"
-    "*kai scope <name>: 切换到指定合集（如 StrawberryJam）\n" if (
-        norm_answer_local(it) == nk)
-    {
-        "*kai scopes: 查看可用合集\n"
-        "*kai start: 开始游戏\n"
-        "*kai open <letter>: 开字母\n"
-        "*kai guess <row> <answer>: 抢答某一题\n"
-        "*kai score: 查看本局积分榜\n"
-        "*kai status: 查看题板\n"
-        "*kai abort: 终止游戏\n"
-        "*kai reveal <row>: 揭露某一题";
-    }
+           "*kai go: 直接开始自由模式（无需加入）\n"
+           "*kai quit: 退出房间\n"
+           "*kai count N: 设置题目数量\n"
+           "*kai range pinyin|english|mixed: 设置题型\n"
+           "*kai scope <name>: 切换到指定合集（如 StrawberryJam）\n"
+           "*kai scopes: 查看可用合集\n"
+           "*kai start: 开始游戏\n"
+           "*kai open <letter>: 开字母\n"
+           "*kai guess <row> <answer>: 抢答某一题\n"
+           "*kai score: 查看本局积分榜\n"
+           "*kai status: 查看题板\n"
+           "*kai abort: 终止游戏\n"
+           "*kai reveal <row>: 揭露某一题";
+}
+
+bool parse_guessletter_cmd(const std::string &raw, std::string &cmd)
+{
+    return cmd_parse_prefixed(raw, {"*kai", "*ba", "*开字母"}, cmd);
+}
 } // namespace
 
 guessletter::guessletter() { load_bank(); }
@@ -426,14 +413,20 @@ bool guessletter::all_solved(const session &s) const
 bool guessletter::check(std::string message, const msg_meta &conf)
 {
     (void)conf;
-    message = trim(message);
-    return message.rfind("*kai", 0) == 0 || message.rfind("*ba", 0) == 0 ||
-           message.rfind("*开字母", 0) == 0;
+    return cmd_match_prefix(trim(message), {"*kai", "*ba", "*开字母"});
 }
 
 std::string guessletter::help()
 {
     return "蔚蓝开字母：轮流开字母并抢答地图名。帮助：*kai.help";
+}
+
+bool guessletter::reload(const msg_meta &conf)
+{
+    (void)conf;
+    std::lock_guard<std::mutex> guard(lock_);
+    sessions_.clear();
+    return load_bank();
 }
 
 void guessletter::process(std::string message, const msg_meta &conf)
@@ -442,18 +435,8 @@ void guessletter::process(std::string message, const msg_meta &conf)
         return;
     }
 
-    std::string m = trim(message);
     std::string cmd;
-    if (starts_with(m, "*kai")) {
-        cmd = trim(m.substr(4));
-    }
-    else if (starts_with(m, "*ba")) {
-        cmd = trim(m.substr(3));
-    }
-    else if (starts_with(m, "*开字母")) {
-        cmd = trim(m.substr(std::string("*开字母").size()));
-    }
-    else {
+    if (!parse_guessletter_cmd(message, cmd)) {
         return;
     }
 

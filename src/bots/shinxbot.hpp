@@ -119,6 +119,7 @@ private:
     // ===== OP command handlers =====
     bool handle_bot_load(const std::string &message, const msg_meta &conf);
     bool handle_bot_unload(const std::string &message, const msg_meta &conf);
+    bool handle_bot_reload(const std::string &message, const msg_meta &conf);
     bool meta_func(std::string message, const msg_meta &conf);
 
     // ===== Networking/log bootstrap =====
