@@ -98,7 +98,8 @@ void r_color::process(std::string message, const msg_meta &conf)
 }
 bool r_color::check(std::string message, const msg_meta &conf)
 {
-    return string_to_wstring(message).find(L"来点色图") == 0;
+    (void)conf;
+    return starts_with(string_to_wstring(message), std::wstring(L"来点色图"));
 }
 std::string r_color::help() { return "来点色图：来点色图+#color_hex_code"; }
 

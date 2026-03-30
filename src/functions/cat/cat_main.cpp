@@ -43,10 +43,11 @@ Json::Value catmain::get_text() { return cat_text; }
 
 void catmain::process(std::string message, const msg_meta &conf)
 {
-    if (message.rfind("*cat", 0) != 0) {
+    std::string body;
+    if (!cmd_strip_prefix(message, "*cat", body)) {
         return;
     }
-    message = "&#91;cat&#93;" + message.substr(4);
+    message = "&#91;cat&#93;" + body;
 
     if (message == "&#91;cat&#93;.help") {
         conf.p->cq_send("An interactive cat!\n"
@@ -109,7 +110,7 @@ void catmain::process(std::string message, const msg_meta &conf)
 bool catmain::check(std::string message, const msg_meta &conf)
 {
     (void)conf;
-    return message.rfind("*cat", 0) == 0;
+    return cmd_match_prefix(message, {"*cat"});
 }
 std::string catmain::help() { return "online cat. *cat.help"; }
 

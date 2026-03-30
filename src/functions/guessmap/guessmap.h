@@ -124,6 +124,7 @@ public:
 
     void process(std::string message, const msg_meta &conf) override;
     bool check(std::string message, const msg_meta &conf) override;
+    bool reload(const msg_meta &conf) override;
     std::string help() override;
 };
 

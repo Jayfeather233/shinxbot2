@@ -11,6 +11,12 @@ private:
     std::map<T2, std::vector<T1>> mp2;
 
 public:
+    void clear()
+    {
+        mp1.clear();
+        mp2.clear();
+    }
+
     void insert(const T1 &a, const T2 &b)
     {
         mp1[a].push_back(b);
@@ -98,7 +104,8 @@ private:
     std::map<userid_t, std::tuple<bool, groupid_t, std::wstring>> is_adding;
     std::map<userid_t, std::tuple<bool, groupid_t, std::wstring>> is_deling;
 
-    bool process_command(std::string message, const msg_meta &conf);
+    void load_config();
+    bool process_command(const std::string &message, const msg_meta &conf);
     void add_images(const std::wstring &message, const std::string &name,
                     const groupid_t &groupid, const msg_meta &conf);
 
@@ -113,10 +120,11 @@ public:
     img();
     void save();
 
-    void process(std::string message, const msg_meta &conf);
-    bool check(std::string message, const msg_meta &conf);
-    std::string help();
-    void set_backup_files(archivist *p, const std::string &name);
+    void process(std::string message, const msg_meta &conf) override;
+    bool check(std::string message, const msg_meta &conf) override;
+    bool reload(const msg_meta &conf) override;
+    std::string help() override;
+    void set_backup_files(archivist *p, const std::string &name) override;
 };
 
 DECLARE_FACTORY_FUNCTIONS_HEADER

@@ -18,6 +18,7 @@ public:
     auto_approve();
     void process(std::string message, const msg_meta &conf);
     bool check(std::string message, const msg_meta &conf);
+    bool reload(const msg_meta &conf) override;
     std::string help();
     std::string help(const msg_meta &conf, help_level_t level);
 };

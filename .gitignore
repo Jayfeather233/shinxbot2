@@ -11,3 +11,6 @@ compile_commands.json
 dev_tools/inspector
 backup/
 shinxbot
+tests/function_bench/generated/
+tests/function_bench/*_check_bench.cpp
+tests/function_bench/*.bench.out

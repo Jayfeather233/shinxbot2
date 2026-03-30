@@ -80,8 +80,9 @@ void read_server_message(int new_socket)
         int valread;
         while (1) {
             valread = read(new_socket, buffer, 4000);
-            if (valread < 0) {
+            if (valread <= 0) {
                 std::cerr << "Error read message.\n";
+                break;
             }
             buffer[valread] = 0;
             s_buffer += buffer;

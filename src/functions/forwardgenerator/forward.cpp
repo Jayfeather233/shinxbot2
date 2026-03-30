@@ -120,8 +120,9 @@ bool forward_msg_gen::is_support_messageArr() { return false; }
 
 bool forward_msg_gen::check(std::string message, const msg_meta &conf)
 {
-    return string_to_wstring(message).find(L"转发 ") == 0 ||
-           string_to_wstring(message).find(L"转发\n") == 0;
+    (void)conf;
+    const std::wstring w = string_to_wstring(message);
+    return starts_with(w, L"转发 ") || starts_with(w, L"转发\n");
 }
 
 std::string forward_msg_gen::help()

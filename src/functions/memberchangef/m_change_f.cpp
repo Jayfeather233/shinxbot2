@@ -186,10 +186,10 @@ void m_change_f::flush_welcome_queue(bot *p)
 bool m_change_f::check(std::string message, const msg_meta &conf)
 {
     return conf.group_id != 0 &&
-           (message == "welcome.help" || message.find("设置入群消息") == 0 ||
+           (cmd_match_exact(message, {"welcome.help"}) ||
+            cmd_match_prefix(message, {"设置入群消息", "删除入群消息"}) ||
             (conf.message_type == "internal" &&
-             conf.message_id == internal_message::kMemberChangeWelcome) ||
-            message.find("删除入群消息") == 0);
+             conf.message_id == internal_message::kMemberChangeWelcome));
 }
 std::string m_change_f::help() { return ""; }
 

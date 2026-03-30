@@ -44,6 +44,14 @@ public:
     {
     }
     virtual void set_backup_files(archivist *p, const std::string &name) {}
+
+    // Optional hot-reload hook for stateful modules.
+    // Stateless modules can keep the default no-op implementation.
+    virtual bool reload(const msg_meta &conf)
+    {
+        (void)conf;
+        return false;
+    }
 };
 
 #ifdef DECLARE_FACTORY_FUNCTIONS

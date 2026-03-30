@@ -61,12 +61,9 @@ std::pair<bool, std::string> informer::isValidTime(const std::string &timeInput)
         }
     };
 
-    // Validate each part
-    if (numParts >= 1) {
-        // Validate hours (hh)
-        if (!isValidComponent(parts[0], 0, 23)) {
-            return std::make_pair(false, "");
-        }
+    // Validate hours (hh)
+    if (!isValidComponent(parts[0], 0, 23)) {
+        return std::make_pair(false, "");
     }
 
     if (numParts >= 2) {
@@ -156,15 +153,15 @@ std::string informer::inform_list(const msg_meta &conf)
 
 void informer::process(std::string message, const msg_meta &conf)
 {
-    message = message.substr(7);
-    if (message.find("add") == 0) {
+    std::string body = message.size() > 7 ? trim(message.substr(7)) : "";
+    const auto add_handler = [&](const std::string &args) {
         std::string inputtime, inputmsg;
-        std::istringstream iss(message.substr(3));
+        std::istringstream iss(args);
         iss >> inputtime >> inputmsg;
 
         if (inputmsg.find("multimedia.nt.qq.com.cn") != inputmsg.npos) {
             conf.p->cq_send("请用旧版qq发送图片", conf);
-            return;
+            return true;
         }
         // TODO: download image and change inputmsg to local image path
 
@@ -181,20 +178,41 @@ void informer::process(std::string message, const msg_meta &conf)
         else {
             conf.p->cq_send("Invalid time pattern.", conf);
         }
-    }
-    else if (message.find("del") == 0) {
-        size_t id = my_string2uint64(message.substr(3));
+        return true;
+    };
+
+    const auto del_handler = [&](const std::string &args) {
+        size_t id = my_string2uint64(args);
         uint64_t k = conf.message_type == "private"
                          ? (conf.user_id << 1)
                          : ((conf.group_id << 1) + 1);
         this->inform_tuplelist[k].erase(this->inform_tuplelist[k].begin() + id);
         conf.p->cq_send("Deleted id: " + std::to_string(id), conf);
         save();
+        return true;
+    };
+
+    std::string args;
+    if (cmd_strip_prefix(body, "add", args)) {
+        (void)add_handler(args);
+        return;
     }
-    else if (message.find("list") == 0) {
-        conf.p->cq_send(this->inform_list(conf), conf);
+    if (cmd_strip_prefix(body, "del", args)) {
+        (void)del_handler(args);
+        return;
     }
-    else {
+
+    const std::vector<cmd_exact_rule> exact_rules = {
+        {"list",
+         [&]() {
+             conf.p->cq_send(this->inform_list(conf), conf);
+             return true;
+         }},
+    };
+
+    bool handled = false;
+    (void)cmd_try_dispatch(body, exact_rules, {}, handled);
+    if (!handled) {
         conf.p->cq_send(inform_help, conf);
     }
 }
@@ -221,6 +239,7 @@ informer::~informer() { save(); }
 
 void informer::read()
 {
+    inform_tuplelist.clear();
     Json::Value res = string_to_json(readfile(
         bot_config_path(nullptr, "features/informer/informer.json"), "[]"));
     for (auto u : res) {
@@ -229,9 +248,17 @@ void informer::read()
     }
 }
 
+bool informer::reload(const msg_meta &conf)
+{
+    (void)conf;
+    read();
+    return true;
+}
+
 bool informer::check(std::string message, const msg_meta &conf)
 {
-    return message.find("inform.") == 0;
+    (void)conf;
+    return cmd_match_prefix(message, {"inform."});
 }
 std::string informer::help() { return "定时提醒。详情 inform.help"; }
 

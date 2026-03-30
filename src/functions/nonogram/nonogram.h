@@ -98,6 +98,7 @@ public:
     nonogram();
     void process(std::string message, const msg_meta &conf);
     bool check(std::string message, const msg_meta &conf);
+    bool reload(const msg_meta &conf) override;
     std::string help();
 };
 

@@ -28,9 +28,9 @@ public:
     void save_file();
     void save_history(int64_t id);
     std::string do_black(std::string u);
-    void process(std::string message, const msg_meta &conf);
-    bool check(std::string message, const msg_meta &conf);
-    std::string help();
+    void process(std::string message, const msg_meta &conf) override;
+    bool check(std::string message, const msg_meta &conf) override;
+    std::string help() override;
 };
 
 DECLARE_FACTORY_FUNCTIONS_HEADER

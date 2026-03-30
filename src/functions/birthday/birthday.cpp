@@ -21,8 +21,13 @@ static std::string birthday_admin_detail_help()
            "date.inf.list";
 }
 
-birthday::birthday()
+birthday::birthday() { load_config(); }
+
+void birthday::load_config()
 {
+    birthdays.clear();
+    inform_interval.clear();
+
     Json::Value Ja = string_to_json(readfile(
         bot_config_path(nullptr, "features/birthday/birthday.json"), "{}"));
     for (const std::string &uid : Ja.getMemberNames()) {
@@ -69,130 +74,163 @@ void birthday::process(std::string message, const msg_meta &conf)
     std::istringstream iss(trim(message));
     std::string command;
     iss >> command;
+
     const bool can_manage = conf.p->is_op(conf.user_id) ||
                             is_group_op(conf.p, conf.group_id, conf.user_id);
+    std::string args;
+    getline(iss, args);
+    args = trim(args);
 
-    if (command == "date.help") {
-        conf.p->cq_send(can_manage ? birthday_admin_detail_help()
-                                   : birthday_public_detail_help(),
-                        conf);
-        return;
-    }
+    const std::vector<cmd_exact_rule> exact_rules = {
+        {"date.help",
+         [&]() {
+             conf.p->cq_send(can_manage ? birthday_admin_detail_help()
+                                        : birthday_public_detail_help(),
+                             conf);
+             return true;
+         }},
+        {"date.add",
+         [&]() {
+             std::string who, date;
+             std::istringstream arg_iss(args);
+             std::ostringstream oss_output;
+             while (arg_iss >> date) {
+                 getline(arg_iss, who);
+                 who = trim(who);
+                 if (date.size() == 4 && !who.empty()) {
+                     mmdd u;
+                     try {
+                         u = (mmdd){who, std::stoi(date.substr(0, 2)),
+                                    std::stoi(date.substr(2, 2))};
+                     }
+                     catch (...) {
+                         oss_output << fmt::format("{} 日期不是数字\n", date);
+                         continue;
+                     }
+                     if (check_valid_date(u)) {
+                         birthdays[conf.group_id].push_back(u);
 
-    if (command == "date.add") {
-        std::string who, date;
-        std::ostringstream oss_output;
-        while (iss >> date) {
-            getline(iss, who);
-            who = trim(who);
-            if (date.size() == 4 && !who.empty()) {
-                mmdd u;
-                try {
-                    u = (mmdd){who, std::stoi(date.substr(0, 2)),
-                               std::stoi(date.substr(2, 2))};
-                }
-                catch (...) {
-                    oss_output << fmt::format("{} 日期不是数字\n", date);
-                    continue;
-                }
-                if (check_valid_date(u)) {
-                    birthdays[conf.group_id].push_back(u);
+                         std::sort(birthdays[conf.group_id].begin(),
+                                   birthdays[conf.group_id].end(),
+                                   [](const mmdd &a, const mmdd &b) {
+                                       return (a.mm < b.mm) ||
+                                              (a.mm == b.mm && a.dd < b.dd);
+                                   });
+                         oss_output
+                             << fmt::format("加入 {} 的日期 {}\n", who, date);
+                         save();
+                     }
+                     else {
+                         oss_output
+                             << fmt::format("{} 不是一个有效日期！\n", date);
+                     }
+                 }
+                 else if (!who.empty()) {
+                     oss_output
+                         << fmt::format("{} 请使用 MMDD 日期格式\n", date);
+                 }
+                 else {
+                     oss_output << fmt::format("{} 请输入事件描述\n", date);
+                 }
+             }
+             conf.p->cq_send(trim(oss_output.str()), conf);
+             return true;
+         }},
+        {"date.del",
+         [&]() {
+             if (!can_manage) {
+                 conf.p->cq_send("只有管理员可以哦", conf);
+                 return true;
+             }
+             std::string who = args;
+             auto &bdays = birthdays[conf.group_id];
+             auto it = std::remove_if(
+                 bdays.begin(), bdays.end(),
+                 [&who](const mmdd &m) { return m.name == who; });
+             if (it != bdays.end()) {
+                 bdays.erase(it, bdays.end());
+                 conf.p->cq_send(fmt::format("删除了 {} 的日期", who), conf);
+                 save();
+             }
+             else {
+                 conf.p->cq_send(fmt::format("找不到 {} 的日期", who), conf);
+             }
+             return true;
+         }},
+        {"date.list",
+         [&]() {
+             std::string list;
+             for (const auto &b : birthdays[conf.group_id]) {
+                 list += fmt::format("{}: {:02d}{:02d}\n", b.name, b.mm, b.dd);
+             }
+             if (list.empty()) {
+                 list = "空空的";
+             }
+             conf.p->cq_send(list, conf);
+             return true;
+         }},
+        {"date.send",
+         [&]() {
+             auto nowtime = std::chrono::system_clock::now();
+             std::time_t currentTime =
+                 std::chrono::system_clock::to_time_t(nowtime);
+             std::tm localTime = *std::localtime(&currentTime);
+             send_upcoming_msg(localTime, conf.p, conf.group_id);
+             return true;
+         }},
+        {"date.inf.add",
+         [&]() {
+             if (!can_manage) {
+                 conf.p->cq_send("只有管理员可以哦", conf);
+                 return true;
+             }
+             int tt = my_string2int64(args);
+             inform_interval.insert(tt);
+             conf.p->cq_send(fmt::format("提示时长加入 {} 天", tt), conf);
+             save();
+             return true;
+         }},
+        {"date.inf.del",
+         [&]() {
+             if (!can_manage) {
+                 conf.p->cq_send("只有管理员可以哦", conf);
+                 return true;
+             }
+             int tt = my_string2int64(args);
+             inform_interval.erase(tt);
+             conf.p->cq_send(fmt::format("提示时长删除 {} 天", tt), conf);
+             save();
+             return true;
+         }},
+        {"date.inf.list",
+         [&]() {
+             conf.p->cq_send(fmt::format("提示时长为 {} 天",
+                                         fmt::join(inform_interval, ", ")),
+                             conf);
+             return true;
+         }},
+    };
 
-                    std::sort(birthdays[conf.group_id].begin(),
-                              birthdays[conf.group_id].end(),
-                              [](const mmdd &a, const mmdd &b) {
-                                  return (a.mm < b.mm) ||
-                                         (a.mm == b.mm && a.dd < b.dd);
-                              });
-                    oss_output << fmt::format("加入 {} 的日期 {}\n", who, date);
-                    save();
-                }
-                else {
-                    oss_output << fmt::format("{} 不是一个有效日期！\n", date);
-                }
-            }
-            else if (!who.empty()) {
-                oss_output << fmt::format("{} 请使用 MMDD 日期格式\n", date);
-            }
-            else {
-                oss_output << fmt::format("{} 请输入事件描述\n", date);
-            }
-        }
-        conf.p->cq_send(trim(oss_output.str()), conf);
-        return;
-    }
-    else if (command == "date.del") {
-        if (!can_manage) {
-            conf.p->cq_send("只有管理员可以哦", conf);
-            return;
-        }
-        std::string who;
-        getline(iss, who);
-        who = trim(who);
-        auto &bdays = birthdays[conf.group_id];
-        auto it =
-            std::remove_if(bdays.begin(), bdays.end(),
-                           [&who](const mmdd &m) { return m.name == who; });
-        if (it != bdays.end()) {
-            bdays.erase(it, bdays.end());
-            conf.p->cq_send(fmt::format("删除了 {} 的日期", who), conf);
-            save();
-        }
-        else {
-            conf.p->cq_send(fmt::format("找不到 {} 的日期", who), conf);
-        }
-    }
-    else if (command == "date.list") {
-        std::string list;
-        for (const auto &b : birthdays[conf.group_id]) {
-            list += fmt::format("{}: {:02d}{:02d}\n", b.name, b.mm, b.dd);
-        }
-        if (list.empty()) {
-            list = "空空的";
-        }
-        conf.p->cq_send(list, conf);
-    }
-    else if (command == "date.send") {
-        auto nowtime = std::chrono::system_clock::now();
-        std::time_t currentTime = std::chrono::system_clock::to_time_t(nowtime);
-        std::tm localTime = *std::localtime(&currentTime);
-        send_upcoming_msg(localTime, conf.p, conf.group_id);
-    }
-    else if (command == "date.inf.add") {
-        if (!can_manage) {
-            conf.p->cq_send("只有管理员可以哦", conf);
-            return;
-        }
-        int tt;
-        iss >> tt;
-        inform_interval.insert(tt);
-        conf.p->cq_send(fmt::format("提示时长加入 {} 天", tt), conf);
-        save();
-    }
-    else if (command == "date.inf.del") {
-        if (!can_manage) {
-            conf.p->cq_send("只有管理员可以哦", conf);
-            return;
-        }
-        int tt;
-        iss >> tt;
-        inform_interval.erase(tt);
-        conf.p->cq_send(fmt::format("提示时长删除 {} 天", tt), conf);
-        save();
-    }
-    else if (command == "date.inf.list") {
-        conf.p->cq_send(
-            fmt::format("提示时长为 {} 天", fmt::join(inform_interval, ", ")),
-            conf);
-    }
-    else {
+    bool handled = false;
+    (void)cmd_try_dispatch(command, exact_rules, {}, handled);
+    if (!handled) {
         conf.p->cq_send("未知命令，请使用 date.help 查看帮助", conf);
     }
 }
 bool birthday::check(std::string message, const msg_meta &conf)
 {
-    return (message.find("date.") == 0 && conf.message_type == "group");
+    return (cmd_match_prefix(message, {"date."}) &&
+            conf.message_type == "group");
 }
+
+bool birthday::reload(const msg_meta &conf)
+{
+    (void)conf;
+    std::lock_guard<std::mutex> lock(mutex_);
+    load_config();
+    return true;
+}
+
 std::string birthday::help()
 {
     return "日期提醒：记录群事件并定期提醒。帮助：date.help";
