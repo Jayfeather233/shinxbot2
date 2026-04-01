@@ -179,88 +179,6 @@ void gpt3_5::save_history(int64_t id)
 
 void gpt3_5::process(std::string message, const msg_meta &conf)
 {
-<<<<<<< HEAD
-    // Handle recall: if user replies with "你说的话我不喜欢", the bot recalls the replied-to message if it was sent by the bot.
-    if (message.find("你说的话我不喜欢") != std::string::npos &&
-        message.find("[CQ:reply,id=") != std::string::npos) {
-        size_t pos = message.find("[CQ:reply,id=");
-        size_t end_pos = message.find("]", pos);
-        if (pos != std::string::npos && end_pos != std::string::npos) {
-            std::string reply_id_str =
-                message.substr(pos + 13, end_pos - (pos + 13));
-            int64_t reply_id = my_string2int64(reply_id_str);
-
-            Json::Value J;
-            J["message_id"] = reply_id;
-            std::string res = conf.p->cq_send("get_msg", J);
-            Json::Value res_json = string_to_json(res);
-
-            if (res_json.isMember("data") &&
-                res_json["data"].isMember("sender") &&
-                res_json["data"]["sender"]["user_id"].asUInt64() ==
-                    conf.p->get_botqq()) {
-                Json::Value del_J;
-                del_J["message_id"] = reply_id;
-                conf.p->cq_send("delete_msg", del_J);
-                conf.p->setlog(LOG::INFO,
-                               fmt::format("gpt3_5: Recalled message {} as "
-                                           "requested by user {}",
-                                           reply_id, conf.user_id));
-                return;
-            }
-        }
-    }
-
-    // Handle .ai command: extract the content after .ai
-    size_t ai_pos = message.find(".ai");
-    if (ai_pos == std::string::npos) {
-        return;
-    }
-
-    std::string command = trim(message.substr(ai_pos + 3));
-
-    // Handle forwarded message reading: if command starts with .fw, read the replied-to forwarded message content.
-    if (command.find(".fw") == 0) {
-        size_t reply_pos = message.find("[CQ:reply,id=");
-        if (reply_pos != std::string::npos) {
-            size_t end_pos = message.find("]", reply_pos);
-            std::string reply_id_str =
-                message.substr(reply_pos + 13, end_pos - (reply_pos + 13));
-            int64_t reply_id = my_string2int64(reply_id_str);
-
-            Json::Value J;
-            J["message_id"] = reply_id;
-            std::string res = conf.p->cq_send("get_forward_msg", J);
-            Json::Value res_json = string_to_json(res);
-
-            if (res_json["retcode"].asInt() == 0) {
-                std::string forward_content = "";
-                for (const auto &node : res_json["data"]["messages"]) {
-                    forward_content +=
-                        "[" + node["sender"]["nickname"].asString() + "]: " +
-                        messageArr_to_string(node["message"]) + "\n";
-                }
-                command = trim(command.substr(3)) +
-                          "\n以下是聊天记录：\n" + forward_content;
-            }
-            else {
-                conf.p->cq_send("获取转发消息失败", conf);
-                return;
-            }
-        }
-        else {
-            conf.p->cq_send("请回复一个合并转发消息并使用 .ai .fw [你的要求]",
-                            conf);
-            return;
-        }
-    }
-
-    message = do_black(trim(command));
-    if (message.find(".test") == 0) {
-        conf.p->cq_send(message, conf);
-        return;
-    }
-=======
     message = do_black(trim(message.substr(3)));
     std::istringstream iss(message);
     std::string command;
@@ -269,7 +187,6 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     getline(iss, args);
     args = trim(args);
 
->>>>>>> 940e730c8833c0a4b2562e8db11f14350afb6c8b
     int64_t id = conf.message_type == "group" ? (conf.group_id << 1)
                                               : ((conf.user_id << 1) | 1);
 
@@ -501,27 +418,8 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
 }
 bool gpt3_5::check(std::string message, const msg_meta &conf)
 {
-<<<<<<< HEAD
-    size_t pos = message.find(".ai");
-    if (pos != std::string::npos) {
-        if (pos == 0 || message[pos - 1] == ' ' || message[pos - 1] == ']')
-            return true;
-    }
-    if (message.find("你说的话我不喜欢") != std::string::npos &&
-        message.find("[CQ:reply,id=") != std::string::npos)
-        return true;
-    return false;
-}
-std::string gpt3_5::help()
-{
-    return "Openai gpt3.5: start with .ai\n"
-           "Reading forwarded messages: Reply to a merged record with .ai .fw "
-           "[requirement]\n"
-           "Recall: Reply to AI message with '你说的话我不喜欢' to recall it.";
-=======
     (void)conf;
     return cmd_match_prefix(message, {".ai"});
->>>>>>> 940e730c8833c0a4b2562e8db11f14350afb6c8b
 }
 
 DECLARE_FACTORY_FUNCTIONS(gpt3_5)
