@@ -8,16 +8,19 @@ Json::Value catmain::cat_text;
 
 catmain::catmain()
 {
-    std::string ans = readfile("./data/cat.json");
+    const std::string cat_text_path =
+        bot_resource_path(nullptr, "cat/cat_text.json");
+    std::string ans = readfile(cat_text_path);
     if (ans != "") {
         Json::Value J = string_to_json(ans);
         cat_text = J;
     }
     else {
-        set_global_log(LOG::ERROR, "Missing file: ./data/cat.json");
+        set_global_log(LOG::ERROR, "Missing file: " + cat_text_path);
     }
 
-    ans = readfile("./config/cats/user_list.json", "[]");
+    ans =
+        readfile(bot_config_path(nullptr, "features/cat/user_list.json"), "[]");
     Json::Value user_list = string_to_json(ans);
     auto sz = user_list.size();
     for (Json::ArrayIndex i = 0; i < sz; ++i) {
@@ -32,17 +35,24 @@ void catmain::save_map()
     for (auto it : cat_map) {
         J.append(it.first);
     }
-    writefile("./config/cats/user_list.json", J.toStyledString());
+    writefile(bot_config_path(nullptr, "features/cat/user_list.json"),
+              J.toStyledString());
 }
 
 Json::Value catmain::get_text() { return cat_text; }
 
 void catmain::process(std::string message, const msg_meta &conf)
 {
+    std::string body;
+    if (!cmd_strip_prefix(message, "*cat", body)) {
+        return;
+    }
+    message = "&#91;cat&#93;" + body;
+
     if (message == "&#91;cat&#93;.help") {
         conf.p->cq_send("An interactive cat!\n"
                         "First use adopt to have one.\n"
-                        "Then you can play, feed and so on!(start with[cat])",
+                        "Then you can play, feed and so on!(start with *cat)",
                         conf);
         return;
     }
@@ -88,7 +98,7 @@ void catmain::process(std::string message, const msg_meta &conf)
         auto it = cat_map.find(conf.user_id);
         if (it == cat_map.end()) {
             conf.p->cq_send("You don't have one!\n"
-                            "Use [cat].adopt name to get a cute cat!",
+                            "Use *cat.adopt name to get a cute cat!",
                             conf);
             return;
         }
@@ -99,8 +109,9 @@ void catmain::process(std::string message, const msg_meta &conf)
 }
 bool catmain::check(std::string message, const msg_meta &conf)
 {
-    return message.find("&#91;cat&#93;") == 0;
+    (void)conf;
+    return cmd_match_prefix(message, {"*cat"});
 }
-std::string catmain::help() { return "online cat. &#91;cat&#93;.help"; }
+std::string catmain::help() { return "online cat. *cat.help"; }
 
 DECLARE_FACTORY_FUNCTIONS(catmain)

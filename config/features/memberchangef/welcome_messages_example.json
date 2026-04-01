@@ -1,3 +1,4 @@
 {
+    "groupid": "welcome message",
     "default": "欢迎{{username}}的加入！"
 }

@@ -1,14 +1,13 @@
 #!/bin/bash
+set -euo pipefail
 
-directories=("./build" "./resource/download" "./resource/generate" "./resource/r_color")  # Add your directories here
+directories=("./build" "./resource/download" "./resource/generate" "./resource/r_color")
 
-for directory in "${directories[@]}"
-do
+for directory in "${directories[@]}"; do
     if [ ! -d "$directory" ]; then
-        mkdir "$directory"
+        mkdir -p "$directory"
     fi
 done
 
-cd ./build
-cmake -DCMAKE_BUILD_TYPE=Release .. -DMODE="$1"
-make -j$(( $(nproc) > 1 ? $(nproc) - 1 : 1 ))
+cmake -S . -B ./build -DCMAKE_BUILD_TYPE=Release -DMODE="${1:-}"
+cmake --build ./build -j"$(( $(nproc) > 1 ? $(nproc) - 1 : 1 ))"

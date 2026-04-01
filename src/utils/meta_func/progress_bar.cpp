@@ -51,7 +51,7 @@ void progressBar::addBar(BarInfo *u)
     tail.f = u;
 }
 
-std::string progressBar::desc()
+std::string progressBar::desc() const
 {
     std::lock_guard<std::mutex> lock(m);
     std::ostringstream oss;

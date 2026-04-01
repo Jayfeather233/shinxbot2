@@ -20,9 +20,9 @@ public:
     std::string generate_text(std::string message, uint64_t id, uint64_t user_id);
     std::string generate_image(std::string message, uint64_t id, uint64_t user_id);
     size_t get_tokens(const Json::Value &history);
-    void process(std::string message, const msg_meta &conf);
-    bool check(std::string message, const msg_meta &conf);
-    std::string help();
+    void process(std::string message, const msg_meta &conf) override;
+    bool check(std::string message, const msg_meta &conf) override;
+    std::string help() override;
 };
 
 DECLARE_FACTORY_FUNCTIONS_HEADER

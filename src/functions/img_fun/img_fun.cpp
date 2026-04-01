@@ -14,60 +14,126 @@ void img_fun::process(std::string message, const msg_meta &conf)
 {
     BarInfo p(0, "图片处理初始化");
     conf.p->registerBar(&p);
-    if (message == "img_fun.help") {
+    if (cmd_match_exact(message, {"img_fun.help"})) {
         conf.p->cq_send(imgfun_help_msg, conf);
         return;
     }
     // TODO: mirror [axis]
     //      Kaleido_scope WanHuaTong
     //      rotate
-    std::wstring wmessage = string_to_wstring(message);
+    std::wstring wmessage = trim(string_to_wstring(message));
     std::string fileurl;
     std::string filename;
-    img_fun_type proc_type;
+    img_fun_type proc_type = (img_fun_type){img_fun_type::MIRROR, 1, 0};
     std::map<userid_t, img_fun_type>::iterator it = is_input.end();
-    if (wmessage.find(L"对称") == 0) {
-        char axis = 1;
-        char order = 0;
-        wmessage = trim(wmessage.substr(2));
-        if (wmessage.find(L"axis=") == 0) {
-            wmessage = trim(wmessage.substr(5));
-            axis = wmessage[0] == L'1';
-            wmessage = trim(wmessage.substr(1));
+
+    auto parse_axis_or_order = [](const std::wstring &token,
+                                  const std::wstring &key,
+                                  int &target) -> bool {
+        std::wstring body;
+        if (!cmd_strip_prefix(token, key, body) || body.empty()) {
+            return false;
         }
-        if (wmessage.find(L"order=") == 0) {
-            wmessage = trim(wmessage.substr(6));
-            order = wmessage[0] == L'1';
-            wmessage = trim(wmessage.substr(1));
+        target = (body[0] == L'1') ? 1 : 0;
+        return true;
+    };
+
+    auto parse_command = [&](const std::wstring &input, img_fun_type &out,
+                             std::wstring &payload_out) -> bool {
+        struct rule {
+            std::wstring cmd;
+            std::function<bool(const std::wstring &, img_fun_type &,
+                               std::wstring &)>
+                handler;
+        };
+
+        const std::vector<rule> rules = {
+            {L"对称",
+             [&](const std::wstring &args, img_fun_type &proc,
+                 std::wstring &payload) {
+                 int axis = 1;
+                 int order = 0;
+                 std::wistringstream iss(args);
+                 std::wstring token;
+                 while (iss >> token) {
+                     if (parse_axis_or_order(token, L"axis=", axis) ||
+                         parse_axis_or_order(token, L"order=", order)) {
+                         continue;
+                     }
+                     if (!payload.empty()) {
+                         payload += L" ";
+                     }
+                     payload += token;
+                 }
+                 proc = (img_fun_type){img_fun_type::MIRROR, axis, order};
+                 return true;
+             }},
+            {L"旋转",
+             [&](const std::wstring &args, img_fun_type &proc,
+                 std::wstring &payload) {
+                 int fps = 24;
+                 int order = 0;
+                 std::wistringstream iss(args);
+                 std::wstring token;
+                 while (iss >> token) {
+                     std::wstring body;
+                     if (cmd_strip_prefix(token, L"fps=", body) &&
+                         !body.empty()) {
+                         fps = std::max(
+                             0, std::min(50, (int)my_string2int64(body)));
+                         continue;
+                     }
+                     if (parse_axis_or_order(token, L"order=", order)) {
+                         continue;
+                     }
+                     if (!payload.empty()) {
+                         payload += L" ";
+                     }
+                     payload += token;
+                 }
+                 proc = (img_fun_type){img_fun_type::ROTATE, fps, order};
+                 return true;
+             }},
+            {L"万花筒",
+             [&](const std::wstring &args, img_fun_type &proc,
+                 std::wstring &payload) {
+                 int layers = 3;
+                 int nums = 8;
+                 std::wistringstream iss(args);
+                 std::wstring token;
+                 while (iss >> token) {
+                     std::wstring body;
+                     if (cmd_strip_prefix(token, L"num=", body) &&
+                         !body.empty()) {
+                         nums = std::max(
+                             3, std::min(12, (int)my_string2int64(body)));
+                         continue;
+                     }
+                     if (!payload.empty()) {
+                         payload += L" ";
+                     }
+                     payload += token;
+                 }
+                 proc = (img_fun_type){img_fun_type::KALEIDO, layers, nums};
+                 return true;
+             }},
+        };
+
+        for (const auto &r : rules) {
+            std::wstring body;
+            if (cmd_strip_prefix(input, r.cmd, body)) {
+                if (!r.handler) {
+                    return false;
+                }
+                return r.handler(body, out, payload_out);
+            }
         }
-        proc_type = (img_fun_type){img_fun_type::MIRROR, axis, order};
-    }
-    else if (wmessage.find(L"旋转") == 0) {
-        int fps = 24;
-        char order = 0;
-        wmessage = trim(wmessage.substr(2));
-        if (wmessage.find(L"fps=") == 0) {
-            wmessage = trim(wmessage.substr(4));
-            fps = std::max(0, std::min(50, (int)my_string2int64(wmessage)));
-            wmessage = trim(wmessage.substr(wmessage.find(L' ') + 1));
-        }
-        if (wmessage.find(L"order=") == 0) {
-            wmessage = trim(wmessage.substr(6));
-            order = wmessage[0] == L'1';
-            wmessage = trim(wmessage.substr(1));
-        }
-        proc_type = (img_fun_type){img_fun_type::ROTATE, fps, order};
-    }
-    else if (wmessage.find(L"万花筒") == 0) {
-        int layers = 3;
-        int nums = 8;
-        wmessage = trim(wmessage.substr(3));
-        if (wmessage.find(L"num=") == 0) {
-            wmessage = trim(wmessage.substr(4));
-            nums = std::max(3, std::min(12, (int)my_string2int64(wmessage)));
-            wmessage = trim(wmessage.substr(wmessage.find(L' ') + 1));
-        }
-        proc_type = (img_fun_type){img_fun_type::KALEIDO, layers, nums};
+        return false;
+    };
+
+    std::wstring payload = wmessage;
+    if (parse_command(wmessage, proc_type, payload)) {
+        wmessage = trim(payload);
     }
     else if ((it = is_input.find(conf.user_id)) != is_input.end()) {
         proc_type = is_input[conf.user_id];
@@ -118,11 +184,12 @@ void img_fun::process(std::string message, const msg_meta &conf)
     conf.p->setlog(
         LOG::INFO,
         fmt::format("img_fun at u{} g{}：type={}, para1={}, para2={}",
-                    conf.user_id, conf.group_id, proc_type.type,
+                    conf.user_id, conf.group_id, (int)proc_type.type,
                     (int)proc_type.para1, (int)proc_type.para2));
     is_input.erase(conf.user_id);
-    std::string filepath = "./resource/download/" + filename;
-    download(cq_decode(fileurl), "./resource/download/", filename);
+    const std::string download_dir = bot_resource_path(nullptr, "download");
+    std::string filepath = download_dir + "/" + filename;
+    download(cq_decode(fileurl), download_dir + "/", filename);
     p.setBar(0.2, "图片处理中");
     Magick::Image img;
     bool mgif = false;
@@ -159,7 +226,7 @@ void img_fun::process(std::string message, const msg_meta &conf)
         }
         p.setBar(0.9, "图片处理完成，保存中");
         Magick::writeImages(img_list.begin(), img_list.end(),
-                            "./resource/download/" + filename);
+                            download_dir + "/" + filename);
         p.setBar(0.9, "图片处理完成，发送中");
     }
     else {
@@ -174,13 +241,15 @@ void img_fun::process(std::string message, const msg_meta &conf)
                 p.setProgress(prog += delta_p * 0.7);
             });
         }
-        img.write("./resource/download/" + filename);
+        img.write(download_dir + "/" + filename);
         p.setBar(0.9, "图片处理完成，发送中");
     }
-    conf.p->cq_send("[CQ:image,file=file://" + get_local_path() +
-                        "/resource/download/" + filename + ",id=40000]",
-                    conf);
-    fs::remove("./resource/download/" + filename);
+    conf.p->cq_send(
+        "[CQ:image,file=file://" +
+            fs::absolute(fs::path(download_dir + "/" + filename)).string() +
+            ",id=40000]",
+        conf);
+    fs::remove(download_dir + "/" + filename);
     fs::remove(filepath);
     conf.p->setlog(LOG::INFO, fmt::format("img_fun done at u{} g{}",
                                           conf.user_id, conf.group_id));
@@ -189,9 +258,9 @@ void img_fun::process(std::string message, const msg_meta &conf)
 bool img_fun::check(std::string message, const msg_meta &conf)
 {
     std::wstring wmes = string_to_wstring(message);
-    return message == "img_fun.help" || wmes.find(L"对称 ") == 0 ||
-           wmes == L"对称" || wmes.find(L"旋转 ") == 0 || wmes == L"旋转" ||
-           wmes.find(L"万花筒 ") == 0 || wmes == L"万花筒" ||
+    return message == "img_fun.help" || starts_with(wmes, L"对称 ") ||
+           wmes == L"对称" || starts_with(wmes, L"旋转 ") || wmes == L"旋转" ||
+           starts_with(wmes, L"万花筒 ") || wmes == L"万花筒" ||
            is_input.find(conf.user_id) != is_input.end();
 }
 std::string img_fun::help() { return "图片处理。 img_fun.help 获得更多帮助。"; }

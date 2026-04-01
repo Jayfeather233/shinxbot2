@@ -122,13 +122,15 @@ When the bot unloads a library, it will call `extern "C" processable *close(proc
 
 1. If using clang, the `.clang-format` file in the root directory provides automatic formatting settings.
 
-2. `sender.sh` in `dev_tools` can be used to send messages to shinxbot, while `inspector` captures data sent from shinxbot to Onebot 11. `inspector` cannot run simultaneously with Onebot 11. Both serve as equivalents to Onebot 11, providing convenience for developers unable to run it. (You may need to modify paths in `inspector.cpp` and `sender.sh` to point to the `config` file.)
+2. `tools/dev_tools/sender.sh` can be used to send messages to shinxbot, while `inspector` captures data sent from shinxbot to Onebot 11. `inspector` cannot run simultaneously with Onebot 11. Both serve as equivalents to Onebot 11, providing convenience for developers unable to run it. (You may need to modify paths in `inspector.cpp` and `sender.sh` to point to the `config` file.)
 
    For example:
 
 ```bash
-bash sender.sh "bot.help"
+bash tools/dev_tools/sender.sh "bot.help"
 ```
+
+Backward compatibility: `src/dev_tools/sender.sh` remains as a wrapper.
 
 ## License
 

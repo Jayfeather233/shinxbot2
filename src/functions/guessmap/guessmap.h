@@ -39,6 +39,7 @@ private:
         int total_guess_count = 0;
         int roll_count = 0;
         int hint_count = 0;
+        int assist_used_count = 0;
         int image_seq = 0;
         int current_track = 0;
         std::chrono::steady_clock::time_point started_at;
@@ -52,10 +53,13 @@ private:
     std::unordered_map<std::string, session_state> sessions_;
     std::unordered_map<std::string, std::chrono::steady_clock::time_point>
         cooldown_;
+    std::unordered_map<std::string, int> assist_cooldown_guess_by_scope_;
     std::unordered_map<std::string, std::deque<size_t>> recent_map_history_;
     std::mutex lock_;
     std::string maps_json_path_;
     std::string images_root_path_;
+    std::string config_dir_ = bot_config_path("");
+    std::string resource_dir_ = bot_resource_path("");
 
     static constexpr int kEasyCrop = 256;
     static constexpr int kHardCrop = 128;
@@ -64,6 +68,7 @@ private:
     static constexpr int kHintExpandStep = 32;
     static constexpr int kMaxRollCount = 4;
     static constexpr int kMaxHintCount = 6;
+    static constexpr int kDefaultAssistGuessCooldown = 4;
     static constexpr size_t kRecentMapHistory = 10;
 
     std::string get_scope_id(const msg_meta &conf) const;
@@ -73,6 +78,17 @@ private:
     std::string get_guess_arg(const std::string &message) const;
     bool is_cooldown_active(const std::string &id) const;
     std::string hint_output_path(const std::string &id, int seq) const;
+    std::string maps_config_path() const;
+    std::string images_root_dir() const;
+    std::string cache_root_dir() const;
+    std::string cooldown_config_path() const;
+    void sync_dirs_from_bot(const bot *p);
+    void load_cooldown_config();
+    void save_cooldown_config() const;
+    int get_assist_cooldown_guess(const std::string &id) const;
+    bool can_use_assist(const session_state &state, int cooldown_guess) const;
+    int available_assist_uses(const session_state &state,
+                              int cooldown_guess) const;
 
     bool load_maps();
     size_t pick_map_index(const std::string &id) const;
@@ -86,8 +102,10 @@ private:
     bool try_random_position(const session_state &state, int crop_size,
                              int &left, int &top) const;
     bool append_hint_image(session_state &state, const std::string &id) const;
-    bool roll_hint(session_state &state, const std::string &id);
-    bool expand_hint(session_state &state, const std::string &id);
+    bool roll_hint(session_state &state, const std::string &id,
+                   bool ignore_usage_cap = false);
+    bool expand_hint(session_state &state, const std::string &id,
+                     bool ignore_usage_cap = false);
     bool build_reveal_image(const session_state &state,
                             const std::string &out_file) const;
     void cleanup_generated_images(const std::string &id) const;
@@ -106,6 +124,7 @@ public:
 
     void process(std::string message, const msg_meta &conf) override;
     bool check(std::string message, const msg_meta &conf) override;
+    bool reload(const msg_meta &conf) override;
     std::string help() override;
 };
 

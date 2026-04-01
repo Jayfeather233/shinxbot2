@@ -9,9 +9,13 @@ inline bool check_valid(const point_t &a, const point_t &b)
            (a.second == 0 || b.second == 0 || a.second == b.second);
 }
 
-forwarder::forwarder()
+forwarder::forwarder() { load_config(); }
+
+void forwarder::load_config()
 {
-    Json::Value J = string_to_json(readfile("./config/forwarder.json", "[]"));
+    forward_set.clear();
+    Json::Value J = string_to_json(readfile(
+        bot_config_path(nullptr, "features/forwarder/forwarder.json"), "[]"));
     for (Json::Value j : J) {
         point_t from, to;
         from = std::make_pair<groupid_t, userid_t>(
@@ -33,48 +37,43 @@ void forwarder::save()
         J["to"]["user_id"] = it.second.second;
         Ja.append(J);
     }
-    writefile("./config/forwarder.json", Ja.toStyledString());
+    writefile(bot_config_path(nullptr, "features/forwarder/forwarder.json"),
+              Ja.toStyledString());
 }
 
-size_t forwarder::configure(std::string message, const msg_meta &conf)
+size_t forwarder::configure(const std::string &message, const msg_meta &conf)
 {
-    size_t t;
-    if (message.find("forward.set") == 0) {
-        std::istringstream iss(message.substr(11));
-        point_t from, to;
-        iss >> from.first >> from.second >> to.first >> to.second;
-        if (conf.p->is_op(conf.user_id) ||
-            ((from.first == 0 ||
-              is_group_op(conf.p, from.first, conf.user_id)) &&
-             ((to.first == 0 && to.second == conf.user_id) ||
-              (to.first == conf.group_id &&
-               is_group_op(conf.p, conf.group_id, conf.user_id))))) {
-            t = forward_set.insert(std::make_pair(from, to)).second;
-        }
-        else {
-            t = 0;
-        }
+    point_t from, to;
+    std::string args;
+    bool is_set = false;
+    if (cmd_strip_prefix(message, "forward.set", args)) {
+        is_set = true;
     }
-    else if (message.find("forward.del") == 0) {
-        std::istringstream iss(message.substr(11));
-        point_t from, to;
-        iss >> from.first >> from.second >> to.first >> to.second;
-        if (conf.p->is_op(conf.user_id) ||
-            ((from.first == 0 ||
-              is_group_op(conf.p, from.first, conf.user_id)) &&
-             ((to.first == 0 && to.second == conf.user_id) ||
-              (to.first == conf.group_id &&
-               is_group_op(conf.p, conf.group_id, conf.user_id))))) {
-            t = forward_set.erase(std::make_pair(from, to));
-        }
-        else {
-            t = 0;
-        }
+    else if (!cmd_strip_prefix(message, "forward.del", args)) {
+        return static_cast<size_t>(-1);
     }
-    else
-        t = -1;
+
+    std::istringstream iss(args);
+    if (!(iss >> from.first >> from.second >> to.first >> to.second)) {
+        return 0;
+    }
+
+    const bool has_permission =
+        conf.p->is_op(conf.user_id) ||
+        ((from.first == 0 || is_group_op(conf.p, from.first, conf.user_id)) &&
+         ((to.first == 0 && to.second == conf.user_id) ||
+          (to.first == conf.group_id &&
+           is_group_op(conf.p, conf.group_id, conf.user_id))));
+    if (!has_permission) {
+        return 0;
+    }
+
+    size_t ret = is_set
+                     ? static_cast<size_t>(
+                           forward_set.insert(std::make_pair(from, to)).second)
+                     : forward_set.erase(std::make_pair(from, to));
     save();
-    return t;
+    return ret;
 }
 
 bool is_full_msg(const std::string &message)
@@ -88,7 +87,8 @@ bool is_full_msg(const std::string &message)
 
 void forwarder::process(std::string message, const msg_meta &conf)
 {
-    if (trim(message) == "forward.help") {
+    const std::string normalized = trim(message);
+    if (cmd_match_exact(normalized, {"forward.help"})) {
         conf.p->cq_send(
             "forwarder.[set/del] src_group_id src_user_id dst_group_id "
             "dst_user_id\n"
@@ -101,8 +101,10 @@ void forwarder::process(std::string message, const msg_meta &conf)
             conf);
         return;
     }
-    if (message.find("forward.") == 0) {
-        int t = configure(message, conf);
+    if (cmd_match_prefix(normalized, {"forward."})) {
+        const size_t code = configure(normalized, conf);
+        const int t =
+            (code == static_cast<size_t>(-1)) ? -1 : static_cast<int>(code);
         conf.p->cq_send("done with code: " + std::to_string(t), conf);
         return;
     }
@@ -165,8 +167,18 @@ void forwarder::process(std::string message, const msg_meta &conf)
 }
 bool forwarder::check(std::string message, const msg_meta &conf)
 {
+    (void)message;
+    (void)conf;
     return true;
 }
+
+bool forwarder::reload(const msg_meta &conf)
+{
+    (void)conf;
+    load_config();
+    return true;
+}
+
 std::string forwarder::help() { return ""; }
 
 DECLARE_FACTORY_FUNCTIONS(forwarder)

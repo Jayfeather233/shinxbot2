@@ -30,73 +30,6 @@ static void rebuild_init_index_for_group(groupid_t group_id, NGGame &game)
     }
 }
 
-static bool starts_with(const std::string &s, const std::string &prefix)
-{
-    return s.size() >= prefix.size() &&
-           s.compare(0, prefix.size(), prefix) == 0;
-}
-
-static const char *state_name(gameState s)
-{
-    switch (s) {
-    case gameState::idle:
-        return "idle";
-    case gameState::join:
-        return "join";
-    case gameState::init:
-        return "init";
-    case gameState::work:
-        return "work";
-    default:
-        return "unknown";
-    }
-}
-
-static void ng_debug(const msg_meta &conf, const std::string &msg)
-{
-    if (!conf.p) {
-        return;
-    }
-    conf.p->setlog(LOG::INFO, "[NGgame] gid=" + std::to_string(conf.group_id) +
-                                  " uid=" + std::to_string(conf.user_id) + " " +
-                                  msg);
-}
-
-static userid_t extract_qq_from_at_segment(const std::string &seg)
-{
-    size_t qq_pos = seg.find("qq=");
-    if (qq_pos == std::string::npos) {
-        return 0;
-    }
-    qq_pos += 3;
-    size_t qq_end = seg.find_first_of(",]", qq_pos);
-    if (qq_end == std::string::npos || qq_end <= qq_pos) {
-        return 0;
-    }
-    return my_string2uint64(seg.substr(qq_pos, qq_end - qq_pos));
-}
-
-static bool at_segment_matches_bot(const std::string &seg,
-                                   const std::string &bot_qq)
-{
-    if (!starts_with(seg, "[CQ:at,") || seg.empty() || seg.back() != ']') {
-        return false;
-    }
-
-    userid_t qq = extract_qq_from_at_segment(seg);
-    return qq != 0 && qq == my_string2uint64(bot_qq);
-}
-
-static std::string display_name_in_group(const msg_meta &conf, userid_t uid,
-                                         groupid_t gid)
-{
-    std::string name = get_username(conf.p, uid, gid);
-    if (!trim(name).empty()) {
-        return name;
-    }
-    return "用户" + std::to_string(uid);
-}
-
 static void ng_react_or_reply(const msg_meta &conf, const std::string &emoji_id,
                               const std::string &fallback_text)
 {
@@ -117,6 +50,19 @@ static void ng_react_or_reply(const msg_meta &conf, const std::string &emoji_id,
                             "]" + fallback_text,
                         conf);
     }
+}
+
+static std::string ng_detail_help()
+{
+    return "NG 游戏：\n"
+           "*ng.help - 查看帮助\n"
+           "*ng create - 创建房间\n"
+           "*ng join - 加入房间\n"
+           "*ng start - 分配目标并进入设置词阶段\n"
+           "*ng go - 全员设置完成后开始游戏\n"
+           "*ng guess <词> - 自检并出局\n"
+           "*ng state | *ng quit [@用户] | *ng abort\n"
+           "不要说挑战！想办法设局让群友不经意间说出量身设计的NG词吧~";
 }
 
 void send_msg_ng(bot *p, groupid_t group_id, userid_t user_id,
@@ -262,13 +208,10 @@ void NGGame::send_vic(const msg_meta &conf)
     for (const auto &it : ng) {
         userid_t vic = get_vic(it.first);
         if (!vic) {
-            ng_debug(conf, "send_vic skipped: broken link for user=" +
-                               std::to_string(it.first));
             continue;
         }
         send_msg_ng(conf.p, 0, it.first,
-                    "请为 " + display_name_in_group(conf, vic, conf.group_id) +
-                        " 设置 NG 词");
+                    "请为 " + display_name_in_group(conf, vic) + " 设置 NG 词");
     }
 }
 
@@ -412,8 +355,8 @@ bool NGgame::check(std::string message, const msg_meta &conf)
 {
     if (conf.message_type == "group") {
         std::string normalized = trim(message);
-        if (starts_with(normalized, "ng ") ||
-            normalized.find("[CQ:at,") != std::string::npos) {
+        if (cmd_match_exact(normalized, {"*ng"}) ||
+            cmd_match_prefix(normalized, {"*ng ", "*ng."})) {
             return true;
         }
 
@@ -444,18 +387,6 @@ void NGgame::process(std::string message, const msg_meta &conf)
 {
     auto uid = conf.user_id;
     auto gid = conf.group_id;
-    std::string bot_qq = std::to_string(conf.p->get_botqq());
-
-    std::string state_hint = "n/a";
-    if (conf.message_type == "group") {
-        auto state_it = games.find(gid);
-        state_hint = (state_it == games.end()
-                          ? "none"
-                          : state_name(state_it->second.get_state()));
-    }
-
-    ng_debug(conf, "process enter type=" + conf.message_type +
-                       " state_hint=" + state_hint + " msg=" + message);
 
     if (conf.message_type == "group") {
         auto game_it = games.find(gid);
@@ -465,39 +396,26 @@ void NGgame::process(std::string message, const msg_meta &conf)
 
         {
             std::string normalized = trim(message);
+            std::string body;
 
-            // Remove bot-at CQ segments regardless of parameter order.
-            size_t search_pos = 0;
-            while (true) {
-                size_t at_pos = normalized.find("[CQ:at,", search_pos);
-                if (at_pos == std::string::npos) {
-                    break;
-                }
-                size_t at_end = normalized.find(']', at_pos);
-                if (at_end == std::string::npos) {
-                    break;
-                }
-                std::string seg =
-                    normalized.substr(at_pos, at_end - at_pos + 1);
-                if (at_segment_matches_bot(seg, bot_qq)) {
-                    normalized.erase(at_pos, at_end - at_pos + 1);
-                    normalized = trim(normalized);
-                    search_pos = 0;
-                    continue;
-                }
-                search_pos = at_end + 1;
-            }
-
-            if (starts_with(normalized, "ng ")) {
+            if (normalized == "*ng") {
                 is_ng_command = true;
-                cmd = trim(normalized.substr(3));
+                cmd.clear();
+            }
+            else if (cmd_strip_prefix(normalized, "*ng ", body)) {
+                is_ng_command = true;
+                cmd = body;
+            }
+            else if (cmd_strip_prefix(normalized, "*ng.", body)) {
+                is_ng_command = true;
+                cmd = body;
             }
         }
 
         if (is_ng_command && starts_with(cmd, "guess")) {
             if (!game) {
                 send_msg_ng(conf.p, gid, 0,
-                            "当前没有房间，请先使用 ng create。");
+                            "当前没有房间，请先使用 *ng create。");
                 return;
             }
             std::string guess;
@@ -509,7 +427,7 @@ void NGgame::process(std::string message, const msg_meta &conf)
                 send_msg_ng(conf.p, gid, 0, "恭喜！你的 NG 词是 " + guess);
                 send_msg_ng(conf.p, gid, 0,
                             "游戏结束！获胜者是 " +
-                                display_name_in_group(conf, uid, gid) + "！");
+                                display_name_in_group(conf, uid) + "！");
                 clear_init_index_for_group(gid);
                 game->abort();
             }
@@ -520,11 +438,11 @@ void NGgame::process(std::string message, const msg_meta &conf)
                                 "\n下次加油！");
                 game->lose(uid);
                 if (game->check_end()) {
-                    send_msg_ng(conf.p, gid, 0,
-                                "游戏结束！获胜者是 " +
-                                    display_name_in_group(
-                                        conf, game->get_winner(), gid) +
-                                    "！");
+                    send_msg_ng(
+                        conf.p, gid, 0,
+                        "游戏结束！获胜者是 " +
+                            display_name_in_group(conf, game->get_winner()) +
+                            "！");
                     clear_init_index_for_group(gid);
                     game->abort();
                 }
@@ -537,15 +455,15 @@ void NGgame::process(std::string message, const msg_meta &conf)
             if (game->check_ng(expanded_msg, uid)) {
                 ng_react_or_reply(conf, "128165", "触发 NG 词");
                 send_msg_ng(conf.p, gid, 0,
-                            display_name_in_group(conf, uid, gid) +
+                            display_name_in_group(conf, uid) +
                                 "  Out！NG 词是 " + game->get_ng(uid));
                 game->lose(uid);
                 if (game->check_end()) {
-                    send_msg_ng(conf.p, gid, 0,
-                                "游戏结束！获胜者是 " +
-                                    display_name_in_group(
-                                        conf, game->get_winner(), gid) +
-                                    "！");
+                    send_msg_ng(
+                        conf.p, gid, 0,
+                        "游戏结束！获胜者是 " +
+                            display_name_in_group(conf, game->get_winner()) +
+                            "！");
                     clear_init_index_for_group(gid);
                     game->abort();
                 }
@@ -556,62 +474,63 @@ void NGgame::process(std::string message, const msg_meta &conf)
             return;
         }
 
-        if (cmd == "create") {
+        auto handle_create = [&]() {
             if (!game) {
                 game_it = games.emplace(gid, NGGame()).first;
                 game = &game_it->second;
             }
             if (game->get_state() != gameState::idle) {
                 send_msg_ng(conf.p, gid, 0,
-                            "已有游戏正在进行，可用 ng state 查看状态。");
-                return;
+                            "已有游戏正在进行，可用 *ng state 查看状态。");
+                return true;
             }
             clear_init_index_for_group(gid);
             game->set_state(gameState::join);
             send_msg_ng(
                 conf.p, gid, 0,
-                "房间已创建。使用 ng join 加入，人齐后 ng start 开始选词。");
-            return;
-        }
+                "房间已创建。使用 *ng join 加入，人齐后 *ng start 开始选词。");
+            return true;
+        };
 
-        if (cmd == "start") {
+        auto handle_start = [&]() {
             if (!game) {
                 send_msg_ng(conf.p, gid, 0,
-                            "当前没有房间，请先使用 ng create。");
-                return;
+                            "当前没有房间，请先使用 *ng create。");
+                return true;
             }
             if (game->get_state() != gameState::join) {
                 send_msg_ng(conf.p, gid, 0,
-                            "ng start 只能在创建并加入阶段使用。");
-                return;
+                            "*ng start 只能在创建并加入阶段使用。");
+                return true;
             }
             if (game->total_cnt() <= 1) {
                 send_msg_ng(conf.p, gid, 0, "拉上朋友一起玩吧！");
-                return;
+                return true;
             }
             game->set_state(gameState::init);
             game->link();
             rebuild_init_index_for_group(gid, *game);
             send_msg_ng(conf.p, gid, 0, "目标已分配，请私聊机器人设置 NG 词。");
             game->send_vic(conf);
-            return;
-        }
+            return true;
+        };
 
-        if (cmd == "go") {
+        auto handle_go = [&]() {
             if (!game) {
                 send_msg_ng(conf.p, gid, 0,
-                            "当前没有房间，请先使用 ng create。");
-                return;
+                            "当前没有房间，请先使用 *ng create。");
+                return true;
             }
             if (game->get_state() != gameState::init) {
-                send_msg_ng(conf.p, gid, 0, "ng go 只能在设置好 NG 词后使用。");
-                return;
+                send_msg_ng(conf.p, gid, 0,
+                            "*ng go 只能在设置好 NG 词后使用。");
+                return true;
             }
             if (game->ready_cnt() != game->total_cnt()) {
                 auto lazy_list = game->get_lazy();
                 std::string content;
                 for (auto it : lazy_list) {
-                    content += display_name_in_group(conf, it, gid) + "、";
+                    content += display_name_in_group(conf, it) + "、";
                 }
                 if (!content.empty()) {
                     content.pop_back();
@@ -621,54 +540,53 @@ void NGgame::process(std::string message, const msg_meta &conf)
                     content = "仍有玩家未设置 NG 词。";
                 }
                 send_msg_ng(conf.p, gid, 0, content);
-                return;
+                return true;
             }
             clear_init_index_for_group(gid);
             game->set_state(gameState::work);
             send_msg_ng(conf.p, gid, 0, "游戏开始！请查看私聊~");
             game->send_list(conf);
-            return;
-        }
+            return true;
+        };
 
-        if (cmd == "join") {
+        auto handle_join = [&]() {
             if (!game || game->get_state() == gameState::idle) {
                 send_msg_ng(conf.p, gid, 0,
-                            "当前没有房间，请先使用 ng create。");
-                return;
+                            "当前没有房间，请先使用 *ng create。");
+                return true;
             }
             if (game->get_state() != gameState::join) {
                 send_msg_ng(conf.p, gid, 0,
                             "当前阶段无法加入，请等待本局结束。");
-                return;
+                return true;
             }
             if (!game->join(uid)) {
                 send_msg_ng(conf.p, gid, 0, "你已经在本局游戏中了。");
-                return;
+                return true;
             }
             send_msg_ng(conf.p, gid, 0,
-                        display_name_in_group(conf, uid, gid) +
+                        display_name_in_group(conf, uid) +
                             " 已加入，当前房间：" +
                             std::to_string(game->total_cnt()) +
                             "人 \n请添加Bot好友以便私聊设置 NG 词");
-            return;
-        }
+            return true;
+        };
 
-        if (starts_with(cmd, "quit")) {
+        auto handle_quit = [&]() {
             if (!game) {
                 send_msg_ng(conf.p, gid, 0,
-                            "当前没有房间，请先使用 ng create。");
-                return;
+                            "当前没有房间，请先使用 *ng create。");
+                return true;
             }
             userid_t victim =
                 extract_first_at(message.substr(message.find("quit")));
             victim = victim ? victim : uid;
             if (!game->quit(victim)) {
                 send_msg_ng(conf.p, gid, 0, "目标不在当前游戏中。");
-                return;
+                return true;
             }
             send_msg_ng(conf.p, gid, 0,
-                        display_name_in_group(conf, victim, gid) +
-                            " 已退出游戏。");
+                        display_name_in_group(conf, victim) + " 已退出游戏。");
             if (game->get_state() == gameState::init) {
                 rebuild_init_index_for_group(gid, *game);
             }
@@ -676,29 +594,28 @@ void NGgame::process(std::string message, const msg_meta &conf)
                 send_msg_ng(
                     conf.p, gid, 0,
                     "游戏结束！获胜者是 " +
-                        display_name_in_group(conf, game->get_winner(), gid) +
-                        "！");
+                        display_name_in_group(conf, game->get_winner()) + "！");
                 clear_init_index_for_group(gid);
                 game->abort();
             }
-            return;
-        }
+            return true;
+        };
 
-        if (cmd == "abort") {
+        auto handle_abort = [&]() {
             if (!game) {
                 send_msg_ng(conf.p, gid, 0, "当前没有进行中的游戏。");
-                return;
+                return true;
             }
             clear_init_index_for_group(gid);
             game->abort();
             send_msg_ng(conf.p, gid, 0, "游戏已终止。");
-            return;
-        }
+            return true;
+        };
 
-        if (cmd == "state") {
+        auto handle_state = [&]() {
             if (!game) {
                 send_msg_ng(conf.p, gid, 0, "当前没有进行中的游戏。");
-                return;
+                return true;
             }
             switch (game->get_state()) {
             case gameState::idle:
@@ -716,7 +633,7 @@ void NGgame::process(std::string message, const msg_meta &conf)
                                 std::to_string(game->total_cnt()) + "）");
                 send_msg_ng(conf.p, 0, uid,
                             "你的目标是 " + display_name_in_group(
-                                                conf, game->get_vic(uid), gid));
+                                                conf, game->get_vic(uid)));
                 break;
             case gameState::work:
                 send_msg_ng(conf.p, gid, 0, game->overall(conf));
@@ -725,15 +642,30 @@ void NGgame::process(std::string message, const msg_meta &conf)
             default:
                 break;
             }
+            return true;
+        };
+
+        auto handle_help = [&]() {
+            send_msg_ng(conf.p, gid, 0, ng_detail_help());
+            return true;
+        };
+
+        const std::vector<cmd_exact_rule> exact_rules = {
+            {"create", handle_create}, {"start", handle_start},
+            {"go", handle_go},         {"join", handle_join},
+            {"abort", handle_abort},   {"state", handle_state},
+            {"help", handle_help},     {".help", handle_help},
+        };
+
+        const std::vector<cmd_prefix_rule> prefix_rules = {
+            {"quit", handle_quit},
+        };
+
+        if (cmd_dispatch(cmd, exact_rules, prefix_rules)) {
             return;
         }
 
-        if (cmd == "help") {
-            send_msg_ng(conf.p, gid, 0, help());
-            return;
-        }
-
-        send_msg_ng(conf.p, gid, 0, "未知命令，请使用 ng help 查看帮助。");
+        send_msg_ng(conf.p, gid, 0, "未知命令，请使用 *ng.help 查看帮助。");
         return;
     }
 
@@ -762,8 +694,8 @@ void NGgame::process(std::string message, const msg_meta &conf)
         size_t ready = game.ready_cnt();
         size_t total = game.total_cnt();
 
-        std::string victim_name = display_name_in_group(conf, vic, group_id);
-        std::string setter_name = display_name_in_group(conf, uid, group_id);
+        std::string victim_name = display_name_in_group(conf, vic);
+        std::string setter_name = display_name_in_group(conf, uid);
 
         send_msg_ng(conf.p, 0, uid,
                     "已为 " + victim_name + " 设置 NG 词：" + message);
@@ -776,14 +708,7 @@ void NGgame::process(std::string message, const msg_meta &conf)
 
 std::string NGgame::help()
 {
-    return "NG 游戏：\n"
-           "ng create - 创建房间\n"
-           "ng join - 加入房间\n"
-           "ng start - 分配目标并进入设置词阶段\n"
-           "ng go - 全员设置完成后开始游戏\n"
-           "ng guess <词> - 自检并出局\n"
-           "ng state | ng quit [@用户] | ng abort | ng help\n"
-           "不要说挑战！想办法设局让群友不经意间说出量身设计的NG词吧~";
+    return "NG 游戏：不要说挑战。帮助：*ng.help";
 }
 
 DECLARE_FACTORY_FUNCTIONS(NGgame)

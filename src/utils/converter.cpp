@@ -25,7 +25,34 @@ userid_t get_botqq(const bot *p) { return p->get_botqq(); }
 
 std::string get_local_path() { return fs::current_path(); }
 
-void input_process(bot *p, std::string *input) { p->input_process(input); }
+void input_process(bot *p, const std::string &input)
+{
+    p->input_process(input);
+}
+
+std::string bot_config_path(const bot *p, const fs::path &relative)
+{
+    const fs::path base =
+        p ? fs::path(p->getConfigDir()) : fs::path("./config");
+    return (base / relative).string();
+}
+
+std::string bot_resource_path(const bot *p, const fs::path &relative)
+{
+    const fs::path base =
+        p ? fs::path(p->getResourceDir()) : fs::path("./resource");
+    return (base / relative).string();
+}
+
+std::string bot_config_path(const fs::path &relative)
+{
+    return bot_config_path(nullptr, relative);
+}
+
+std::string bot_resource_path(const fs::path &relative)
+{
+    return bot_resource_path(nullptr, relative);
+}
 
 std::string message_to_string(const Json::Value &J)
 {
@@ -72,7 +99,7 @@ Json::Value string_to_message(const std::string &s)
 {
     Json::Value J;
     if (s[0] == '[') {
-        size_t pos = s.find(','), laspos, mid;
+        size_t pos = s.find(','), laspos;
         J["type"] = s.substr(4, pos - 4);
         laspos = pos;
         while (pos != s.length() - 1) {
@@ -80,6 +107,7 @@ Json::Value string_to_message(const std::string &s)
             if (pos == s.npos) {
                 pos = s.length() - 1;
             }
+            size_t mid;
             mid = s.find('=', laspos + 1);
             if (mid == s.npos) {
                 throw "CQ code syntax error.";

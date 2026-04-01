@@ -51,6 +51,7 @@ private:
     std::map<groupid_t, std::vector<mmdd>> birthdays;
     std::mutex mutex_;
     bool has_sent = true;
+    void load_config();
     void send_upcoming_msg(const std::tm &localTime, bot *p,
                            groupid_t group_idx = 0);
 
@@ -62,12 +63,14 @@ public:
     birthday.add mmdd who
     birthday.del who
     */
-    void process(std::string message, const msg_meta &conf);
-    bool check(std::string message, const msg_meta &conf);
-    std::string help();
-    std::string help(const msg_meta &conf, help_level_t level);
+    void process(std::string message, const msg_meta &conf) override;
+    bool check(std::string message, const msg_meta &conf) override;
+    bool reload(const msg_meta &conf) override;
+    std::string help() override;
+    std::string help(const msg_meta &conf, help_level_t level) override;
     ~birthday();
     void check_date(bot *p);
-    void set_callback(std::function<void(std::function<void(bot *p)>)> f);
+    void
+    set_callback(std::function<void(std::function<void(bot *p)>)> f) override;
 };
 DECLARE_FACTORY_FUNCTIONS_HEADER

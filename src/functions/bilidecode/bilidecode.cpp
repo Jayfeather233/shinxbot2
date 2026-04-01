@@ -45,26 +45,26 @@ void bili_decode::send_dec_info(const Json::Value &J, const msg_meta &conf)
 
 void bili_decode::process_string(std::string s, const msg_meta &conf)
 {
-    {
+    do {
         bv_result res = get_bv(s);
         if (res.first.empty())
-            return;
+            break;
         Json::Value raw_info = get_raw_info(res.first);
         if (raw_info["code"].asInt64() == 0) {
             send_dec_info(raw_info, conf);
             return;
         }
-    }
-    {
+    } while (0);
+    do {
         av_result res = get_av(s);
         if (res.first == 0)
-            return;
+            break;
         Json::Value raw_info = get_raw_info(res.first);
         if (raw_info["code"].asInt64() == 0) {
             send_dec_info(raw_info, conf);
             return;
         }
-    }
+    } while (0);
 }
 
 void bili_decode::process(Json::Value messageArr, const msg_meta &conf)
@@ -151,8 +151,6 @@ std::string bili_decode::get_decode_info(const Json::Value &raw_info)
 std::string bili_decode::help() { return "对av和BV号，下载封面图和视频数据"; }
 
 bool bili_decode::is_support_messageArr() { return true; }
-
-/// deprecated below
 
 void bili_decode::process(std::string message, const msg_meta &conf)
 {

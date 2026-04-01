@@ -6,6 +6,7 @@
 #include <iostream>
 #include <mutex>
 #include <regex>
+#include <sstream>
 
 /**
  * Overall API intro: https://platform.openai.com/docs/api-reference/chat/create
@@ -35,11 +36,15 @@ std::mutex gptlock[MAX_KEYS];
 
 gpt3_5::gpt3_5()
 {
-    if (!fs::exists("./config/openai.json")) {
+    const std::string openai_conf_path =
+        bot_config_path(nullptr, "features/openai/openai.json");
+    const std::string gpt_history_dir = bot_config_path(nullptr, "gpt3_5");
+
+    if (!fs::exists(openai_conf_path)) {
         std::cout << "Please config your openai key in openai.json (and "
                      "restart) OR see openai_example.json"
                   << std::endl;
-        std::ofstream of("./config/openai.json", std::ios::out);
+        std::ofstream of(openai_conf_path, std::ios::out);
         of << "{"
               "\"keys\": [\"\"],"
               "\"mode\": [\"default\"],"
@@ -53,7 +58,7 @@ gpt3_5::gpt3_5()
         of.close();
     }
     else {
-        std::string ans = readfile("./config/openai.json");
+        std::string ans = readfile(openai_conf_path);
 
         Json::Value res = string_to_json(ans);
 
@@ -85,8 +90,8 @@ gpt3_5::gpt3_5()
     is_debug = false;
     key_cycle = 0;
 
-    if (fs::exists("./config/gpt3_5")) {
-        fs::path gpt_files = "./config/gpt3_5";
+    if (fs::exists(gpt_history_dir)) {
+        fs::path gpt_files = gpt_history_dir;
         fs::directory_iterator di(gpt_files);
         for (auto &entry : di) {
             if (entry.is_regular_file()) {
@@ -115,7 +120,8 @@ void gpt3_5::save_file()
     for (std::string u : modes) {
         J[u] = mode_prompt[u];
     }
-    writefile("./config/openai.json", J.toStyledString());
+    writefile(bot_config_path(nullptr, "features/openai/openai.json"),
+              J.toStyledString());
 }
 
 int64_t getlength(const Json::Value &J)
@@ -166,12 +172,14 @@ void gpt3_5::save_history(int64_t id)
     Json::Value J;
     J["pre_prompt"] = pre_default[id];
     J["history"] = history[id];
-    writefile("./config/gpt3_5/" + std::to_string(id) + ".json",
-              J.toStyledString());
+    writefile(
+        bot_config_path(nullptr, "gpt3_5/" + std::to_string(id) + ".json"),
+        J.toStyledString());
 }
 
 void gpt3_5::process(std::string message, const msg_meta &conf)
 {
+<<<<<<< HEAD
     // Handle recall: if user replies with "你说的话我不喜欢", the bot recalls the replied-to message if it was sent by the bot.
     if (message.find("你说的话我不喜欢") != std::string::npos &&
         message.find("[CQ:reply,id=") != std::string::npos) {
@@ -252,92 +260,134 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
         conf.p->cq_send(message, conf);
         return;
     }
+=======
+    message = do_black(trim(message.substr(3)));
+    std::istringstream iss(message);
+    std::string command;
+    iss >> command;
+    std::string args;
+    getline(iss, args);
+    args = trim(args);
+
+>>>>>>> 940e730c8833c0a4b2562e8db11f14350afb6c8b
     int64_t id = conf.message_type == "group" ? (conf.group_id << 1)
                                               : ((conf.user_id << 1) | 1);
-    if (message.find(".reset") == 0 || message.find("reset") == 0) {
-        auto it = history.find(id);
-        if (it != history.end()) {
-            it->second.clear();
-        }
-        conf.p->cq_send("reset done.", conf);
-        save_history(id);
+
+    const std::vector<cmd_exact_rule> exact_rules = {
+        {".test",
+         [&]() {
+             conf.p->cq_send(message, conf);
+             return true;
+         }},
+        {".reset",
+         [&]() {
+             auto it = history.find(id);
+             if (it != history.end()) {
+                 it->second.clear();
+             }
+             conf.p->cq_send("reset done.", conf);
+             save_history(id);
+             return true;
+         }},
+        {"reset",
+         [&]() {
+             auto it = history.find(id);
+             if (it != history.end()) {
+                 it->second.clear();
+             }
+             conf.p->cq_send("reset done.", conf);
+             save_history(id);
+             return true;
+         }},
+        {".change",
+         [&]() {
+             if (conf.p->is_op(conf.user_id) || (id & 1)) {
+                 const std::string mode = args;
+                 bool flg = false;
+                 std::string res = "avaliable modes:";
+                 for (std::string u : modes) {
+                     res += " " + u;
+                     if (u == mode) {
+                         flg = true;
+                         history[id].clear();
+                         pre_default[id] = mode;
+                         conf.p->cq_send("change done.", conf);
+                         break;
+                     }
+                 }
+                 if (!flg) {
+                     conf.p->cq_send(res, conf);
+                 }
+             }
+             else {
+                 conf.p->cq_send("Not on op list.", conf);
+             }
+             save_history(id);
+             return true;
+         }},
+        {".sw",
+         [&]() {
+             if (conf.p->is_op(conf.user_id)) {
+                 is_open = !is_open;
+                 close_message = args;
+                 conf.p->cq_send("is_open: " + std::to_string(is_open), conf);
+             }
+             else {
+                 conf.p->cq_send("Not on op list.", conf);
+             }
+             return true;
+         }},
+        {".debug",
+         [&]() {
+             if (conf.p->is_op(conf.user_id)) {
+                 is_debug = !is_debug;
+                 conf.p->cq_send("is_debug: " + std::to_string(is_debug), conf);
+             }
+             else {
+                 conf.p->cq_send("Not on op list.", conf);
+             }
+             return true;
+         }},
+        {".set",
+         [&]() {
+             std::string reply = "Not on op list.";
+             if (conf.p->is_op(conf.user_id)) {
+                 std::string type;
+                 int64_t num = 0;
+                 std::istringstream arg_iss(args);
+                 if (!(arg_iss >> type >> num)) {
+                     conf.p->cq_send("Unknown type", conf);
+                     save_file();
+                     return true;
+                 }
+                 if (type == "reply") {
+                     MAX_REPLY = num;
+                     reply = "set MAX_REPLY to " + std::to_string(num);
+                 }
+                 else if (type == "token") {
+                     MAX_TOKEN = num;
+                     reply = "set MAX_TOKEN to " + std::to_string(num);
+                 }
+                 else if (type == "red") {
+                     RED_LINE = num;
+                     reply = "set RED_LINE to " + std::to_string(num);
+                 }
+                 else {
+                     reply = "Unknown type";
+                 }
+             }
+             conf.p->cq_send(reply, conf);
+             save_file();
+             return true;
+         }},
+    };
+
+    bool handled = false;
+    (void)cmd_try_dispatch(command, exact_rules, {}, handled);
+    if (handled) {
         return;
     }
-    if (message.find(".change") == 0) {
-        if (conf.p->is_op(conf.user_id) || (id & 1)) {
-            message = trim(message.substr(7));
-            bool flg = 0;
-            std::string res = "avaliable modes:";
-            for (std::string u : modes) {
-                res += " " + u;
-                if (u == message) {
-                    flg = true;
-                    history[id].clear();
-                    pre_default[id] = message;
-                    conf.p->cq_send("change done.", conf);
-                    break;
-                }
-            }
-            if (!flg) {
-                conf.p->cq_send(res, conf);
-            }
-        }
-        else {
-            conf.p->cq_send("Not on op list.", conf);
-        }
-        save_history(id);
-        return;
-    }
-    if (message.find(".sw") == 0) {
-        if (conf.p->is_op(conf.user_id)) {
-            is_open = !is_open;
-            close_message = trim(message.substr(3));
-            conf.p->cq_send("is_open: " + std::to_string(is_open), conf);
-        }
-        else {
-            conf.p->cq_send("Not on op list.", conf);
-        }
-        return;
-    }
-    if (message.find(".debug") == 0) {
-        if (conf.p->is_op(conf.user_id)) {
-            is_debug = !is_debug;
-            conf.p->cq_send("is_debug: " + std::to_string(is_debug), conf);
-        }
-        else {
-            conf.p->cq_send("Not on op list.", conf);
-        }
-        return;
-    }
-    if (message.find(".set") == 0) {
-        if (conf.p->is_op(conf.user_id)) {
-            std::string type;
-            int64_t num;
-            std::istringstream iss(message.substr(4));
-            iss >> type >> num;
-            if (type == "reply") {
-                MAX_REPLY = num;
-                message = "set MAX_REPLY to " + std::to_string(num);
-            }
-            else if (type == "token") {
-                MAX_TOKEN = num;
-                message = "set MAX_TOKEN to " + std::to_string(num);
-            }
-            else if (type == "red") {
-                RED_LINE = num;
-                message = "set RED_LINE to " + std::to_string(num);
-            }
-            else {
-                message = "Unknown type";
-            }
-        }
-        else {
-            message = "Not on op list.";
-        }
-        conf.p->cq_send(message, conf);
-        save_file();
-        return;
-    }
+
     if (key.size() == 0) {
         conf.p->cq_send("No avaliable key!", conf);
         return;
@@ -384,8 +434,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     J["temperature"] = 0.7;
     J["max_tokens"] = MAX_REPLY;
     try {
-        J = string_to_json(do_post(base_url,
-                                   "/v1/chat/completions", false, J,
+        J = string_to_json(do_post(base_url, "/v1/chat/completions", false, J,
                                    {{"Content-Type", "application/json"},
                                     {"Authorization", "Bearer " + key[keyid]}},
                                    true));
@@ -452,6 +501,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
 }
 bool gpt3_5::check(std::string message, const msg_meta &conf)
 {
+<<<<<<< HEAD
     size_t pos = message.find(".ai");
     if (pos != std::string::npos) {
         if (pos == 0 || message[pos - 1] == ' ' || message[pos - 1] == ']')
@@ -468,6 +518,10 @@ std::string gpt3_5::help()
            "Reading forwarded messages: Reply to a merged record with .ai .fw "
            "[requirement]\n"
            "Recall: Reply to AI message with '你说的话我不喜欢' to recall it.";
+=======
+    (void)conf;
+    return cmd_match_prefix(message, {".ai"});
+>>>>>>> 940e730c8833c0a4b2562e8db11f14350afb6c8b
 }
 
 DECLARE_FACTORY_FUNCTIONS(gpt3_5)

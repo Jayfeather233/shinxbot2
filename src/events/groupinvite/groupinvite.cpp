@@ -12,7 +12,7 @@ void groupinvite::process(bot *p, Json::Value J)
         J.isMember("group_id") ? J["group_id"].asUInt64() : 0,
         J.isMember("user_id") ? J["user_id"].asUInt64() : 0);
 
-    p->input_process(new std::string(w.toStyledString()));
+    p->input_process(w.toStyledString());
 }
 
 bool groupinvite::check(bot *p, Json::Value J)

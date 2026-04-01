@@ -33,7 +33,7 @@ void nativeQuery::process(std::string message, const msg_meta &conf)
 }
 bool nativeQuery::check(std::string message, const msg_meta &conf)
 {
-    return message.find(".nq") == 0 && conf.p->is_op(conf.user_id);
+    return cmd_match_prefix(message, {".nq"}) && conf.p->is_op(conf.user_id);
 }
 std::string nativeQuery::help() { return ""; }
 std::string nativeQuery::help(const msg_meta &conf, help_level_t level)

@@ -9,7 +9,7 @@ class BarInfo {
     BarInfo *f, *b;
 
 public:
-    BarInfo(float pg = 0, const std::string &dc = "");
+    explicit BarInfo(float pg = 0, const std::string &dc = "");
     void setProgress(float pg);
     void setDesc(const std::string &d);
     void setBar(float pg, const std::string &d);
@@ -25,6 +25,6 @@ class progressBar {
 public:
     progressBar();
     void addBar(BarInfo *u);
-    std::string desc();
+    std::string desc() const;
     ~progressBar();
 };

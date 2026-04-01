@@ -3,18 +3,13 @@
 #include "utils.h"
 
 namespace {
-constexpr const char *AUTO_APPROVE_CONFIG_FILE = "./config/auto_approve.json";
-
-bool starts_with(const std::string &s, const std::string &prefix)
-{
-    return s.size() >= prefix.size() &&
-           s.compare(0, prefix.size(), prefix) == 0;
-}
+const std::string AUTO_APPROVE_CONFIG_FILE =
+    bot_config_path(nullptr, "features/auto_approve/auto_approve.json");
 
 bool is_approve_command(const std::string &m)
 {
-    return m == "approve" || m == "approve.help" || m == "approve.status" ||
-           starts_with(m, "approve.friend") || starts_with(m, "approve.invite");
+    return cmd_match_exact(m, {"approve", "approve.help", "approve.status"}) ||
+           cmd_match_prefix(m, {"approve.friend", "approve.invite"});
 }
 
 std::string approve_usage()
@@ -89,6 +84,7 @@ void auto_approve::process(std::string message, const msg_meta &conf)
 
             Json::Value res;
             res["flag"] = flag;
+            res["sub_type"] = "add";
             res["approve"] = true;
             conf.p->cq_send("set_friend_add_request", res);
             conf.p->setlog(LOG::INFO, "friend add approved by " +
@@ -107,6 +103,7 @@ void auto_approve::process(std::string message, const msg_meta &conf)
 
             Json::Value res;
             res["flag"] = flag;
+            res["sub_type"] = "invite";
             res["approve"] = true;
             conf.p->cq_send("set_group_add_request", res);
             conf.p->setlog(LOG::INFO, "group invite approved in group " +
@@ -116,23 +113,6 @@ void auto_approve::process(std::string message, const msg_meta &conf)
             return;
         }
 
-        return;
-    }
-
-    if (!conf.p->is_op(conf.user_id)) {
-        return;
-    }
-
-    if (m == "approve" || m == "approve.help") {
-        conf.p->cq_send(approve_usage(), conf);
-        return;
-    }
-
-    if (m == "approve.status") {
-        conf.p->cq_send(
-            "auto friend: " + state_to_text(auto_friend_) +
-                "\nauto invite: " + state_to_text(auto_group_invite_),
-            conf);
         return;
     }
 
@@ -148,14 +128,54 @@ void auto_approve::process(std::string message, const msg_meta &conf)
         conf.p->cq_send(label + " set to: " + state_to_text(state), conf);
     };
 
-    if (starts_with(m, "approve.friend")) {
-        set_switch(trim(m.substr(std::string("approve.friend").size())),
-                   auto_friend_, "auto friend");
-        return;
-    }
-    if (starts_with(m, "approve.invite")) {
-        set_switch(trim(m.substr(std::string("approve.invite").size())),
-                   auto_group_invite_, "auto invite");
+    auto require_op = [&]() { return conf.p->is_op(conf.user_id); };
+
+    const std::vector<cmd_exact_rule> exact_rules = {
+        {"approve",
+         [&]() {
+             conf.p->cq_send(approve_usage(), conf);
+             return true;
+         },
+         {require_op}},
+        {"approve.help",
+         [&]() {
+             conf.p->cq_send(approve_usage(), conf);
+             return true;
+         },
+         {require_op}},
+        {"approve.status",
+         [&]() {
+             conf.p->cq_send(
+                 "auto friend: " + state_to_text(auto_friend_) +
+                     "\nauto invite: " + state_to_text(auto_group_invite_),
+                 conf);
+             return true;
+         },
+         {require_op}},
+    };
+
+    const std::vector<cmd_prefix_rule> prefix_rules = {
+        {"approve.friend",
+         [&]() {
+             std::string body;
+             if (cmd_strip_prefix(m, "approve.friend", body)) {
+                 set_switch(body, auto_friend_, "auto friend");
+             }
+             return true;
+         },
+         {require_op}},
+        {"approve.invite",
+         [&]() {
+             std::string body;
+             if (cmd_strip_prefix(m, "approve.invite", body)) {
+                 set_switch(body, auto_group_invite_, "auto invite");
+             }
+             return true;
+         },
+         {require_op}},
+    };
+
+    if (cmd_dispatch(m, exact_rules, prefix_rules)) {
         return;
     }
 
@@ -173,6 +193,14 @@ bool auto_approve::check(std::string message, const msg_meta &conf)
     return is_approve_command(m);
 }
 
+bool auto_approve::reload(const msg_meta &conf)
+{
+    (void)conf;
+    std::unique_lock<std::mutex> lock(mutex_);
+    load_config();
+    return true;
+}
+
 std::string auto_approve::help() { return ""; }
 
 std::string auto_approve::help(const msg_meta &conf, help_level_t level)
@@ -182,11 +210,8 @@ std::string auto_approve::help(const msg_meta &conf, help_level_t level)
         return "";
     }
 
-    return "approve: OP-only auto approve controls\n"
-           "approve.help\n"
-           "approve.status\n"
-           "approve.friend on|off\n"
-           "approve.invite on|off";
+    return "approve: OP-only auto approve controls. Use approve.help for full "
+           "usage.";
 }
 
 DECLARE_FACTORY_FUNCTIONS(auto_approve)

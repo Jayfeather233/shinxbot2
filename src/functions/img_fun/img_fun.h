@@ -12,9 +12,9 @@ private:
     std::map<userid_t, img_fun_type> is_input;
 
 public:
-    void process(std::string message, const msg_meta &conf);
-    bool check(std::string message, const msg_meta &conf);
-    std::string help();
+    void process(std::string message, const msg_meta &conf) override;
+    bool check(std::string message, const msg_meta &conf) override;
+    std::string help() override;
 };
 
 DECLARE_FACTORY_FUNCTIONS_HEADER

@@ -15,8 +15,12 @@ void heartBeat::start_recover()
         std::cerr << "Process Error!" << std::endl;
     }
     else if (k == 0) {
-        for (std::string u : recover_commands) {
-            system(u.c_str());
+        for (const std::string &u : recover_commands) {
+            int rc = system(u.c_str());
+            if (rc == -1) {
+                std::cerr << "recover command failed to launch: " << u
+                          << std::endl;
+            }
         }
         exit(0);
     }
@@ -25,14 +29,14 @@ void heartBeat::start_recover()
     }
 }
 heartBeat::heartBeat(const std::vector<std::string> &commands)
-    : recover_commands(commands)
+    : recover_commands(commands), las_time(get_current_time())
 {
     is_recorded = false;
     recovering = true;
 }
 void heartBeat::run()
 {
-    while (1) {
+    while (running_.load()) {
         if (is_recorded && get_current_time() - las_time >= 3600 * 8 &&
             !recovering) { // 8h
             start_recover();
@@ -41,6 +45,9 @@ void heartBeat::run()
         sleep(60);
     }
 }
+
+void heartBeat::stop() { running_.store(false); }
+
 void heartBeat::inform()
 {
     las_time = get_current_time();
