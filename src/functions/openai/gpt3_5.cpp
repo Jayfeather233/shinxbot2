@@ -179,7 +179,86 @@ void gpt3_5::save_history(int64_t id)
 
 void gpt3_5::process(std::string message, const msg_meta &conf)
 {
+    int64_t reply_id = -1;
+    if (starts_with(message, "[CQ:reply,id=")) {
+        size_t id_start = 13;
+        size_t id_end = message.find_first_of(",]", id_start);
+        if (id_end != std::string::npos) {
+            reply_id = std::stoll(message.substr(id_start, id_end - id_start));
+        }
+        size_t pos = message.find(']');
+        if (pos != std::string::npos) {
+            message = trim(message.substr(pos + 1));
+        }
+    }
+
+    if (message == "你说的话我不喜欢") {
+        if (reply_id != -1) {
+            Json::Value get_msg_param;
+            get_msg_param["message_id"] = reply_id;
+            Json::Value msg_info =
+                string_to_json(conf.p->cq_send("get_msg", get_msg_param));
+            if (msg_info["data"]["sender"]["user_id"].asUInt64() ==
+                conf.p->get_botqq()) {
+                Json::Value del_msg_param;
+                del_msg_param["message_id"] = reply_id;
+                conf.p->cq_send("delete_msg", del_msg_param);
+            }
+        }
+        return;
+    }
+
+    if (!starts_with(message, ".ai")) {
+        return;
+    }
+
     message = do_black(trim(message.substr(3)));
+
+    if (message.find(".fw") != std::string::npos && reply_id != -1) {
+        Json::Value get_msg_param;
+        get_msg_param["message_id"] = reply_id;
+        Json::Value msg_info =
+            string_to_json(conf.p->cq_send("get_msg", get_msg_param));
+        std::string replied_content = msg_info["data"]["message"].asString();
+
+        size_t fwd_pos = replied_content.find("[CQ:forward,id=");
+        if (fwd_pos != std::string::npos) {
+            size_t id_start = fwd_pos + 15;
+            size_t id_end = replied_content.find(']', id_start);
+            if (id_end != std::string::npos) {
+                std::string forward_id =
+                    replied_content.substr(id_start, id_end - id_start);
+                Json::Value get_fwd_param;
+                get_fwd_param["message_id"] =
+                    reply_id; 
+                Json::Value fwd_info = string_to_json(
+                    conf.p->cq_send("get_forward_msg", get_fwd_param));
+
+                if (fwd_info["retcode"].asInt() == 0) {
+                    Json::Value messages = fwd_info["data"].isMember("messages")
+                                               ? fwd_info["data"]["messages"]
+                                               : fwd_info["data"];
+                    std::string all_text = "Forwarded Messages:\n";
+                    if (messages.isArray()) {
+                        for (const auto &m : messages) {
+                            std::string nick =
+                                m["sender"]["nickname"].asString();
+                            std::string content = messageArr_to_string(
+                                m.isMember("message") ? m["message"]
+                                                      : m["content"]);
+                            all_text += nick + ": " + content + "\n";
+                        }
+                    }
+                    size_t fw_placeholder_pos = message.find(".fw");
+                    if (fw_placeholder_pos != std::string::npos) {
+                        message.replace(fw_placeholder_pos, 3,
+                                        "\n" + all_text);
+                    }
+                }
+            }
+        }
+    }
+
     std::istringstream iss(message);
     std::string command;
     iss >> command;
@@ -419,6 +498,15 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
 bool gpt3_5::check(std::string message, const msg_meta &conf)
 {
     (void)conf;
+    if (starts_with(message, "[CQ:reply,id=")) {
+        size_t pos = message.find(']');
+        if (pos != std::string::npos) {
+            message = trim(message.substr(pos + 1));
+        }
+    }
+    if (message == "你说的话我不喜欢") {
+        return true;
+    }
     return cmd_match_prefix(message, {".ai"});
 }
 std::string gpt3_5::help() { return "Openai gpt3.5: start with .ai"; }
