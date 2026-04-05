@@ -63,6 +63,7 @@ gpt3_5::gpt3_5()
         Json::Value res = string_to_json(ans);
 
         Json::ArrayIndex sz = res["keys"].size();
+        if (sz > MAX_KEYS) sz = MAX_KEYS;
         for (Json::ArrayIndex i = 0; i < sz; ++i) {
             key.push_back(res["keys"][i].asString());
             is_lock.push_back(false);
@@ -461,6 +462,13 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
         }
     }
     else {
+        if (!J.isMember("choices") || !J["choices"].isArray() ||
+            J["choices"].empty()) {
+            conf.p->cq_send("Openai ERROR: API 响应格式异常(缺少 choices)",
+                            conf);
+            return;
+        }
+
         std::string aimsg = J["choices"][0]["message"]["content"].asString();
         if (trim(aimsg).empty()) {
             conf.p->cq_send("API空返回！", conf);
@@ -468,7 +476,10 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
         }
         aimsg = do_black(aimsg);
 
-        int tokens = static_cast<int>(J["usage"]["total_tokens"].asInt64());
+        int tokens = 0;
+        if (J.isMember("usage") && J["usage"].isMember("total_tokens")) {
+            tokens = static_cast<int>(J["usage"]["total_tokens"].asInt64());
+        }
 
         if (MAX_TOKEN < tokens) {
             history[id].clear();
