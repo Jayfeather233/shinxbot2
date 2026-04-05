@@ -462,6 +462,10 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     }
     else {
         std::string aimsg = J["choices"][0]["message"]["content"].asString();
+        if (trim(aimsg).empty()) {
+            conf.p->cq_send("API空返回！", conf);
+            return;
+        }
         aimsg = do_black(aimsg);
 
         int tokens = static_cast<int>(J["usage"]["total_tokens"].asInt64());
