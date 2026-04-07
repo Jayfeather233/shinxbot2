@@ -7,6 +7,7 @@
 #include <mutex>
 #include <regex>
 #include <sstream>
+#include <ctime>
 
 /**
  * Overall API intro: https://platform.openai.com/docs/api-reference/chat/create
@@ -407,8 +408,15 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     Json::Value J, user_input_J, ign;
     user_input_J["role"] = "user";
     std::string nickname = get_stranger_name(conf.p, conf.user_id);
+
+    std::time_t now = std::time(nullptr);
+    now += 8 * 3600; 
+    std::tm *tm_utc8 = std::gmtime(&now);
+    char time_buf[64];
+    std::strftime(time_buf, sizeof(time_buf), "%Y/%m/%d %H:%M:%S", tm_utc8);
+
     user_input_J["content"] = "[User: " + std::to_string(conf.user_id) + "(" +
-                              nickname + ")] " + message;
+                              nickname + ")][Time: " + std::string(time_buf) + "] " + message;
     // J = history[id];
     // while(getlength(J) > MAX_TOKEN - MAX_REPLY){
     //     J.removeIndex(0, &ign);
