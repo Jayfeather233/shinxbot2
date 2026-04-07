@@ -4,9 +4,11 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <mutex>
 
 class gpt3_5 : public processable {
 private:
+    std::mutex data_lock;
     std::vector<bool> is_lock;
     bool is_open, is_debug;
     std::string close_message; // The reason for is_open=false

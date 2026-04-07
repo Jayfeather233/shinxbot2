@@ -8,6 +8,7 @@
 #include <regex>
 #include <sstream>
 #include <ctime>
+#include <cstring>
 
 /**
  * Overall API intro: https://platform.openai.com/docs/api-reference/chat/create
@@ -146,19 +147,36 @@ bool isASCII(const std::string &s)
 
 std::string gpt3_5::do_black(std::string message)
 {
+    std::lock_guard<std::mutex> lock(data_lock);
     for (std::string u : black_list) {
+        // Escape basic regex special chars
+        std::string escaped_u;
+        for (char c : u) {
+            if (strchr(".^$*+?()[]{}\\|", c)) escaped_u += '\\';
+            escaped_u += c;
+        }
         std::regex black_regex;
-        if (isASCII(u))
-            black_regex = std::regex("\\b" + u + "\\b");
-        else
-            black_regex = std::regex(u);
-        message = std::regex_replace(message, black_regex, "__");
+        try {
+            if (isASCII(u))
+                black_regex = std::regex("\\b" + escaped_u + "\\b");
+            else
+                black_regex = std::regex(escaped_u);
+            message = std::regex_replace(message, black_regex, "__");
+        } catch (...) {
+            // If regex still fails, fallback to simple find/replace if needed
+            size_t pos = 0;
+            while ((pos = message.find(u, pos)) != std::string::npos) {
+                message.replace(pos, u.length(), "__");
+                pos += 2;
+            }
+        }
     }
     return message;
 }
 
 size_t gpt3_5::get_avaliable_key()
 {
+    std::lock_guard<std::mutex> lock(data_lock);
     size_t u;
     for (size_t i = 0; i < key.size(); i++) {
         if (!is_lock[u = (key_cycle + i) % key.size()]) {
@@ -171,6 +189,7 @@ size_t gpt3_5::get_avaliable_key()
 
 void gpt3_5::save_history(int64_t id)
 {
+    std::lock_guard<std::mutex> lock(data_lock);
     Json::Value J;
     J["pre_prompt"] = pre_default[id];
     J["history"] = history[id];
@@ -231,8 +250,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
                 std::string forward_id =
                     replied_content.substr(id_start, id_end - id_start);
                 Json::Value get_fwd_param;
-                get_fwd_param["message_id"] =
-                    reply_id; 
+                get_fwd_param["id"] = forward_id; 
                 Json::Value fwd_info = string_to_json(
                     conf.p->cq_send("get_forward_msg", get_fwd_param));
 
@@ -279,6 +297,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
          }},
         {".reset",
          [&]() {
+             std::lock_guard<std::mutex> lock(data_lock);
              auto it = history.find(id);
              if (it != history.end()) {
                  it->second.clear();
@@ -289,6 +308,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
          }},
         {"reset",
          [&]() {
+             std::lock_guard<std::mutex> lock(data_lock);
              auto it = history.find(id);
              if (it != history.end()) {
                  it->second.clear();
@@ -299,6 +319,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
          }},
         {".change",
          [&]() {
+             std::lock_guard<std::mutex> lock(data_lock);
              if (conf.p->is_op(conf.user_id) || (id & 1)) {
                  const std::string mode = args;
                  bool flg = false;
@@ -325,6 +346,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
          }},
         {".sw",
          [&]() {
+             std::lock_guard<std::mutex> lock(data_lock);
              if (conf.p->is_op(conf.user_id)) {
                  is_open = !is_open;
                  close_message = args;
@@ -337,6 +359,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
          }},
         {".debug",
          [&]() {
+             std::lock_guard<std::mutex> lock(data_lock);
              if (conf.p->is_op(conf.user_id)) {
                  is_debug = !is_debug;
                  conf.p->cq_send("is_debug: " + std::to_string(is_debug), conf);
@@ -348,6 +371,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
          }},
         {".set",
          [&]() {
+             std::lock_guard<std::mutex> lock(data_lock);
              std::string reply = "Not on op list.";
              if (conf.p->is_op(conf.user_id)) {
                  std::string type;
@@ -392,50 +416,65 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     }
 
     size_t keyid = get_avaliable_key();
-    if (is_lock[keyid]) {
-        conf.p->cq_send("请等待上次输入的回复。", conf);
-        return;
+    {
+        std::lock_guard<std::mutex> lock(data_lock);
+        if (is_lock[keyid]) {
+            conf.p->cq_send("请等待上次输入的回复。", conf);
+            return;
+        }
+        if (!is_open) {
+            conf.p->cq_send("已关闭。" + close_message, conf);
+            return;
+        }
+        if (history.find(id) == history.end()) {
+            pre_default[id] = default_prompt;
+        }
+        is_lock[keyid] = true;
     }
-    if (!is_open) {
-        conf.p->cq_send("已关闭。" + close_message, conf);
-        return;
-    }
-    if (history.find(id) == history.end()) {
-        pre_default[id] = default_prompt;
-    }
+
     std::lock_guard<std::mutex> lock(gptlock[keyid]);
-    is_lock[keyid] = true;
     Json::Value J, user_input_J, ign;
     user_input_J["role"] = "user";
     std::string nickname = get_stranger_name(conf.p, conf.user_id);
 
     std::time_t now = std::time(nullptr);
     now += 8 * 3600; 
-    std::tm *tm_utc8 = std::gmtime(&now);
-    char time_buf[64];
-    std::strftime(time_buf, sizeof(time_buf), "%Y/%m/%d %H:%M:%S", tm_utc8);
+    struct std::tm tm_utc8_res;
+    char time_buf[64] = "Unknown time";
+    
+#ifdef _WIN32
+    if (_gmtime64_s(&tm_utc8_res, &now) == 0) {
+#else
+    if (gmtime_r(&now, &tm_utc8_res) != nullptr) {
+#endif
+        std::strftime(time_buf, sizeof(time_buf), "%Y/%m/%d %H:%M:%S", &tm_utc8_res);
+    }
 
     user_input_J["content"] = "[User: " + std::to_string(conf.user_id) + "(" +
                               nickname + ")][Time: " + std::string(time_buf) + "] " + message;
-    // J = history[id];
-    // while(getlength(J) > MAX_TOKEN - MAX_REPLY){
-    //     J.removeIndex(0, &ign);
-    //     J.removeIndex(0, &ign);
-    // }
 
-    // history[id] = J;
-    // J = Json::Value();
     J["model"] = model_name;
-    Json::Value K = mode_prompt[pre_default[id]];
-    auto it = history.find(id);
-    if (it != history.end()) {
-        Json::ArrayIndex sz = it->second.size();
-        for (Json::ArrayIndex i = 0; i < sz; i++) {
-            K.append(it->second[i]);
+    
+    {
+        std::lock_guard<std::mutex> lock_data(data_lock);
+        
+        // Pre-pruning history to avoid context-length-limit errors
+        Json::Value &h = history[id];
+        while(getlength(h) > (int64_t)(MAX_TOKEN - MAX_REPLY)) {
+            if (h.size() > 0) h.removeIndex(0, &ign);
+            if (h.size() > 0) h.removeIndex(0, &ign);
+            if (h.size() == 0) break;
         }
+
+        Json::Value K = mode_prompt[pre_default[id]];
+        Json::ArrayIndex sz = h.size();
+        for (Json::ArrayIndex i = 0; i < sz; i++) {
+            K.append(h[i]);
+        }
+        K.append(user_input_J);
+        J["messages"] = K;
     }
-    K.append(user_input_J);
-    J["messages"] = K;
+    
     J["temperature"] = 0.7;
     J["max_tokens"] = MAX_REPLY;
     try {
@@ -453,15 +492,21 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
         J["error"]["message"] = "http connection failed.";
     }
     conf.p->setlog(LOG::INFO, "openai: user " + std::to_string(conf.user_id));
-    is_lock[keyid] = false;
+    
+    {
+        std::lock_guard<std::mutex> lock_data(data_lock);
+        is_lock[keyid] = false;
+    }
+
     if (J.isMember("error")) {
         if (J["error"]["message"].asString().find(
                 "This model's maximum context length is") == 0) {
             conf.p->cq_send("Openai ERROR: history message is too long. Please "
                             "try again or try .ai.reset",
                             conf);
-            history[id].removeIndex(0, &ign);
-            history[id].removeIndex(0, &ign);
+            std::lock_guard<std::mutex> lock_data(data_lock);
+            if (history[id].size() > 0) history[id].removeIndex(0, &ign);
+            if (history[id].size() > 0) history[id].removeIndex(0, &ign);
             save_history(id);
         }
         else {
@@ -489,6 +534,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
             tokens = static_cast<int>(J["usage"]["total_tokens"].asInt64());
         }
 
+        std::lock_guard<std::mutex> lock_data(data_lock);
         if (MAX_TOKEN < tokens) {
             history[id].clear();
         }
@@ -496,8 +542,8 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
             for (int i = 5; i >= 1; i--) {
                 if (MAX_TOKEN - RED_LINE / i < tokens) {
                     for (int j = 0; j < i; j++) {
-                        history[id].removeIndex(0, &ign);
-                        history[id].removeIndex(0, &ign);
+                        if (history[id].size() > 0) history[id].removeIndex(0, &ign);
+                        if (history[id].size() > 0) history[id].removeIndex(0, &ign);
                     }
                     break;
                 }
@@ -518,6 +564,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     }
     save_history(id);
 }
+
 bool gpt3_5::check(std::string message, const msg_meta &conf)
 {
     (void)conf;
@@ -532,6 +579,7 @@ bool gpt3_5::check(std::string message, const msg_meta &conf)
     }
     return cmd_match_prefix(message, {".ai"});
 }
+
 std::string gpt3_5::help() { return "Openai gpt3.5: start with .ai"; }
 
 DECLARE_FACTORY_FUNCTIONS(gpt3_5)
