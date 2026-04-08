@@ -198,6 +198,99 @@ void gpt3_5::save_history(int64_t id)
         J.toStyledString());
 }
 
+std::string gpt3_5::get_quoted_content(const bot *p, int64_t reply_id, int depth)
+{
+    if (depth > 5) return "...(too deep)";
+
+    Json::Value get_msg_param;
+    get_msg_param["message_id"] = reply_id;
+    Json::Value msg_info =
+        string_to_json(p->cq_send("get_msg", get_msg_param));
+
+    if (msg_info["retcode"].asInt() != 0 || !msg_info.isMember("data")) return "[Failed to fetch message]";
+
+    Json::Value &msg_data = msg_info["data"];
+    if (!msg_data.isMember("message")) return "[Empty message content]";
+
+    std::string content = messageArr_to_string(msg_data["message"]);
+
+    // Check for forward message
+    size_t fwd_pos = content.find("[CQ:forward,id=");
+    if (fwd_pos != std::string::npos) {
+        size_t id_start = fwd_pos + 15;
+        size_t id_end = content.find(']', id_start);
+        if (id_end != std::string::npos) {
+            std::string forward_id = content.substr(id_start, id_end - id_start);
+            return expand_forward_content(p, forward_id, depth);
+        }
+    }
+
+    std::string nickname = "Unknown";
+    if (msg_data.isMember("sender") && msg_data["sender"].isMember("nickname") && msg_data["sender"]["nickname"].isString()) {
+        nickname = msg_data["sender"]["nickname"].asString();
+    }
+
+    uint64_t uid = 0;
+    if (msg_data.isMember("sender") && msg_data["sender"].isMember("user_id")) {
+        uid = msg_data["sender"]["user_id"].asUInt64();
+    }
+
+    if (uid != 0) {
+        return "[" + nickname + "(" + std::to_string(uid) + ")]：" + content;
+    }
+    return "[" + nickname + "]：" + content;
+}
+
+std::string gpt3_5::expand_forward_content(const bot *p, const std::string &forward_id, int depth)
+{
+    Json::Value get_fwd_param;
+    get_fwd_param["id"] = forward_id;
+    Json::Value fwd_info = string_to_json(
+        p->cq_send("get_forward_msg", get_fwd_param));
+
+    if (fwd_info["retcode"].asInt() != 0 || !fwd_info.isMember("data")) return "[Failed to fetch forward message]";
+
+    Json::Value messages = fwd_info["data"].isMember("messages")
+                               ? fwd_info["data"]["messages"]
+                               : fwd_info["data"];
+    std::string result;
+    if (messages.isArray()) {
+        for (const auto &m : messages) {
+            if (!m.isMember("message") && !m.isMember("content")) continue;
+
+            std::string content = messageArr_to_string(
+                m.isMember("message") ? m["message"] : m["content"]);
+
+            // Check for nested forward
+            size_t fwd_pos = content.find("[CQ:forward,id=");
+            if (fwd_pos != std::string::npos) {
+                size_t id_start = fwd_pos + 15;
+                size_t id_end = content.find(']', id_start);
+                if (id_end != std::string::npos) {
+                    std::string nested_id =
+                        content.substr(id_start, id_end - id_start);
+                    result += "[" + expand_forward_content(p, nested_id, depth + 1) + "] ";
+                    continue;
+                }
+            }
+
+            if (!m.isMember("sender")) continue;
+
+            std::string nick = m["sender"]["nickname"].isString() 
+                               ? m["sender"]["nickname"].asString() 
+                               : "Unknown";
+            uint64_t uid = m["sender"]["user_id"].asUInt64();
+
+            if (uid != 0) {
+                result += "[" + nick + "(" + std::to_string(uid) + ")]：" + content + " ";
+            } else {
+                result += "[" + nick + "]：" + content + " ";
+            }
+        }
+    }
+    return trim(result);
+}
+
 void gpt3_5::process(std::string message, const msg_meta &conf)
 {
     int64_t reply_id = -1;
@@ -234,50 +327,6 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     }
 
     message = do_black(trim(message.substr(3)));
-
-    if (message.find(".fw") != std::string::npos && reply_id != -1) {
-        Json::Value get_msg_param;
-        get_msg_param["message_id"] = reply_id;
-        Json::Value msg_info =
-            string_to_json(conf.p->cq_send("get_msg", get_msg_param));
-        std::string replied_content = msg_info["data"]["message"].asString();
-
-        size_t fwd_pos = replied_content.find("[CQ:forward,id=");
-        if (fwd_pos != std::string::npos) {
-            size_t id_start = fwd_pos + 15;
-            size_t id_end = replied_content.find(']', id_start);
-            if (id_end != std::string::npos) {
-                std::string forward_id =
-                    replied_content.substr(id_start, id_end - id_start);
-                Json::Value get_fwd_param;
-                get_fwd_param["id"] = forward_id; 
-                Json::Value fwd_info = string_to_json(
-                    conf.p->cq_send("get_forward_msg", get_fwd_param));
-
-                if (fwd_info["retcode"].asInt() == 0) {
-                    Json::Value messages = fwd_info["data"].isMember("messages")
-                                               ? fwd_info["data"]["messages"]
-                                               : fwd_info["data"];
-                    std::string all_text = "Forwarded Messages:\n";
-                    if (messages.isArray()) {
-                        for (const auto &m : messages) {
-                            std::string nick =
-                                m["sender"]["nickname"].asString();
-                            std::string content = messageArr_to_string(
-                                m.isMember("message") ? m["message"]
-                                                      : m["content"]);
-                            all_text += nick + ": " + content + "\n";
-                        }
-                    }
-                    size_t fw_placeholder_pos = message.find(".fw");
-                    if (fw_placeholder_pos != std::string::npos) {
-                        message.replace(fw_placeholder_pos, 3,
-                                        "\n" + all_text);
-                    }
-                }
-            }
-        }
-    }
 
     std::istringstream iss(message);
     std::string command;
@@ -450,8 +499,13 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
         std::strftime(time_buf, sizeof(time_buf), "%Y/%m/%d %H:%M:%S", &tm_utc8_res);
     }
 
-    user_input_J["content"] = "[User: " + std::to_string(conf.user_id) + "(" +
-                              nickname + ")][Time: " + std::string(time_buf) + "] " + message;
+    std::string prompt_content = "[User: " + std::to_string(conf.user_id) + " (" +
+                                 nickname + ")] [Time: " + std::string(time_buf) + "]";
+    if (reply_id != -1) {
+        prompt_content += " [CQ:reply,id=" + std::to_string(reply_id) + "] 引用聊天记录：" + get_quoted_content(conf.p, reply_id);
+    }
+    prompt_content += " 正文：" + message;
+    user_input_J["content"] = prompt_content;
 
     J["model"] = model_name;
     

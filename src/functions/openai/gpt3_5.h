@@ -24,6 +24,9 @@ private:
     std::string base_url;
     std::string model_name;
 
+    std::string get_quoted_content(const bot *p, int64_t reply_id, int depth = 0);
+    std::string expand_forward_content(const bot *p, const std::string &forward_id, int depth);
+
 public:
     gpt3_5();
     size_t get_avaliable_key();
