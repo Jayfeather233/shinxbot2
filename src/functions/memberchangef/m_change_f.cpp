@@ -112,9 +112,11 @@ void m_change_f::process(std::string message, const msg_meta &conf)
         }
         if (message_w.find(L"设置入群消息") == 0) {
             std::wstring new_msg = trim(message_w.substr(6));
-            std::lock_guard<std::mutex> lock(group_mutex);
-            this->group_welcome_messages[conf.group_id] = new_msg;
-            this->save_welcome_messages();
+            {
+                std::lock_guard<std::mutex> lock(group_mutex);
+                this->group_welcome_messages[conf.group_id] = new_msg;
+                this->save_welcome_messages();
+            }
             conf.p->setlog(LOG::INFO,
                            fmt::format("{} 设置入群消息: {}", conf.group_id,
                                        wstring_to_string(new_msg)));
