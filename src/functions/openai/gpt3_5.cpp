@@ -96,15 +96,20 @@ gpt3_5::gpt3_5()
     if (fs::exists(gpt_history_dir)) {
         fs::path gpt_files = gpt_history_dir;
         fs::directory_iterator di(gpt_files);
+        std::regex history_file_regex(R"(^(\d+)\.json$)");
         for (auto &entry : di) {
-            if (entry.is_regular_file()) {
-                std::istringstream iss(entry.path().filename().string());
-                int64_t id;
-                iss >> id;
-                Json::Value J = string_to_json(readfile(entry.path()));
-                history[id] = J["history"];
-                pre_default[id] = J["pre_prompt"].asString();
+            if (!entry.is_regular_file()) {
+                continue;
             }
+            std::string filename = entry.path().filename().string();
+            std::smatch match;
+            if (!std::regex_match(filename, match, history_file_regex)) {
+                continue;
+            }
+            int64_t id = std::stoll(match[1].str());
+            Json::Value J = string_to_json(readfile(entry.path()));
+            history[id] = J["history"];
+            pre_default[id] = J["pre_prompt"].asString();
         }
     }
 }
