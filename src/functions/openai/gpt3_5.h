@@ -18,12 +18,12 @@ private:
     std::map<int64_t, Json::Value> history;
     std::vector<std::string> modes;
     std::set<std::string> black_list;
+    std::set<int64_t> active_ids;
     std::map<std::string, Json::Value> mode_prompt;
     std::vector<std::string> key;
     size_t key_cycle;
     std::string base_url;
     std::string model_name;
-
     std::string get_quoted_content(const bot *p, int64_t reply_id, int depth = 0);
     std::string expand_forward_content(const bot *p, const std::string &forward_id, int depth);
 

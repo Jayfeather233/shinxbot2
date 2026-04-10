@@ -627,7 +627,11 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     {
         std::lock_guard<std::mutex> lock(data_lock);
         if (is_lock[keyid]) {
-            conf.p->cq_send("请等待上次输入的回复。", conf);
+            conf.p->cq_send("请等待其他对话中输入的回复。", conf);
+            return;
+        }
+        if (active_ids.count(id)) {
+            conf.p->cq_send("请等待该对话中上一个输入的回复。", conf);
             return;
         }
         if (!is_open) {
@@ -638,6 +642,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
             pre_default[id] = default_prompt;
         }
         is_lock[keyid] = true;
+        active_ids.insert(id);
     }
 
     std::lock_guard<std::mutex> lock(gptlock[keyid]);
@@ -709,6 +714,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     {
         std::lock_guard<std::mutex> lock_data(data_lock);
         is_lock[keyid] = false;
+        active_ids.erase(id);
     }
 
     if (J.isMember("error")) {
@@ -732,6 +738,8 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
             J["choices"].empty()) {
             conf.p->cq_send("Openai ERROR: API 响应格式异常(缺少 choices)",
                             conf);
+            std::lock_guard<std::mutex> lock_data(data_lock);
+            active_ids.erase(id); 
             return;
         }
 
@@ -746,6 +754,8 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
             } else {
                 conf.p->cq_send("API空返回！", conf);
             }
+            std::lock_guard<std::mutex> lock_data(data_lock);
+            active_ids.erase(id);
             return;
         }
 
