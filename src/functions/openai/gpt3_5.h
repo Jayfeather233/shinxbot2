@@ -34,6 +34,9 @@ private:
     void restore_archive(int64_t id, const msg_meta &conf, const std::string &arg);
     bool is_allowed_arc(int64_t id, const msg_meta &conf);
 
+    int arc_check_counter = 0;
+    bool arc_is_full = false;
+
 public:
     gpt3_5();
     size_t get_avaliable_key();

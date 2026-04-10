@@ -96,7 +96,7 @@ gpt3_5::gpt3_5()
     if (fs::exists(gpt_history_dir)) {
         fs::path gpt_files = gpt_history_dir;
         fs::directory_iterator di(gpt_files);
-        std::regex history_file_regex(R"(^(\d+)\.json$)");
+        std::regex history_file_regex(R"(^(-?\d+)\.json$)");
         for (auto &entry : di) {
             if (!entry.is_regular_file()) {
                 continue;
@@ -836,10 +836,8 @@ uintmax_t gpt3_5::get_archives_total_size()
 void gpt3_5::perform_archive(int64_t id, const msg_meta &conf, bool is_auto)
 {
     std::lock_guard<std::mutex> lock(data_lock);
-    if (get_archives_total_size() >= 250 * 1024 * 1024) { // 250MB
-        if (!is_auto) {
-            conf.p->cq_send("当前归档文件过大，已暂停生成。请联系管理员", conf);
-        }
+    if (!is_auto && arc_is_full) {
+        conf.p->cq_send("当前归档文件过大，已暂停生成。请联系管理员", conf);
         return;
     }
 
@@ -874,6 +872,12 @@ void gpt3_5::perform_archive(int64_t id, const msg_meta &conf, bool is_auto)
     J["pre_prompt"] = pre_default[id];
     J["history"] = history[id];
     writefile(full_path, J.toStyledString());
+
+    arc_check_counter++;
+    if (arc_check_counter >= 10) {
+        arc_is_full = (get_archives_total_size() >= 250 * 1024 * 1024);
+        arc_check_counter = 0;
+    }
 
     if (!is_auto) {
         conf.p->cq_send("归档已生成: " + filename, conf);
@@ -949,6 +953,15 @@ void gpt3_5::restore_archive(int64_t id, const msg_meta &conf,
         target_file = arg;
         if (target_file.find(".json") == std::string::npos)
             target_file += ".json";
+    }
+
+    if (target_file.empty()) return;
+
+    if (target_file.find("..") != std::string::npos || 
+        target_file.find('/') != std::string::npos || 
+        target_file.find('\\') != std::string::npos) {
+        conf.p->cq_send("非法的文件名格式。", conf);
+        return;
     }
 
     std::string full_path = backup_dir + "/" + target_file;
