@@ -153,7 +153,12 @@ bool isASCII(const std::string &s)
 std::string gpt3_5::do_black(std::string message)
 {
     std::lock_guard<std::mutex> lock(data_lock);
+    bool filtered = false;
     for (std::string u : black_list) {
+        if (u.empty()) continue;
+        if (message.find(u) == std::string::npos) continue;
+
+        filtered = true;
         // Escape basic regex special chars
         std::string escaped_u;
         for (char c : u) {
@@ -175,6 +180,9 @@ std::string gpt3_5::do_black(std::string message)
                 pos += 2;
             }
         }
+    }
+    if (filtered) {
+        message += "\n(QAQ 响应被过滤了)";
     }
     return message;
 }
@@ -582,11 +590,26 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
         }
 
         std::string aimsg = J["choices"][0]["message"]["content"].asString();
+        std::string finish_reason = J["choices"][0].isMember("finish_reason") 
+                                    ? J["choices"][0]["finish_reason"].asString() 
+                                    : "";
+
         if (trim(aimsg).empty()) {
-            conf.p->cq_send("API空返回！", conf);
+            if (finish_reason == "content_filter") {
+                conf.p->cq_send("QAQ 响应被 OpenAI 安全策略过滤了", conf);
+            } else {
+                conf.p->cq_send("API空返回！", conf);
+            }
             return;
         }
+
         aimsg = do_black(aimsg);
+
+        if (finish_reason == "length") {
+            aimsg += "\n(QAQ 响应因长度限制未完成)";
+        } else if (finish_reason == "content_filter") {
+            aimsg += "\n(QAQ 响应被 OpenAI 安全策略部分过滤)";
+        }
 
         int tokens = 0;
         if (J.isMember("usage") && J["usage"].isMember("total_tokens")) {
