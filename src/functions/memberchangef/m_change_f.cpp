@@ -120,18 +120,16 @@ void m_change_f::process(std::string message, const msg_meta &conf)
             conf.p->setlog(LOG::INFO,
                            fmt::format("{} 设置入群消息: {}", conf.group_id,
                                        wstring_to_string(new_msg)));
-            std::wstring test_msg =
-                trim(this->format_message(new_msg, conf));
+            std::wstring test_msg = trim(this->format_message(
+                this->get_welcome_message(conf.group_id), conf));
             conf.p->cq_send(fmt::format("设置入群消息成功!\n{}",
                                         wstring_to_string(test_msg)),
                             conf);
         }
         else if (message_w.find(L"删除入群消息") == 0) {
-            {
-                std::lock_guard<std::mutex> lock(group_mutex);
-                group_welcome_messages[conf.group_id] = L"";
-                this->save_welcome_messages();
-            }
+            std::lock_guard<std::mutex> lock(group_mutex);
+            group_welcome_messages[conf.group_id] = L"";
+            this->save_welcome_messages();
             conf.p->setlog(LOG::INFO,
                            fmt::format("{} 删除入群消息", conf.group_id));
             conf.p->cq_send("删除入群消息成功", conf);
