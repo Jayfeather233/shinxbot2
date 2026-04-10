@@ -227,14 +227,71 @@ std::string gpt3_5::get_quoted_content(const bot *p, int64_t reply_id, int depth
 
     std::string content = messageArr_to_string(msg_data["message"]);
 
-    // Check for forward message
+    // Check for forward message with ID
     size_t fwd_pos = content.find("[CQ:forward,id=");
     if (fwd_pos != std::string::npos) {
         size_t id_start = fwd_pos + 15;
-        size_t id_end = content.find(']', id_start);
+        size_t id_end = content.find_first_of(",]", id_start);
         if (id_end != std::string::npos) {
             std::string forward_id = content.substr(id_start, id_end - id_start);
             return expand_forward_content(p, forward_id, depth);
+        }
+    }
+
+    // Check for forward message with raw content (JSON format)
+    size_t fwd_cont_pos = content.find("[CQ:forward,content=");
+    if (fwd_cont_pos != std::string::npos) {
+        size_t cont_start = fwd_cont_pos + 20;
+        size_t cont_end = content.find_last_of(']'); // Find the outermost CQ code closure
+        if (cont_end != std::string::npos && cont_end > cont_start) {
+            std::string raw_json = content.substr(cont_start, cont_end - cont_start);
+            // Decode potential HTML entities (like &#91; for [)
+            raw_json = std::regex_replace(raw_json, std::regex("&#91;"), "[");
+            raw_json = std::regex_replace(raw_json, std::regex("&#93;"), "]");
+            raw_json = std::regex_replace(raw_json, std::regex("&#44;"), ",");
+            
+            try {
+                Json::Value fwd_data = string_to_json(raw_json);
+                if (fwd_data.isArray()) {
+                    Json::Value mock_fwd;
+                    mock_fwd["retcode"] = 0;
+                    mock_fwd["data"]["messages"] = fwd_data;
+                    
+                    // We need a way to reuse the formatting logic in expand_forward_content
+                    // Since expand_forward_content currently fetches, we'll manually format here or refactor.
+                    // For now, let's process it directly to be safe.
+                    std::string result = (depth == 0) ? "合并转发记录:" : "";
+                    static const std::regex cq_regex(R"(\[CQ:([^,\]]+)[^\]]*\])");
+                    for (const auto &m : fwd_data) {
+                        std::string msg_text = messageArr_to_string(m.isMember("message") ? m["message"] : m["content"]);
+                        std::replace(msg_text.begin(), msg_text.end(), '\n', ' ');
+                        std::replace(msg_text.begin(), msg_text.end(), '\r', ' ');
+                        
+                        std::string cleaned;
+                        auto words_begin = std::sregex_iterator(msg_text.begin(), msg_text.end(), cq_regex);
+                        auto words_end = std::sregex_iterator();
+                        size_t last_pos = 0;
+                        for (std::sregex_iterator i = words_begin; i != words_end; ++i) {
+                            std::smatch match = *i;
+                            cleaned += msg_text.substr(last_pos, match.position() - last_pos);
+                            std::string type = match[1].str();
+                            if (type == "image") cleaned += "[图片]";
+                            else if (type == "record") cleaned += "[语音]";
+                            else if (type == "face") cleaned += "[表情]";
+                            else if (type == "at") cleaned += "[@某人]";
+                            else cleaned += "[" + type + "]";
+                            last_pos = match.position() + match.length();
+                        }
+                        cleaned += msg_text.substr(last_pos);
+                        
+                        std::string nick = m["sender"]["nickname"].asString();
+                        uint64_t uid = m["sender"]["user_id"].asUInt64();
+                        if (uid != 0) result += "[" + nick + "(" + std::to_string(uid) + ")]：" + cleaned;
+                        else result += "[" + nick + "]：" + cleaned;
+                    }
+                    return trim(result);
+                }
+            } catch (...) {}
         }
     }
 
