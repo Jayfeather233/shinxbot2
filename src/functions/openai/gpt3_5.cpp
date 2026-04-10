@@ -258,8 +258,9 @@ std::string gpt3_5::expand_forward_content(const bot *p, const std::string &forw
     Json::Value messages = fwd_info["data"].isMember("messages")
                                ? fwd_info["data"]["messages"]
                                : fwd_info["data"];
-    std::string result;
+    std::string result = (depth == 0) ? "合并转发记录:" : "";
     if (messages.isArray()) {
+        static const std::regex cq_regex(R"(\[CQ:([^,\]]+)[^\]]*\])");
         for (const auto &m : messages) {
             if (!m.isMember("message") && !m.isMember("content")) continue;
 
@@ -274,10 +275,35 @@ std::string gpt3_5::expand_forward_content(const bot *p, const std::string &forw
                 if (id_end != std::string::npos) {
                     std::string nested_id =
                         content.substr(id_start, id_end - id_start);
-                    result += "[" + expand_forward_content(p, nested_id, depth + 1) + "] ";
+                    result += "\n" + expand_forward_content(p, nested_id, depth + 1);
                     continue;
                 }
             }
+
+            // Flatten newlines
+            std::replace(content.begin(), content.end(), '\n', ' ');
+            std::replace(content.begin(), content.end(), '\r', ' ');
+
+            // Simplify CQ codes
+            std::string cleaned_content;
+            auto words_begin = std::sregex_iterator(content.begin(), content.end(), cq_regex);
+            auto words_end = std::sregex_iterator();
+            size_t last_pos = 0;
+            for (std::sregex_iterator i = words_begin; i != words_end; ++i) {
+                std::smatch match = *i;
+                cleaned_content += content.substr(last_pos, match.position() - last_pos);
+                std::string type = match[1].str();
+                if (type == "image") cleaned_content += "[图片]";
+                else if (type == "record") cleaned_content += "[语音]";
+                else if (type == "face") cleaned_content += "[表情]";
+                else if (type == "video") cleaned_content += "[视频]";
+                else if (type == "at") cleaned_content += "[@某人]";
+                else if (type == "reply") cleaned_content += "[回复]";
+                else cleaned_content += "[" + type + "]";
+                last_pos = match.position() + match.length();
+            }
+            cleaned_content += content.substr(last_pos);
+            content = cleaned_content;
 
             if (!m.isMember("sender")) continue;
 
@@ -287,9 +313,9 @@ std::string gpt3_5::expand_forward_content(const bot *p, const std::string &forw
             uint64_t uid = m["sender"]["user_id"].asUInt64();
 
             if (uid != 0) {
-                result += "[" + nick + "(" + std::to_string(uid) + ")]：" + content + " ";
+                result += "[" + nick + "(" + std::to_string(uid) + ")]：" + content;
             } else {
-                result += "[" + nick + "]：" + content + " ";
+                result += "[" + nick + "]：" + content;
             }
         }
     }
