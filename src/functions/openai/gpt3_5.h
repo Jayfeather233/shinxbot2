@@ -27,6 +27,13 @@ private:
     std::string get_quoted_content(const bot *p, int64_t reply_id, int depth = 0);
     std::string expand_forward_content(const bot *p, const std::string &forward_id, int depth);
 
+    // Archive and Restore features
+    void perform_archive(int64_t id, const msg_meta &conf, bool is_auto = false);
+    uintmax_t get_archives_total_size();
+    void list_archives(int64_t id, const msg_meta &conf, int page);
+    void restore_archive(int64_t id, const msg_meta &conf, const std::string &arg);
+    bool is_allowed_arc(int64_t id, const msg_meta &conf);
+
 public:
     gpt3_5();
     size_t get_avaliable_key();

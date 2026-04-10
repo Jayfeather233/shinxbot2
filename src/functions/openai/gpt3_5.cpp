@@ -227,14 +227,71 @@ std::string gpt3_5::get_quoted_content(const bot *p, int64_t reply_id, int depth
 
     std::string content = messageArr_to_string(msg_data["message"]);
 
-    // Check for forward message
+    // Check for forward message with ID
     size_t fwd_pos = content.find("[CQ:forward,id=");
     if (fwd_pos != std::string::npos) {
         size_t id_start = fwd_pos + 15;
-        size_t id_end = content.find(']', id_start);
+        size_t id_end = content.find_first_of(",]", id_start);
         if (id_end != std::string::npos) {
             std::string forward_id = content.substr(id_start, id_end - id_start);
             return expand_forward_content(p, forward_id, depth);
+        }
+    }
+
+    // Check for forward message with raw content (JSON format)
+    size_t fwd_cont_pos = content.find("[CQ:forward,content=");
+    if (fwd_cont_pos != std::string::npos) {
+        size_t cont_start = fwd_cont_pos + 20;
+        size_t cont_end = content.find_last_of(']'); // Find the outermost CQ code closure
+        if (cont_end != std::string::npos && cont_end > cont_start) {
+            std::string raw_json = content.substr(cont_start, cont_end - cont_start);
+            // Decode potential HTML entities (like &#91; for [)
+            raw_json = std::regex_replace(raw_json, std::regex("&#91;"), "[");
+            raw_json = std::regex_replace(raw_json, std::regex("&#93;"), "]");
+            raw_json = std::regex_replace(raw_json, std::regex("&#44;"), ",");
+            
+            try {
+                Json::Value fwd_data = string_to_json(raw_json);
+                if (fwd_data.isArray()) {
+                    Json::Value mock_fwd;
+                    mock_fwd["retcode"] = 0;
+                    mock_fwd["data"]["messages"] = fwd_data;
+                    
+                    // We need a way to reuse the formatting logic in expand_forward_content
+                    // Since expand_forward_content currently fetches, we'll manually format here or refactor.
+                    // For now, let's process it directly to be safe.
+                    std::string result = (depth == 0) ? "合并转发记录:" : "";
+                    static const std::regex cq_regex(R"(\[CQ:([^,\]]+)[^\]]*\])");
+                    for (const auto &m : fwd_data) {
+                        std::string msg_text = messageArr_to_string(m.isMember("message") ? m["message"] : m["content"]);
+                        std::replace(msg_text.begin(), msg_text.end(), '\n', ' ');
+                        std::replace(msg_text.begin(), msg_text.end(), '\r', ' ');
+                        
+                        std::string cleaned;
+                        auto words_begin = std::sregex_iterator(msg_text.begin(), msg_text.end(), cq_regex);
+                        auto words_end = std::sregex_iterator();
+                        size_t last_pos = 0;
+                        for (std::sregex_iterator i = words_begin; i != words_end; ++i) {
+                            std::smatch match = *i;
+                            cleaned += msg_text.substr(last_pos, match.position() - last_pos);
+                            std::string type = match[1].str();
+                            if (type == "image") cleaned += "[图片]";
+                            else if (type == "record") cleaned += "[语音]";
+                            else if (type == "face") cleaned += "[表情]";
+                            else if (type == "at") cleaned += "[@某人]";
+                            else cleaned += "[" + type + "]";
+                            last_pos = match.position() + match.length();
+                        }
+                        cleaned += msg_text.substr(last_pos);
+                        
+                        std::string nick = m["sender"]["nickname"].asString();
+                        uint64_t uid = m["sender"]["user_id"].asUInt64();
+                        if (uid != 0) result += "[" + nick + "(" + std::to_string(uid) + ")]：" + cleaned;
+                        else result += "[" + nick + "]：" + cleaned;
+                    }
+                    return trim(result);
+                }
+            } catch (...) {}
         }
     }
 
@@ -266,8 +323,9 @@ std::string gpt3_5::expand_forward_content(const bot *p, const std::string &forw
     Json::Value messages = fwd_info["data"].isMember("messages")
                                ? fwd_info["data"]["messages"]
                                : fwd_info["data"];
-    std::string result;
+    std::string result = (depth == 0) ? "合并转发记录:" : "";
     if (messages.isArray()) {
+        static const std::regex cq_regex(R"(\[CQ:([^,\]]+)[^\]]*\])");
         for (const auto &m : messages) {
             if (!m.isMember("message") && !m.isMember("content")) continue;
 
@@ -282,10 +340,35 @@ std::string gpt3_5::expand_forward_content(const bot *p, const std::string &forw
                 if (id_end != std::string::npos) {
                     std::string nested_id =
                         content.substr(id_start, id_end - id_start);
-                    result += "[" + expand_forward_content(p, nested_id, depth + 1) + "] ";
+                    result += "\n" + expand_forward_content(p, nested_id, depth + 1);
                     continue;
                 }
             }
+
+            // Flatten newlines
+            std::replace(content.begin(), content.end(), '\n', ' ');
+            std::replace(content.begin(), content.end(), '\r', ' ');
+
+            // Simplify CQ codes
+            std::string cleaned_content;
+            auto words_begin = std::sregex_iterator(content.begin(), content.end(), cq_regex);
+            auto words_end = std::sregex_iterator();
+            size_t last_pos = 0;
+            for (std::sregex_iterator i = words_begin; i != words_end; ++i) {
+                std::smatch match = *i;
+                cleaned_content += content.substr(last_pos, match.position() - last_pos);
+                std::string type = match[1].str();
+                if (type == "image") cleaned_content += "[图片]";
+                else if (type == "record") cleaned_content += "[语音]";
+                else if (type == "face") cleaned_content += "[表情]";
+                else if (type == "video") cleaned_content += "[视频]";
+                else if (type == "at") cleaned_content += "[@某人]";
+                else if (type == "reply") cleaned_content += "[回复]";
+                else cleaned_content += "[" + type + "]";
+                last_pos = match.position() + match.length();
+            }
+            cleaned_content += content.substr(last_pos);
+            content = cleaned_content;
 
             if (!m.isMember("sender")) continue;
 
@@ -295,9 +378,9 @@ std::string gpt3_5::expand_forward_content(const bot *p, const std::string &forw
             uint64_t uid = m["sender"]["user_id"].asUInt64();
 
             if (uid != 0) {
-                result += "[" + nick + "(" + std::to_string(uid) + ")]：" + content + " ";
+                result += "[" + nick + "(" + std::to_string(uid) + ")]：" + content;
             } else {
-                result += "[" + nick + "]：" + content + " ";
+                result += "[" + nick + "]：" + content;
             }
         }
     }
@@ -351,10 +434,73 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     int64_t id = conf.message_type == "group" ? (conf.group_id << 1)
                                               : ((conf.user_id << 1) | 1);
 
+    // Auto-archive check
+    perform_archive(id, conf, true);
+
     const std::vector<cmd_exact_rule> exact_rules = {
         {".test",
          [&]() {
              conf.p->cq_send(message, conf);
+             return true;
+         }},
+        {".arc",
+         [&]() {
+             if (!is_allowed_arc(id, conf)) {
+                 conf.p->cq_send("Not on op list.", conf);
+                 return true;
+             }
+             std::istringstream arc_iss(args);
+             std::string sub_cmd;
+             arc_iss >> sub_cmd;
+             if (sub_cmd == "list") {
+                 int page = 1;
+                 arc_iss >> page;
+                 list_archives(id, conf, page);
+             }
+             else if (sub_cmd == "restore") {
+                 std::string target;
+                 arc_iss >> target;
+                 if (target.empty()) {
+                     conf.p->cq_send("用法: .ai arc restore [编号/文件名]",
+                                     conf);
+                 }
+                 else {
+                     restore_archive(id, conf, target);
+                 }
+             }
+             else {
+                 perform_archive(id, conf, false);
+             }
+             return true;
+         }},
+        {"arc",
+         [&]() {
+             if (!is_allowed_arc(id, conf)) {
+                 conf.p->cq_send("Not on op list.", conf);
+                 return true;
+             }
+             std::istringstream arc_iss(args);
+             std::string sub_cmd;
+             arc_iss >> sub_cmd;
+             if (sub_cmd == "list") {
+                 int page = 1;
+                 arc_iss >> page;
+                 list_archives(id, conf, page);
+             }
+             else if (sub_cmd == "restore") {
+                 std::string target;
+                 arc_iss >> target;
+                 if (target.empty()) {
+                     conf.p->cq_send("用法: .ai arc restore [编号/文件名]",
+                                     conf);
+                 }
+                 else {
+                     restore_archive(id, conf, target);
+                 }
+             }
+             else {
+                 perform_archive(id, conf, false);
+             }
              return true;
          }},
         {".reset",
@@ -662,6 +808,166 @@ bool gpt3_5::check(std::string message, const msg_meta &conf)
     return cmd_match_prefix(message, {".ai"});
 }
 
-std::string gpt3_5::help() { return "Openai gpt3.5: start with .ai"; }
+std::string gpt3_5::help()
+{
+    return "OpenAI GPT-3.5：使用 .ai [内容] 开始对话\n"
+           "指令列表：\n"
+           ".ai reset - 重置当前对话上下文\n"
+           ".ai change [模式] - 切换提示词模式\n"
+           ".ai arc - 手动归档当前上下文\n"
+           ".ai arc list [页码] - 查看归档列表（每页5条）\n"
+           ".ai arc restore [编号/文件名] - 从归档中恢复上下文\n"
+           "权限说明：归档与恢复功能在群聊中需管理员（OP）权限，私聊可直接使用。";
+}
+
+uintmax_t gpt3_5::get_archives_total_size()
+{
+    std::string backup_root = bot_config_path(nullptr, "gpt3_5/backups");
+    if (!fs::exists(backup_root)) return 0;
+    uintmax_t total_size = 0;
+    for (const auto &entry : fs::recursive_directory_iterator(backup_root)) {
+        if (entry.is_regular_file()) {
+            total_size += entry.file_size();
+        }
+    }
+    return total_size;
+}
+
+void gpt3_5::perform_archive(int64_t id, const msg_meta &conf, bool is_auto)
+{
+    std::lock_guard<std::mutex> lock(data_lock);
+    if (get_archives_total_size() >= 250 * 1024 * 1024) { // 250MB
+        if (!is_auto) {
+            conf.p->cq_send("当前归档文件过大，已暂停生成。请联系管理员", conf);
+        }
+        return;
+    }
+
+    std::string backup_dir =
+        bot_config_path(nullptr, "gpt3_5/backups/" + std::to_string(id));
+    if (!fs::exists(backup_dir)) {
+        fs::create_directories(backup_dir);
+    }
+
+    std::time_t now = std::time(nullptr);
+    now += 8 * 3600;
+    struct std::tm tm_res;
+#ifdef _WIN32
+    _gmtime64_s(&tm_res, &now);
+#else
+    gmtime_r(&now, &tm_res);
+#endif
+    char time_buf[64];
+    if (is_auto) {
+        std::strftime(time_buf, sizeof(time_buf), "%Y-%m-%d_auto", &tm_res);
+    }
+    else {
+        std::strftime(time_buf, sizeof(time_buf), "%Y-%m-%d_%H-%M-%S", &tm_res);
+    }
+
+    std::string filename = std::string(time_buf) + ".json";
+    std::string full_path = backup_dir + "/" + filename;
+
+    if (is_auto && fs::exists(full_path)) return; // Already backed up today
+
+    Json::Value J;
+    J["pre_prompt"] = pre_default[id];
+    J["history"] = history[id];
+    writefile(full_path, J.toStyledString());
+
+    if (!is_auto) {
+        conf.p->cq_send("归档已生成: " + filename, conf);
+    }
+}
+
+bool gpt3_5::is_allowed_arc(int64_t id, const msg_meta &conf)
+{
+    if (id & 1) return true; // Private chat
+    return conf.p->is_op(conf.user_id);
+}
+
+void gpt3_5::list_archives(int64_t id, const msg_meta &conf, int page)
+{
+    std::string backup_dir =
+        bot_config_path(nullptr, "gpt3_5/backups/" + std::to_string(id));
+    if (!fs::exists(backup_dir)) {
+        conf.p->cq_send("暂无归档记录。", conf);
+        return;
+    }
+
+    std::vector<std::string> files;
+    for (const auto &entry : fs::directory_iterator(backup_dir)) {
+        if (entry.is_regular_file() && entry.path().extension() == ".json") {
+            files.push_back(entry.path().filename().string());
+        }
+    }
+    std::sort(files.rbegin(), files.rend()); // Newest first
+
+    if (files.empty()) {
+        conf.p->cq_send("暂无归档记录。", conf);
+        return;
+    }
+
+    int total_pages = (files.size() + 4) / 5;
+    if (page < 1) page = 1;
+    if (page > total_pages) page = total_pages;
+
+    std::string res = "归档列表 (第 " + std::to_string(page) + "/" +
+                      std::to_string(total_pages) + " 页):\n";
+    for (size_t i = (page - 1) * 5; i < page * 5 && i < files.size(); ++i) {
+        res += std::to_string(i + 1) + ". " + files[i] + "\n";
+    }
+    res += "使用 .ai arc restore [编号/文件名] 恢复。";
+    conf.p->cq_send(trim(res), conf);
+}
+
+void gpt3_5::restore_archive(int64_t id, const msg_meta &conf,
+                             const std::string &arg)
+{
+    std::string backup_dir =
+        bot_config_path(nullptr, "gpt3_5/backups/" + std::to_string(id));
+    if (!fs::exists(backup_dir)) {
+        conf.p->cq_send("暂无归档记录。", conf);
+        return;
+    }
+
+    std::string target_file;
+    if (std::all_of(arg.begin(), arg.end(), ::isdigit)) {
+        int idx = std::stoi(arg) - 1;
+        std::vector<std::string> files;
+        for (const auto &entry : fs::directory_iterator(backup_dir)) {
+            if (entry.is_regular_file() && entry.path().extension() == ".json") {
+                files.push_back(entry.path().filename().string());
+            }
+        }
+        std::sort(files.rbegin(), files.rend());
+        if (idx >= 0 && idx < (int)files.size()) {
+            target_file = files[idx];
+        }
+    }
+    else {
+        target_file = arg;
+        if (target_file.find(".json") == std::string::npos)
+            target_file += ".json";
+    }
+
+    std::string full_path = backup_dir + "/" + target_file;
+    if (!fs::exists(full_path)) {
+        conf.p->cq_send("找不到指定的归档文件: " + target_file, conf);
+        return;
+    }
+
+    std::lock_guard<std::mutex> lock(data_lock);
+    Json::Value J = string_to_json(readfile(full_path));
+    if (J.isMember("history") && J.isMember("pre_prompt")) {
+        history[id] = J["history"];
+        pre_default[id] = J["pre_prompt"].asString();
+        conf.p->cq_send("归档 " + target_file + " 已成功恢复。", conf);
+        save_history(id);
+    }
+    else {
+        conf.p->cq_send("归档文件格式错误。", conf);
+    }
+}
 
 DECLARE_FACTORY_FUNCTIONS(gpt3_5)
