@@ -117,16 +117,19 @@ gpt3_5::gpt3_5()
 void gpt3_5::save_file()
 {
     Json::Value J;
-    for (std::string u : key)
-        J["keys"].append(u);
-    for (std::string u : modes)
-        J["mode"].append(u);
-    J["black_list"] = parse_set_to_json(black_list);
-    J["MAX_TOKEN"] = MAX_TOKEN;
-    J["MAX_REPLY"] = MAX_REPLY;
-    J["RED_LINE"] = RED_LINE;
-    for (std::string u : modes) {
-        J[u] = mode_prompt[u];
+    {
+        std::lock_guard<std::mutex> lock(data_lock);
+        for (const std::string &u : key)
+            J["keys"].append(u);
+        for (const std::string &u : modes)
+            J["mode"].append(u);
+        J["black_list"] = parse_set_to_json(black_list);
+        J["MAX_TOKEN"] = MAX_TOKEN;
+        J["MAX_REPLY"] = MAX_REPLY;
+        J["RED_LINE"] = RED_LINE;
+        for (const std::string &u : modes) {
+            J[u] = mode_prompt[u];
+        }
     }
     writefile(bot_config_path(nullptr, "features/openai/openai.json"),
               J.toStyledString());
@@ -202,14 +205,17 @@ size_t gpt3_5::get_avaliable_key()
 
 void gpt3_5::save_history(int64_t id)
 {
-    std::lock_guard<std::mutex> lock(data_lock);
     Json::Value J;
-    J["pre_prompt"] = pre_default[id];
-    J["history"] = history[id];
+    {
+        std::lock_guard<std::mutex> lock(data_lock);
+        J["pre_prompt"] = pre_default[id];
+        J["history"] = history[id];
+    }
     writefile(
         bot_config_path(nullptr, "gpt3_5/" + std::to_string(id) + ".json"),
         J.toStyledString());
 }
+
 
 std::string gpt3_5::get_quoted_content(const bot *p, int64_t reply_id, int depth)
 {
@@ -504,54 +510,57 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
              return true;
          }},
         {".reset",
-         [&]() {
-             std::lock_guard<std::mutex> lock(data_lock);
-             auto it = history.find(id);
-             if (it != history.end()) {
-                 it->second.clear();
-             }
-             conf.p->cq_send("reset done.", conf);
-             save_history(id);
-             return true;
-         }},
+        [&]() {
+            {
+                std::lock_guard<std::mutex> lock(data_lock);
+                history[id].clear();
+            }
+            save_history(id);
+            conf.p->cq_send("reset done.", conf);
+            return true;
+        }},
         {"reset",
-         [&]() {
-             std::lock_guard<std::mutex> lock(data_lock);
-             auto it = history.find(id);
-             if (it != history.end()) {
-                 it->second.clear();
-             }
-             conf.p->cq_send("reset done.", conf);
-             save_history(id);
-             return true;
-         }},
+        [&]() {
+            {
+                std::lock_guard<std::mutex> lock(data_lock);
+                history[id].clear();
+            }
+            save_history(id);
+            conf.p->cq_send("reset done.", conf);
+            return true;
+        }},
         {".change",
-         [&]() {
-             std::lock_guard<std::mutex> lock(data_lock);
-             if (conf.p->is_op(conf.user_id) || (id & 1)) {
-                 const std::string mode = args;
-                 bool flg = false;
-                 std::string res = "avaliable modes:";
-                 for (std::string u : modes) {
-                     res += " " + u;
-                     if (u == mode) {
-                         flg = true;
-                         history[id].clear();
-                         pre_default[id] = mode;
-                         conf.p->cq_send("change done.", conf);
-                         break;
-                     }
-                 }
-                 if (!flg) {
-                     conf.p->cq_send(res, conf);
-                 }
-             }
-             else {
-                 conf.p->cq_send("Not on op list.", conf);
-             }
-             save_history(id);
-             return true;
-         }},
+        [&]() {
+            std::string reply;
+            bool need_save = false;
+            {
+                std::lock_guard<std::mutex> lock(data_lock);
+                if (conf.p->is_op(conf.user_id) || (id & 1)) {
+                    const std::string mode = args;
+                    bool flg = false;
+                    reply = "avaliable modes:";
+                    for (const std::string &u : modes) {
+                        reply += " " + u;
+                        if (u == mode) {
+                            flg = true;
+                            history[id].clear();
+                            pre_default[id] = mode;
+                            reply = "change done.";
+                            need_save = true;
+                            break;
+                        }
+                    }
+                }
+                else {
+                    reply = "Not on op list.";
+                }
+            }
+            conf.p->cq_send(reply, conf);
+            if (need_save) {
+                save_history(id);
+            }
+            return true;
+        }},
         {".sw",
          [&]() {
              std::lock_guard<std::mutex> lock(data_lock);
@@ -967,13 +976,15 @@ void gpt3_5::restore_archive(int64_t id, const msg_meta &conf,
         return;
     }
 
-    std::lock_guard<std::mutex> lock(data_lock);
     Json::Value J = string_to_json(readfile(full_path));
     if (J.isMember("history") && J.isMember("pre_prompt")) {
-        history[id] = J["history"];
-        pre_default[id] = J["pre_prompt"].asString();
-        conf.p->cq_send("归档 " + target_file + " 已成功恢复。", conf);
+        {
+            std::lock_guard<std::mutex> lock(data_lock);
+            history[id] = J["history"];
+            pre_default[id] = J["pre_prompt"].asString();
+        }
         save_history(id);
+        conf.p->cq_send("归档 " + target_file + " 已成功恢复。", conf);
     }
     else {
         conf.p->cq_send("归档文件格式错误。", conf);
