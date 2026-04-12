@@ -8,7 +8,7 @@
 
 class gpt3_5 : public processable {
 private:
-    std::mutex data_lock;
+    std::recursive_mutex data_lock;
     std::vector<bool> is_lock;
     bool is_open, is_debug;
     std::string close_message; // The reason for is_open=false
@@ -33,6 +33,9 @@ private:
     void list_archives(int64_t id, const msg_meta &conf, int page);
     void restore_archive(int64_t id, const msg_meta &conf, const std::string &arg);
     bool is_allowed_arc(int64_t id, const msg_meta &conf);
+
+    int arc_check_counter = 0;
+    bool arc_is_full = false;
 
 public:
     gpt3_5();

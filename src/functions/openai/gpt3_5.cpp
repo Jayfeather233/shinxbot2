@@ -97,7 +97,7 @@ gpt3_5::gpt3_5()
     if (fs::exists(gpt_history_dir)) {
         fs::path gpt_files = gpt_history_dir;
         fs::directory_iterator di(gpt_files);
-        std::regex history_file_regex(R"(^(\d+)\.json$)");
+        std::regex history_file_regex(R"(^(-?\d+)\.json$)");
         for (auto &entry : di) {
             if (!entry.is_regular_file()) {
                 continue;
@@ -409,18 +409,16 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
         }
     }
 
-    if (message == "你说的话我不喜欢") {
-        if (reply_id != -1) {
-            Json::Value get_msg_param;
-            get_msg_param["message_id"] = reply_id;
-            Json::Value msg_info =
-                string_to_json(conf.p->cq_send("get_msg", get_msg_param));
-            if (msg_info["data"]["sender"]["user_id"].asUInt64() ==
-                conf.p->get_botqq()) {
-                Json::Value del_msg_param;
-                del_msg_param["message_id"] = reply_id;
-                conf.p->cq_send("delete_msg", del_msg_param);
-            }
+    if (cmd_match_exact(message, "你说的话我不喜欢") && reply_id != -1) {
+        Json::Value get_msg_param;
+        get_msg_param["message_id"] = reply_id;
+        Json::Value msg_info =
+            string_to_json(conf.p->cq_send("get_msg", get_msg_param));
+        if (msg_info["data"]["sender"]["user_id"].asUInt64() ==
+            conf.p->get_botqq()) {
+            Json::Value del_msg_param;
+            del_msg_param["message_id"] = reply_id;
+            conf.p->cq_send("delete_msg", del_msg_param);
         }
         return;
     }
@@ -827,7 +825,7 @@ bool gpt3_5::check(std::string message, const msg_meta &conf)
             message = trim(message.substr(pos + 1));
         }
     }
-    if (message == "你说的话我不喜欢") {
+    if (cmd_match_exact(message, "你说的话我不喜欢")) {
         return true;
     }
     return cmd_match_prefix(message, {".ai"});
@@ -860,7 +858,8 @@ uintmax_t gpt3_5::get_archives_total_size()
 
 void gpt3_5::perform_archive(int64_t id, const msg_meta &conf, bool is_auto)
 {
-    if (get_archives_total_size() >= 250 * 1024 * 1024) {
+    std::lock_guard<std::mutex> lock(data_lock);
+    if (get_archives_total_size() >= 250 * 1024 * 1024) { // 250MB
         if (!is_auto) {
             conf.p->cq_send("当前归档文件过大，已暂停生成。请联系管理员", conf);
         }
@@ -896,6 +895,20 @@ void gpt3_5::perform_archive(int64_t id, const msg_meta &conf, bool is_auto)
     }
 
     writefile(full_path, J.toStyledString());
+
+    bool need_check = false;
+    {
+        std::lock_guard<std::mutex> lock(data_lock);
+        if (++arc_check_counter >= 10) {
+            arc_check_counter = 0;
+            need_check = true;
+        }
+    }
+    if (need_check) {
+        bool full = (get_archives_total_size() >= 250 * 1024 * 1024);
+        std::lock_guard<std::mutex> lock(data_lock);
+        arc_is_full = full;
+    }
 
     if (!is_auto) {
         conf.p->cq_send("归档已生成: " + filename, conf);
@@ -971,6 +984,15 @@ void gpt3_5::restore_archive(int64_t id, const msg_meta &conf,
         target_file = arg;
         if (target_file.find(".json") == std::string::npos)
             target_file += ".json";
+    }
+
+    if (target_file.empty()) return;
+
+    if (target_file.find("..") != std::string::npos || 
+        target_file.find('/') != std::string::npos || 
+        target_file.find('\\') != std::string::npos) {
+        conf.p->cq_send("非法的文件名格式。", conf);
+        return;
     }
 
     std::string full_path = backup_dir + "/" + target_file;
