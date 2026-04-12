@@ -405,7 +405,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
         }
     }
 
-    if (cmd_match_exact(message, "你说的话我不喜欢") && reply_id != -1) {
+    if (cmd_match_exact(message, {"你说的话我不喜欢"}) && reply_id != -1) {
         Json::Value get_msg_param;
         get_msg_param["message_id"] = reply_id;
         Json::Value msg_info =
@@ -657,7 +657,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
         active_ids.insert(id);
     }
 
-    std::lock_guard<std::recursive_mutex> lock(gptlock[keyid]);
+    std::lock_guard<std::mutex> lock(gptlock[keyid]);
     Json::Value J, user_input_J, ign;
     user_input_J["role"] = "user";
     std::string nickname = get_stranger_name(conf.p, conf.user_id);
