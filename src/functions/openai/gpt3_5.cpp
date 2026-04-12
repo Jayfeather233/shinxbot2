@@ -117,20 +117,18 @@ gpt3_5::gpt3_5()
 
 void gpt3_5::save_file()
 {
+    std::lock_guard<std::mutex> lock(data_lock);
     Json::Value J;
-    {
-        std::lock_guard<std::mutex> lock(data_lock);
-        for (const std::string &u : key)
-            J["keys"].append(u);
-        for (const std::string &u : modes)
-            J["mode"].append(u);
-        J["black_list"] = parse_set_to_json(black_list);
-        J["MAX_TOKEN"] = MAX_TOKEN;
-        J["MAX_REPLY"] = MAX_REPLY;
-        J["RED_LINE"] = RED_LINE;
-        for (const std::string &u : modes) {
-            J[u] = mode_prompt[u];
-        }
+    for (const std::string &u : key)
+        J["keys"].append(u);
+    for (const std::string &u : modes)
+        J["mode"].append(u);
+    J["black_list"] = parse_set_to_json(black_list);
+    J["MAX_TOKEN"] = MAX_TOKEN;
+    J["MAX_REPLY"] = MAX_REPLY;
+    J["RED_LINE"] = RED_LINE;
+    for (const std::string &u : modes) {
+        J[u] = mode_prompt[u];
     }
     writefile(bot_config_path(nullptr, "features/openai/openai.json"),
               J.toStyledString());
@@ -206,12 +204,10 @@ size_t gpt3_5::get_avaliable_key()
 
 void gpt3_5::save_history(int64_t id)
 {
+    std::lock_guard<std::mutex> lock(data_lock);
     Json::Value J;
-    {
-        std::lock_guard<std::mutex> lock(data_lock);
-        J["pre_prompt"] = pre_default[id];
-        J["history"] = history[id];
-    }
+    J["pre_prompt"] = pre_default[id];
+    J["history"] = history[id];
     writefile(
         bot_config_path(nullptr, "gpt3_5/" + std::to_string(id) + ".json"),
         J.toStyledString());
@@ -858,12 +854,14 @@ uintmax_t gpt3_5::get_archives_total_size()
 
 void gpt3_5::perform_archive(int64_t id, const msg_meta &conf, bool is_auto)
 {
-    std::lock_guard<std::mutex> lock(data_lock);
-    if (get_archives_total_size() >= 250 * 1024 * 1024) { // 250MB
-        if (!is_auto) {
-            conf.p->cq_send("当前归档文件过大，已暂停生成。请联系管理员", conf);
+    {
+        std::lock_guard<std::mutex> lock(data_lock);
+        if (arc_is_full) {
+            if (!is_auto) {
+                conf.p->cq_send("当前归档文件过大，已暂停生成。请联系管理员", conf);
+            }
+            return;
         }
-        return;
     }
 
     std::string backup_dir =
@@ -892,9 +890,8 @@ void gpt3_5::perform_archive(int64_t id, const msg_meta &conf, bool is_auto)
         std::lock_guard<std::mutex> lock(data_lock);
         J["pre_prompt"] = pre_default[id];
         J["history"] = history[id];
+        writefile(full_path, J.toStyledString());
     }
-
-    writefile(full_path, J.toStyledString());
 
     bool need_check = false;
     {
