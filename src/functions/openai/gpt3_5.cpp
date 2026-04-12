@@ -402,18 +402,16 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
         }
     }
 
-    if (message == "你说的话我不喜欢") {
-        if (reply_id != -1) {
-            Json::Value get_msg_param;
-            get_msg_param["message_id"] = reply_id;
-            Json::Value msg_info =
-                string_to_json(conf.p->cq_send("get_msg", get_msg_param));
-            if (msg_info["data"]["sender"]["user_id"].asUInt64() ==
-                conf.p->get_botqq()) {
-                Json::Value del_msg_param;
-                del_msg_param["message_id"] = reply_id;
-                conf.p->cq_send("delete_msg", del_msg_param);
-            }
+    if (cmd_match_exact(message, "你说的话我不喜欢") && reply_id != -1) {
+        Json::Value get_msg_param;
+        get_msg_param["message_id"] = reply_id;
+        Json::Value msg_info =
+            string_to_json(conf.p->cq_send("get_msg", get_msg_param));
+        if (msg_info["data"]["sender"]["user_id"].asUInt64() ==
+            conf.p->get_botqq()) {
+            Json::Value del_msg_param;
+            del_msg_param["message_id"] = reply_id;
+            conf.p->cq_send("delete_msg", del_msg_param);
         }
         return;
     }
@@ -802,7 +800,7 @@ bool gpt3_5::check(std::string message, const msg_meta &conf)
             message = trim(message.substr(pos + 1));
         }
     }
-    if (message == "你说的话我不喜欢") {
+    if (cmd_match_exact(message, "你说的话我不喜欢")) {
         return true;
     }
     return cmd_match_prefix(message, {".ai"});
