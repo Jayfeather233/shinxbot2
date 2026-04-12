@@ -565,7 +565,6 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
         {".sw",
         [&]() {
             bool new_state;
-            std::string close_msg;
             {
                 std::lock_guard<std::mutex> lock(data_lock);
                 if (conf.p->is_op(conf.user_id)) {
