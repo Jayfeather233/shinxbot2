@@ -9,6 +9,7 @@
 #include <sstream>
 #include <ctime>
 #include <cstring>
+#include <chrono>
 
 /**
  * Overall API intro: https://platform.openai.com/docs/api-reference/chat/create
@@ -562,63 +563,72 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
             return true;
         }},
         {".sw",
-         [&]() {
-             std::lock_guard<std::mutex> lock(data_lock);
-             if (conf.p->is_op(conf.user_id)) {
-                 is_open = !is_open;
-                 close_message = args;
-                 conf.p->cq_send("is_open: " + std::to_string(is_open), conf);
-             }
-             else {
-                 conf.p->cq_send("Not on op list.", conf);
-             }
-             return true;
-         }},
+        [&]() {
+            bool new_state;
+            std::string close_msg;
+            {
+                std::lock_guard<std::mutex> lock(data_lock);
+                if (conf.p->is_op(conf.user_id)) {
+                    is_open = !is_open;
+                    close_message = args;
+                    new_state = is_open;
+                } else {
+                    conf.p->cq_send("Not on op list.", conf);
+                    return true;
+                }
+            }
+            conf.p->cq_send("is_open: " + std::to_string(new_state), conf);
+            return true;
+        }},
         {".debug",
-         [&]() {
-             std::lock_guard<std::mutex> lock(data_lock);
-             if (conf.p->is_op(conf.user_id)) {
-                 is_debug = !is_debug;
-                 conf.p->cq_send("is_debug: " + std::to_string(is_debug), conf);
-             }
-             else {
-                 conf.p->cq_send("Not on op list.", conf);
-             }
-             return true;
-         }},
+        [&]() {
+            bool new_state;
+            {
+                std::lock_guard<std::mutex> lock(data_lock);
+                if (conf.p->is_op(conf.user_id)) {
+                    is_debug = !is_debug;
+                    new_state = is_debug;
+                } else {
+                    conf.p->cq_send("Not on op list.", conf);
+                    return true;
+                }
+            }
+            conf.p->cq_send("is_debug: " + std::to_string(new_state), conf);
+            return true;
+        }},
         {".set",
-         [&]() {
-             std::lock_guard<std::mutex> lock(data_lock);
-             std::string reply = "Not on op list.";
-             if (conf.p->is_op(conf.user_id)) {
-                 std::string type;
-                 int64_t num = 0;
-                 std::istringstream arg_iss(args);
-                 if (!(arg_iss >> type >> num)) {
-                     conf.p->cq_send("Unknown type", conf);
-                     save_file();
-                     return true;
-                 }
-                 if (type == "reply") {
-                     MAX_REPLY = num;
-                     reply = "set MAX_REPLY to " + std::to_string(num);
-                 }
-                 else if (type == "token") {
-                     MAX_TOKEN = num;
-                     reply = "set MAX_TOKEN to " + std::to_string(num);
-                 }
-                 else if (type == "red") {
-                     RED_LINE = num;
-                     reply = "set RED_LINE to " + std::to_string(num);
-                 }
-                 else {
-                     reply = "Unknown type";
-                 }
-             }
-             conf.p->cq_send(reply, conf);
-             save_file();
-             return true;
-         }},
+        [&]() {
+            std::string reply = "Not on op list.";
+            bool do_save = false;
+            {
+                std::lock_guard<std::mutex> lock(data_lock);
+                if (conf.p->is_op(conf.user_id)) {
+                    std::string type;
+                    int64_t num = 0;
+                    std::istringstream arg_iss(args);
+                    if (!(arg_iss >> type >> num)) {
+                        reply = "Unknown type";
+                    } else if (type == "reply") {
+                        MAX_REPLY = num;
+                        reply = "set MAX_REPLY to " + std::to_string(num);
+                        do_save = true;
+                    } else if (type == "token") {
+                        MAX_TOKEN = num;
+                        reply = "set MAX_TOKEN to " + std::to_string(num);
+                        do_save = true;
+                    } else if (type == "red") {
+                        RED_LINE = num;
+                        reply = "set RED_LINE to " + std::to_string(num);
+                        do_save = true;
+                    } else {
+                        reply = "Unknown type";
+                    }
+                }
+            }
+            conf.p->cq_send(reply, conf);
+            if (do_save) save_file();
+            return true;
+        }},
     };
 
     bool handled = false;
@@ -659,18 +669,11 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     user_input_J["role"] = "user";
     std::string nickname = get_stranger_name(conf.p, conf.user_id);
 
-    std::time_t now = std::time(nullptr);
-    now += 8 * 3600; 
-    struct std::tm tm_utc8_res;
+    std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    now += 8 * 3600;
+    tm tm_utc8_res = *std::gmtime(&now);
     char time_buf[64] = "Unknown time";
-    
-#ifdef _WIN32
-    if (_gmtime64_s(&tm_utc8_res, &now) == 0) {
-#else
-    if (gmtime_r(&now, &tm_utc8_res) != nullptr) {
-#endif
-        std::strftime(time_buf, sizeof(time_buf), "%Y/%m/%d %H:%M:%S", &tm_utc8_res);
-    }
+    std::strftime(time_buf, sizeof(time_buf), "%Y/%m/%d %H:%M:%S", &tm_utc8_res);
 
     std::string prompt_content = "[User: " + std::to_string(conf.user_id) + " (" +
                                  nickname + ")] [Time: " + std::string(time_buf) + "]";
@@ -732,9 +735,11 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
             conf.p->cq_send("Openai ERROR: history message is too long. Please "
                             "try again or try .ai.reset",
                             conf);
-            std::lock_guard<std::mutex> lock_data(data_lock);
-            if (history[id].size() > 0) history[id].removeIndex(0, &ign);
-            if (history[id].size() > 0) history[id].removeIndex(0, &ign);
+            {
+                std::lock_guard<std::mutex> lock_data(data_lock);
+                if (history[id].size() > 0) history[id].removeIndex(0, &ign);
+                if (history[id].size() > 0) history[id].removeIndex(0, &ign);
+            }
             save_history(id);
         }
         else {
@@ -747,8 +752,10 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
             J["choices"].empty()) {
             conf.p->cq_send("Openai ERROR: API 响应格式异常(缺少 choices)",
                             conf);
-            std::lock_guard<std::mutex> lock_data(data_lock);
-            active_ids.erase(id); 
+            {
+                std::lock_guard<std::mutex> lock_data(data_lock);
+                active_ids.erase(id);
+            }
             return;
         }
 
@@ -763,8 +770,10 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
             } else {
                 conf.p->cq_send("API空返回！", conf);
             }
-            std::lock_guard<std::mutex> lock_data(data_lock);
-            active_ids.erase(id);
+            {
+                std::lock_guard<std::mutex> lock_data(data_lock);
+                active_ids.erase(id);
+            }
             return;
         }
 
@@ -781,33 +790,31 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
             tokens = static_cast<int>(J["usage"]["total_tokens"].asInt64());
         }
 
-        std::lock_guard<std::mutex> lock_data(data_lock);
-        if (MAX_TOKEN < tokens) {
-            history[id].clear();
-        }
-        else {
-            for (int i = 5; i >= 1; i--) {
-                if (MAX_TOKEN - RED_LINE / i < tokens) {
-                    for (int j = 0; j < i; j++) {
-                        if (history[id].size() > 0) history[id].removeIndex(0, &ign);
-                        if (history[id].size() > 0) history[id].removeIndex(0, &ign);
+        std::string reply_msg = "[CQ:reply,id=" + std::to_string(conf.message_id) +
+                                "] " + aimsg;
+        {
+            std::lock_guard<std::mutex> lock_data(data_lock);
+            if (MAX_TOKEN < tokens) {
+                history[id].clear();
+            }
+            else {
+                for (int i = 5; i >= 1; i--) {
+                    if (MAX_TOKEN - RED_LINE / i < tokens) {
+                        for (int j = 0; j < i; j++) {
+                            if (history[id].size() > 0) history[id].removeIndex(0, &ign);
+                            if (history[id].size() > 0) history[id].removeIndex(0, &ign);
+                        }
+                        break;
                     }
-                    break;
                 }
             }
+            J.clear();
+            J["role"] = "assistant";
+            J["content"] = aimsg;
+            history[id].append(user_input_J);
+            history[id].append(J);
         }
-
-        std::string usage = "\n" + J["usage"].toStyledString();
-        J.clear();
-        J["role"] = "assistant";
-        J["content"] = aimsg;
-        if (is_debug)
-            aimsg += usage;
-        conf.p->cq_send("[CQ:reply,id=" + std::to_string(conf.message_id) +
-                            "] " + aimsg,
-                        conf);
-        history[id].append(user_input_J);
-        history[id].append(J);
+        conf.p->cq_send(reply_msg, conf);
     }
     save_history(id);
 }
@@ -854,8 +861,7 @@ uintmax_t gpt3_5::get_archives_total_size()
 
 void gpt3_5::perform_archive(int64_t id, const msg_meta &conf, bool is_auto)
 {
-    std::lock_guard<std::mutex> lock(data_lock);
-    if (get_archives_total_size() >= 250 * 1024 * 1024) { // 250MB
+    if (get_archives_total_size() >= 250 * 1024 * 1024) {
         if (!is_auto) {
             conf.p->cq_send("当前归档文件过大，已暂停生成。请联系管理员", conf);
         }
@@ -868,30 +874,28 @@ void gpt3_5::perform_archive(int64_t id, const msg_meta &conf, bool is_auto)
         fs::create_directories(backup_dir);
     }
 
-    std::time_t now = std::time(nullptr);
+    std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     now += 8 * 3600;
-    struct std::tm tm_res;
-#ifdef _WIN32
-    _gmtime64_s(&tm_res, &now);
-#else
-    gmtime_r(&now, &tm_res);
-#endif
+    tm tm_res = *std::gmtime(&now);
     char time_buf[64];
     if (is_auto) {
         std::strftime(time_buf, sizeof(time_buf), "%Y-%m-%d_auto", &tm_res);
-    }
-    else {
+    } else {
         std::strftime(time_buf, sizeof(time_buf), "%Y-%m-%d_%H-%M-%S", &tm_res);
     }
 
     std::string filename = std::string(time_buf) + ".json";
     std::string full_path = backup_dir + "/" + filename;
 
-    if (is_auto && fs::exists(full_path)) return; // Already backed up today
+    if (is_auto && fs::exists(full_path)) return;
 
     Json::Value J;
-    J["pre_prompt"] = pre_default[id];
-    J["history"] = history[id];
+    {
+        std::lock_guard<std::mutex> lock(data_lock);
+        J["pre_prompt"] = pre_default[id];
+        J["history"] = history[id];
+    }
+
     writefile(full_path, J.toStyledString());
 
     if (!is_auto) {
