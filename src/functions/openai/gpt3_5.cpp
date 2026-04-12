@@ -117,7 +117,7 @@ gpt3_5::gpt3_5()
 
 void gpt3_5::save_file()
 {
-    std::lock_guard<std::mutex> lock(data_lock);
+    std::lock_guard<std::recursive_mutex> lock(data_lock);
     Json::Value J;
     for (const std::string &u : key)
         J["keys"].append(u);
@@ -154,7 +154,7 @@ bool isASCII(const std::string &s)
 
 std::string gpt3_5::do_black(std::string message)
 {
-    std::lock_guard<std::mutex> lock(data_lock);
+    std::lock_guard<std::recursive_mutex> lock(data_lock);
     bool filtered = false;
     for (std::string u : black_list) {
         if (u.empty()) continue;
@@ -191,7 +191,7 @@ std::string gpt3_5::do_black(std::string message)
 
 size_t gpt3_5::get_avaliable_key()
 {
-    std::lock_guard<std::mutex> lock(data_lock);
+    std::lock_guard<std::recursive_mutex> lock(data_lock);
     size_t u;
     for (size_t i = 0; i < key.size(); i++) {
         if (!is_lock[u = (key_cycle + i) % key.size()]) {
@@ -204,7 +204,7 @@ size_t gpt3_5::get_avaliable_key()
 
 void gpt3_5::save_history(int64_t id)
 {
-    std::lock_guard<std::mutex> lock(data_lock);
+    std::lock_guard<std::recursive_mutex> lock(data_lock);
     Json::Value J;
     J["pre_prompt"] = pre_default[id];
     J["history"] = history[id];
@@ -507,7 +507,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
         {".reset",
         [&]() {
             {
-                std::lock_guard<std::mutex> lock(data_lock);
+                std::lock_guard<std::recursive_mutex> lock(data_lock);
                 history[id].clear();
             }
             save_history(id);
@@ -517,7 +517,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
         {"reset",
         [&]() {
             {
-                std::lock_guard<std::mutex> lock(data_lock);
+                std::lock_guard<std::recursive_mutex> lock(data_lock);
                 history[id].clear();
             }
             save_history(id);
@@ -529,7 +529,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
             std::string reply;
             bool need_save = false;
             {
-                std::lock_guard<std::mutex> lock(data_lock);
+                std::lock_guard<std::recursive_mutex> lock(data_lock);
                 if (conf.p->is_op(conf.user_id) || (id & 1)) {
                     const std::string mode = args;
                     bool flg = false;
@@ -560,7 +560,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
         [&]() {
             bool new_state;
             {
-                std::lock_guard<std::mutex> lock(data_lock);
+                std::lock_guard<std::recursive_mutex> lock(data_lock);
                 if (conf.p->is_op(conf.user_id)) {
                     is_open = !is_open;
                     close_message = args;
@@ -577,7 +577,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
         [&]() {
             bool new_state;
             {
-                std::lock_guard<std::mutex> lock(data_lock);
+                std::lock_guard<std::recursive_mutex> lock(data_lock);
                 if (conf.p->is_op(conf.user_id)) {
                     is_debug = !is_debug;
                     new_state = is_debug;
@@ -594,7 +594,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
             std::string reply = "Not on op list.";
             bool do_save = false;
             {
-                std::lock_guard<std::mutex> lock(data_lock);
+                std::lock_guard<std::recursive_mutex> lock(data_lock);
                 if (conf.p->is_op(conf.user_id)) {
                     std::string type;
                     int64_t num = 0;
@@ -637,7 +637,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
 
     size_t keyid = get_avaliable_key();
     {
-        std::lock_guard<std::mutex> lock(data_lock);
+        std::lock_guard<std::recursive_mutex> lock(data_lock);
         if (is_lock[keyid]) {
             conf.p->cq_send("请等待其他对话中输入的回复。", conf);
             return;
@@ -657,7 +657,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
         active_ids.insert(id);
     }
 
-    std::lock_guard<std::mutex> lock(gptlock[keyid]);
+    std::lock_guard<std::recursive_mutex> lock(gptlock[keyid]);
     Json::Value J, user_input_J, ign;
     user_input_J["role"] = "user";
     std::string nickname = get_stranger_name(conf.p, conf.user_id);
@@ -679,7 +679,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     J["model"] = model_name;
     
     {
-        std::lock_guard<std::mutex> lock_data(data_lock);
+        std::lock_guard<std::recursive_mutex> lock_data(data_lock);
         
         // Pre-pruning history to avoid context-length-limit errors
         Json::Value &h = history[id];
@@ -717,7 +717,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     conf.p->setlog(LOG::INFO, "openai: user " + std::to_string(conf.user_id));
     
     {
-        std::lock_guard<std::mutex> lock_data(data_lock);
+        std::lock_guard<std::recursive_mutex> lock_data(data_lock);
         is_lock[keyid] = false;
         active_ids.erase(id);
     }
@@ -729,7 +729,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
                             "try again or try .ai.reset",
                             conf);
             {
-                std::lock_guard<std::mutex> lock_data(data_lock);
+                std::lock_guard<std::recursive_mutex> lock_data(data_lock);
                 if (history[id].size() > 0) history[id].removeIndex(0, &ign);
                 if (history[id].size() > 0) history[id].removeIndex(0, &ign);
             }
@@ -746,7 +746,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
             conf.p->cq_send("Openai ERROR: API 响应格式异常(缺少 choices)",
                             conf);
             {
-                std::lock_guard<std::mutex> lock_data(data_lock);
+                std::lock_guard<std::recursive_mutex> lock_data(data_lock);
                 active_ids.erase(id);
             }
             return;
@@ -764,7 +764,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
                 conf.p->cq_send("API空返回！", conf);
             }
             {
-                std::lock_guard<std::mutex> lock_data(data_lock);
+                std::lock_guard<std::recursive_mutex> lock_data(data_lock);
                 active_ids.erase(id);
             }
             return;
@@ -786,7 +786,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
         std::string reply_msg = "[CQ:reply,id=" + std::to_string(conf.message_id) +
                                 "] " + aimsg;
         {
-            std::lock_guard<std::mutex> lock_data(data_lock);
+            std::lock_guard<std::recursive_mutex> lock_data(data_lock);
             if (MAX_TOKEN < tokens) {
                 history[id].clear();
             }
@@ -821,7 +821,7 @@ bool gpt3_5::check(std::string message, const msg_meta &conf)
             message = trim(message.substr(pos + 1));
         }
     }
-    if (cmd_match_exact(message, "你说的话我不喜欢")) {
+    if (cmd_match_exact(message, {"你说的话我不喜欢"})) {
         return true;
     }
     return cmd_match_prefix(message, {".ai"});
@@ -855,7 +855,7 @@ uintmax_t gpt3_5::get_archives_total_size()
 void gpt3_5::perform_archive(int64_t id, const msg_meta &conf, bool is_auto)
 {
     {
-        std::lock_guard<std::mutex> lock(data_lock);
+        std::lock_guard<std::recursive_mutex> lock(data_lock);
         if (arc_is_full) {
             if (!is_auto) {
                 conf.p->cq_send("当前归档文件过大，已暂停生成。请联系管理员", conf);
@@ -887,7 +887,7 @@ void gpt3_5::perform_archive(int64_t id, const msg_meta &conf, bool is_auto)
 
     Json::Value J;
     {
-        std::lock_guard<std::mutex> lock(data_lock);
+        std::lock_guard<std::recursive_mutex> lock(data_lock);
         J["pre_prompt"] = pre_default[id];
         J["history"] = history[id];
         writefile(full_path, J.toStyledString());
@@ -895,7 +895,7 @@ void gpt3_5::perform_archive(int64_t id, const msg_meta &conf, bool is_auto)
 
     bool need_check = false;
     {
-        std::lock_guard<std::mutex> lock(data_lock);
+        std::lock_guard<std::recursive_mutex> lock(data_lock);
         if (++arc_check_counter >= 10) {
             arc_check_counter = 0;
             need_check = true;
@@ -903,7 +903,7 @@ void gpt3_5::perform_archive(int64_t id, const msg_meta &conf, bool is_auto)
     }
     if (need_check) {
         bool full = (get_archives_total_size() >= 250 * 1024 * 1024);
-        std::lock_guard<std::mutex> lock(data_lock);
+        std::lock_guard<std::recursive_mutex> lock(data_lock);
         arc_is_full = full;
     }
 
@@ -1001,7 +1001,7 @@ void gpt3_5::restore_archive(int64_t id, const msg_meta &conf,
     Json::Value J = string_to_json(readfile(full_path));
     if (J.isMember("history") && J.isMember("pre_prompt")) {
         {
-            std::lock_guard<std::mutex> lock(data_lock);
+            std::lock_guard<std::recursive_mutex> lock(data_lock);
             history[id] = J["history"];
             pre_default[id] = J["pre_prompt"].asString();
         }
