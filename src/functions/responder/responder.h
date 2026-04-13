@@ -16,6 +16,8 @@ private:
     void save();
     std::string get_reply_message(const std::string &message,
                                   const msg_meta &conf);
+    void send_reply_by_trigger(groupid_t group_id, userid_t user_id,
+                               const std::string &trigger, bot *p);
 
 public:
     Responder();
