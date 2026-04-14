@@ -213,9 +213,23 @@ void img_fun::process(std::string message, const msg_meta &conf)
         else if (proc_type.type == img_fun_type::ROTATE) {
             filename += "_rot.gif";
             float prog = 0.2;
-            img_list = rotateImage(
-                img, proc_type.para1, proc_type.para2,
-                [&](float delta_p) { p.setProgress(prog += delta_p * 0.7); });
+            conf.p->setlog(
+                LOG::INFO,
+                fmt::format("img_fun into rot, img_list.size()={}, "
+                            "animationDelay={}, mgif={}",
+                            img_list.size(), img.animationDelay(), mgif));
+            if (img.animationDelay() || mgif || img_list.size() > 1) {
+                conf.p->setlog(
+                    LOG::INFO,
+                    fmt::format("img_fun into rot gif"));
+                rotateImage(
+                    img_list, proc_type.para1, proc_type.para2,
+                    [&](float delta_p) { p.setProgress(prog += delta_p * 0.7); });
+            } else {
+                img_list = rotateImage(
+                    img, proc_type.para1, proc_type.para2,
+                    [&](float delta_p) { p.setProgress(prog += delta_p * 0.7); });
+            }
         }
         else if (proc_type.type == img_fun_type::KALEIDO) {
             filename += "_kal.gif";

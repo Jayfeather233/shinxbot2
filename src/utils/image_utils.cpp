@@ -207,14 +207,16 @@ void crop_to_square(Magick::Image &img)
 void crop_to_circle(Magick::Image &img)
 {
     crop_to_square(img);
-    size_t len = img.columns(), half_len = img.columns() >> 1;
+    size_t len = img.columns();
+    double radius = len / 2.0;
+    double cx = radius, cy = radius;
+    double radius_sq = radius * radius;
 
     for (size_t y = 0; y < len; ++y) {
         for (size_t x = 0; x < len; ++x) {
-            size_t xx = ((x > half_len) ? (x - half_len) : (half_len - x));
-            size_t yy = ((y > half_len) ? (y - half_len) : (half_len - y));
-            if (xx + yy > 1.42 * half_len ||
-                xx * xx + yy * yy > half_len * half_len) {
+            double dx = x + 0.5 - cx;
+            double dy = y + 0.5 - cy;
+            if (dx * dx + dy * dy > radius_sq) {
                 img.pixelColor(x, y, Magick::Color(0, 0, 0, 0));
             }
         }
@@ -271,6 +273,86 @@ std::vector<Magick::Image> rotateImage(const Magick::Image img, int fps,
         }
     }
     return ret;
+}
+
+void rotateImage(std::vector<Magick::Image> &img, int fps, bool clockwise,
+                 std::function<void(float)> callback)
+{
+    std::vector<Magick::Image> coalesced;
+    Magick::coalesceImages(&coalesced, img.begin(), img.end());
+    int total_delay = 0;
+    for (auto &im : coalesced) {
+        im.alphaChannel(MagickCore::AlphaChannelOption::SetAlphaChannel);
+        crop_to_square(im);
+        double ratio = im.columns() * im.rows() / 1000000;
+        if (ratio > 1) {
+            im.resize(
+                Magick::Geometry(im.columns() / ratio, im.rows() / ratio));
+            im.page(Magick::Geometry(0, 0, 0, 0));
+        }
+        total_delay += im.animationDelay();
+    }
+    double deg_per_frame = 360.0 / fps * (clockwise ? 1 : -1);
+    double delay = 100.0 / fps;
+    if (total_delay > 80 && total_delay < 130) {
+        delay = total_delay * 1.0 / fps;
+    }
+    else if (total_delay >= 130) {
+        if (total_delay % 100 > 80 || total_delay % 100 < 30) {
+            fps *= (total_delay + 50) / 100;
+            delay = total_delay * 1.0 / fps;
+        }
+        else {
+            total_delay <<= 1;
+            fps *= (total_delay + 50) / 100;
+            delay = total_delay * 1.0 / fps;
+            total_delay >>= 1;
+        }
+    }
+    else if (total_delay >= 20) {
+        double ratio = total_delay / 100.0;
+        double availables[] = {2, 3, 4, 5};
+        // find the nearest available ratio
+        double nearest_ratio = availables[0];
+        for (double r : availables) {
+            if (std::abs(1 - ratio * r) < std::abs(1 - ratio * nearest_ratio)) {
+                nearest_ratio = r;
+            }
+        }
+        double ra = 100.0 / nearest_ratio / total_delay;
+        for (auto &im : coalesced) {
+            im.animationDelay(im.animationDelay() * ra);
+        }
+    }
+    set_global_log(LOG::INFO, "rotateImage: total_delay=" + std::to_string(total_delay) +
+                                 ", fps=" + std::to_string(fps) +
+                                 ", delay=" + std::to_string(delay));
+
+    int index = 0;
+    double frac = 0.001;
+
+    std::vector<Magick::Image> output;
+
+    for (int i = 0; i < fps; i++) {
+        while (frac >= coalesced[index].animationDelay()) {
+            frac -= coalesced[index].animationDelay();
+            index = (index + 1) % coalesced.size();
+        }
+        Magick::Image im = coalesced[index];
+        frac += delay;
+
+        constsize_rotate(im, deg_per_frame * i);
+        crop_to_circle(im);
+        im.gifDisposeMethod(MagickCore::DisposeType::BackgroundDispose);
+        im.animationDelay(delay);
+        output.push_back(im);
+
+        if (callback != nullptr) {
+            callback(1.0 / fps);
+        }
+    }
+    img.clear();
+    Magick::optimizeImageLayers(&img, output.begin(), output.end());
 }
 
 struct TileTransform {
