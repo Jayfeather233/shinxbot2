@@ -246,15 +246,9 @@ void Responder::send_reply_by_trigger(groupid_t group_id,
         }
     }
     else {
-        if (conf.message_type == "private") {
-            msg_meta private_conf{"private", conf.user_id, 0, 0, conf.p};
-            conf.p->cq_send(response, private_conf);
-        }
-        else {
-            msg_meta group_conf{"group", conf.user_id, group_id, 0, conf.p};
-            conf.p->cq_send(response, group_conf);
-        }
+        conf.p->cq_send(response, conf);
     }
+    return;
 }
 
 void Responder::save()
