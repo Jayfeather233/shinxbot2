@@ -83,10 +83,6 @@ void m_change_f::process(std::string message, const msg_meta &conf)
 
     std::wstring message_w = string_to_wstring(message);
 
-    if (message == "$m_welcome") {
-        return;
-    }
-
     if (conf.message_type == "internal") {
         std::wstring welcome_message = trim(this->format_message(
             this->get_welcome_message(conf.group_id), conf));
@@ -211,10 +207,9 @@ bool m_change_f::check(std::string message, const msg_meta &conf)
 {
     return conf.group_id != 0 &&
            (cmd_match_exact(message, {"welcome.help"}) ||
-            cmd_match_prefix(message, {"设置入群消息", "删除入群消息", "设置入群消息内部触发 开", "设置入群消息内部触发 关"}) ||
+            cmd_match_prefix(message, {"设置入群消息", "删除入群消息"}) ||
             (conf.message_type == "internal" &&
-             conf.message_id == internal_message::kMemberChangeWelcome) ||
-            message == "$m_welcome");
+             conf.message_id == internal_message::kMemberChangeWelcome));
 }
 
 std::string m_change_f::help() { return ""; }
