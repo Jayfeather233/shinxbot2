@@ -210,14 +210,15 @@ void Responder::process(std::string message, const msg_meta &conf)
     if (groupid == 0) {
         return;
     }
-    send_reply_by_trigger(groupid, conf.user_id, trim(message), conf.p);
+    send_reply_by_trigger(groupid, trim(message), conf);
     return;
 }
 
-void Responder::send_reply_by_trigger(groupid_t group_id, userid_t user_id,
-                                      const std::string &trigger, bot *p)
+void Responder::send_reply_by_trigger(groupid_t group_id,
+                                      const std::string &trigger,
+                                      const msg_meta &conf)
 {
-    if (group_id == 0 || p == nullptr) {
+    if (group_id == 0 || conf.p == nullptr) {
         return;
     }
 
@@ -229,18 +230,30 @@ void Responder::send_reply_by_trigger(groupid_t group_id, userid_t user_id,
     std::string response = it_reply->second;
     size_t pos = 0;
     while ((pos = response.find("{{username}}", pos)) != std::string::npos) {
-        response.replace(pos, 12, get_username(p, user_id, group_id));
+        response.replace(pos, 12, get_username(conf.p, conf.user_id, group_id));
     }
 
     if (response.find("[fwd]") == 0) {
         Json::Value J;
         J["message"] = string_to_json(response.substr(5))["messages"];
-        J["group_id"] = group_id;
-        p->cq_send("send_group_forward_msg", J);
+        if (conf.message_type == "private") {
+            J["user_id"] = conf.user_id;
+            conf.p->cq_send("send_private_forward_msg", J);
+        }
+        else {
+            J["group_id"] = group_id;
+            conf.p->cq_send("send_group_forward_msg", J);
+        }
     }
     else {
-        msg_meta conf{"group", user_id, group_id, 0, p};
-        p->cq_send(response, conf);
+        if (conf.message_type == "private") {
+            msg_meta private_conf{"private", conf.user_id, 0, 0, conf.p};
+            conf.p->cq_send(response, private_conf);
+        }
+        else {
+            msg_meta group_conf{"group", conf.user_id, group_id, 0, conf.p};
+            conf.p->cq_send(response, group_conf);
+        }
     }
 }
 
