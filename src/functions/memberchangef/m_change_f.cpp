@@ -82,6 +82,7 @@ void m_change_f::process(std::string message, const msg_meta &conf)
     }
 
     std::wstring message_w = string_to_wstring(message);
+
     if (conf.message_type == "internal") {
         std::wstring welcome_message = trim(this->format_message(
             this->get_welcome_message(conf.group_id), conf));
@@ -177,11 +178,28 @@ void m_change_f::flush_welcome_queue(bot *p)
 
     for (const auto &item : pending) {
         msg_meta conf{"group", item.user_id, item.group_id, item.message_id,
-                      item.p != nullptr ? item.p : p};
+                    item.p != nullptr ? item.p : p};
+
+        if (conf.p == nullptr) {
+            continue;
+        }
+
         const std::wstring &welcome_message = item.welcome_message;
-        if (conf.p != nullptr) {
+        if (!welcome_message.empty()) {
             conf.p->cq_send(wstring_to_string(welcome_message), conf);
         }
+
+        Json::Value fake;
+        fake["post_type"] = "message";
+        fake["message_type"] = "group";
+        fake["group_id"] = item.group_id;
+        fake["user_id"] = item.user_id;
+        fake["message"] = "$m_welcome";
+        fake["raw_message"] = "$m_welcome";
+        fake["font"] = 0;
+        fake["sender"] = Json::Value();
+        fake["sender"]["user_id"] = item.user_id;
+        conf.p->input_process(fake.toStyledString());
     }
 }
 
@@ -193,6 +211,7 @@ bool m_change_f::check(std::string message, const msg_meta &conf)
             (conf.message_type == "internal" &&
              conf.message_id == internal_message::kMemberChangeWelcome));
 }
+
 std::string m_change_f::help() { return ""; }
 
 std::string m_change_f::help(const msg_meta &conf, help_level_t level)
