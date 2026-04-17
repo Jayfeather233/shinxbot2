@@ -422,6 +422,12 @@ void buildRandomCanvas(const std::vector<Magick::Image> &input,
         Magick::Image canvas(Magick::Geometry(canvasW, canvasH),
                              Magick::Color(0, 0, 0, 0));
         canvas.alpha(true);
+        for (int x = 0; x < canvasW; x += baseW) {
+            for (int y = 0; y < canvasH; y += baseH) {
+                canvas.composite(src, x, y,
+                                 MagickCore::CompositeOperator::OverCompositeOp);
+            }
+        }
 
         for (const auto &t : transforms) {
             Magick::Image img = src;
@@ -477,6 +483,12 @@ Magick::Image buildRandomCanvas(const Image &input,
     Magick::Image canvas(Magick::Geometry(canvasW, canvasH),
                          Magick::Color(0, 0, 0, 0));
     canvas.alpha(true);
+    for (int x = 0; x < canvasW; x += w) {
+        for (int y = 0; y < canvasH; y += h) {
+            canvas.composite(input, x, y,
+                                MagickCore::CompositeOperator::OverCompositeOp);
+        }
+    }
 
     double scale_fact = (canvasW * canvasH) / 2.0 / (w * h);
     int tiles = std::min(
