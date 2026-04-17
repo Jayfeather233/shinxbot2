@@ -51,7 +51,7 @@ void dice::process(std::string message, const msg_meta &conf) {
 }
 
 bool dice::check(std::string message, const msg_meta &conf) {
-    return true;
+    return message.find('d') != message.npos || message.find('D') != message.npos;
 }
 
 std::string dice::help() {
