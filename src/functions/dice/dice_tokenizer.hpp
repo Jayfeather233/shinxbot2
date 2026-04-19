@@ -231,7 +231,7 @@ namespace dice_tokenizer {
                     }
                     return ret;
                 }
-                int sides = int(right->calcVal + 0.4999);
+                int sides = right->calcVal < 0 ? right->calcVal - 0.4999 : right->calcVal + 0.4999;
 
                 int rval = dice_random(sides);
                 calcVal = rval;
@@ -261,8 +261,8 @@ namespace dice_tokenizer {
                     return ret1 || ret2;
                 }
 
-                int num = left->calcVal + 0.4999;
-                int sides = right->calcVal + 0.4999;
+                int num = left->calcVal < 0 ? left->calcVal - 0.4999 : left->calcVal + 0.4999;
+                int sides = right->calcVal < 0 ? right->calcVal - 0.4999 : right->calcVal + 0.4999;
 
                 int rval = 0;
                 for (int i = 0; i < num; ++i) {
@@ -271,7 +271,11 @@ namespace dice_tokenizer {
                     renderedStr += myToString(rrval);
                     if (i < num - 1) renderedStr += "+";
                 }
-                renderedStr = fmt::format("({}d{}={}=({}))", num, sides, rval, renderedStr);
+                if (num <= 1) {
+                    renderedStr = fmt::format("({}d{}={})", num, sides, rval);
+                } else {
+                    renderedStr = fmt::format("({}d{}={}=({}))", num, sides, rval, renderedStr);
+                }
                 calcVal = rval;
 
                 op = OpType::NUMBER;
