@@ -57,7 +57,8 @@ Json::ArrayIndex json_array_find(const Json::Value &J, const uint64_t &data)
 
 // message format like:
 // xx[CQ:at,qq=123456]xx[CQ:image,file=xxx.jpg]xx
-Json::Value expand_string_to_messageArr(std::string s) {
+Json::Value expand_string_to_messageArr(std::string s)
+{
     Json::Value messageArr;
     size_t pos = 0;
     if ((pos = s.find("[CQ:")) == std::string::npos) {
@@ -66,7 +67,8 @@ Json::Value expand_string_to_messageArr(std::string s) {
         jj["data"]["text"] = s;
         messageArr.append(jj);
         return messageArr;
-    } else {
+    }
+    else {
         size_t last_pos = 0;
         while (pos != std::string::npos) {
             if (pos > last_pos) {
@@ -88,13 +90,15 @@ Json::Value expand_string_to_messageArr(std::string s) {
                 if (next_comma == std::string::npos) {
                     next_comma = cq_code.size();
                 }
-                std::string item = cq_code.substr(comma_pos + 1, next_comma - comma_pos - 1);
+                std::string item =
+                    cq_code.substr(comma_pos + 1, next_comma - comma_pos - 1);
                 size_t equal_pos = item.find("=");
                 if (equal_pos != std::string::npos) {
                     std::string key = item.substr(0, equal_pos);
                     std::string value = item.substr(equal_pos + 1);
                     jj["data"][key] = cq_decode(value);
-                } else {
+                }
+                else {
                     jj["data"]["0"] = item;
                 }
                 comma_pos = next_comma;

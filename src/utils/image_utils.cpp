@@ -324,9 +324,10 @@ void rotateImage(std::vector<Magick::Image> &img, int fps, bool clockwise,
             im.animationDelay(im.animationDelay() * ra);
         }
     }
-    set_global_log(LOG::INFO, "rotateImage: total_delay=" + std::to_string(total_delay) +
-                                 ", fps=" + std::to_string(fps) +
-                                 ", delay=" + std::to_string(delay));
+    set_global_log(LOG::INFO,
+                   "rotateImage: total_delay=" + std::to_string(total_delay) +
+                       ", fps=" + std::to_string(fps) +
+                       ", delay=" + std::to_string(delay));
 
     int index = 0;
     double frac = 0.001;

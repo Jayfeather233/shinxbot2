@@ -18,7 +18,7 @@ void set_global_log(LOG type, std::string message)
                     tt.tm_sec, LOG_name[type], message);
 
     if (type == LOG::ERROR)
-        fmt::print(stderr, formatted_message);
+        fmt::print(stderr, "{}", formatted_message);
     else
-        fmt::print(formatted_message);
+        fmt::print("{}", formatted_message);
 }

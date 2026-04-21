@@ -41,7 +41,7 @@ void shinxbot::unload_func(std::tuple<eventprocess *, void *, std::string> &f)
 
 void shinxbot::init_func(const std::string &name, processable *p)
 {
-    p->set_callback([&](std::function<void(bot * p)> func) {
+    p->set_callback([this, name](std::function<void(bot * p)> func) {
         this->mytimer->add_callback(name, func);
     });
     p->set_backup_files(this->archive, name);
@@ -192,6 +192,11 @@ bool shinxbot::handle_bot_load(const std::string &message, const msg_meta &conf)
             bool found_loaded = false;
             for (size_t i = 0; i < functions.size(); ++i) {
                 if (std::get<2>(functions[i]) == n) {
+                    const bool restart_timer = (this->mytimer != nullptr &&
+                                                this->mytimer->is_running());
+                    if (restart_timer) {
+                        this->mytimer->timer_stop();
+                    }
                     unload_func(functions[i]);
 
                     auto u = load_function<processable>("./lib/functions/lib" +
@@ -206,6 +211,9 @@ bool shinxbot::handle_bot_load(const std::string &message, const msg_meta &conf)
                     else {
                         functions.erase(functions.begin() + i);
                         oss << "load " << n << " failed" << std::endl;
+                    }
+                    if (restart_timer) {
+                        this->mytimer->timer_start();
                     }
                     found_loaded = true;
                     break;
@@ -243,6 +251,11 @@ bool shinxbot::handle_bot_load(const std::string &message, const msg_meta &conf)
             bool found_loaded = false;
             for (size_t i = 0; i < events.size(); ++i) {
                 if (std::get<2>(events[i]) == n) {
+                    const bool restart_timer = (this->mytimer != nullptr &&
+                                                this->mytimer->is_running());
+                    if (restart_timer) {
+                        this->mytimer->timer_stop();
+                    }
                     unload_func(events[i]);
 
                     auto u = load_function<eventprocess>("./lib/events/lib" +
@@ -257,6 +270,9 @@ bool shinxbot::handle_bot_load(const std::string &message, const msg_meta &conf)
                     else {
                         events.erase(events.begin() + i);
                         oss << "load " << n << " failed" << std::endl;
+                    }
+                    if (restart_timer) {
+                        this->mytimer->timer_start();
                     }
                     found_loaded = true;
                     break;
@@ -308,8 +324,16 @@ bool shinxbot::handle_bot_unload(const std::string &message,
             bool flg = true;
             for (size_t i = 0; i < functions.size(); ++i) {
                 if (std::get<2>(functions[i]) == n) {
+                    const bool restart_timer = (this->mytimer != nullptr &&
+                                                this->mytimer->is_running());
+                    if (restart_timer) {
+                        this->mytimer->timer_stop();
+                    }
                     unload_func(functions[i]);
                     functions.erase(functions.begin() + i);
+                    if (restart_timer) {
+                        this->mytimer->timer_start();
+                    }
                     oss << "unload " << n << std::endl;
                     flg = false;
                     break;
@@ -330,8 +354,16 @@ bool shinxbot::handle_bot_unload(const std::string &message,
             bool flg = true;
             for (size_t i = 0; i < events.size(); ++i) {
                 if (std::get<2>(events[i]) == n) {
+                    const bool restart_timer = (this->mytimer != nullptr &&
+                                                this->mytimer->is_running());
+                    if (restart_timer) {
+                        this->mytimer->timer_stop();
+                    }
                     unload_func(events[i]);
                     events.erase(events.begin() + i);
+                    if (restart_timer) {
+                        this->mytimer->timer_start();
+                    }
                     oss << "unload " << n << std::endl;
                     flg = false;
                     break;
