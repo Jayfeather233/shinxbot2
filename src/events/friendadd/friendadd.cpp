@@ -17,8 +17,10 @@ bool friendadd::check(bot *p, Json::Value J)
 {
     (void)p;
     return J.isMember("post_type") && J.isMember("request_type") &&
-           J["post_type"].asString() == "request" &&
-           J["request_type"].asString() == "friend";
+           J.isMember("sub_type") && J.isMember("flag") &&
+           J.isMember("user_id") && J["post_type"].asString() == "request" &&
+           J["request_type"].asString() == "friend" &&
+           J["sub_type"].asString() == "add";
 }
 
 DECLARE_FACTORY_FUNCTIONS(friendadd)

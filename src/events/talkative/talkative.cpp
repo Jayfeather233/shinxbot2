@@ -11,7 +11,13 @@ void talkative::process(bot *p, Json::Value J)
 }
 bool talkative::check(bot *p, Json::Value J)
 {
-    return J.isMember("honor_type") &&
+    (void)p;
+    return J.isMember("post_type") && J.isMember("notice_type") &&
+           J.isMember("sub_type") && J.isMember("honor_type") &&
+           J.isMember("group_id") && J.isMember("user_id") &&
+           J["post_type"].asString() == "notice" &&
+           J["notice_type"].asString() == "notify" &&
+           J["sub_type"].asString() == "honor" &&
            J["honor_type"].asString() == "talkative";
 }
 

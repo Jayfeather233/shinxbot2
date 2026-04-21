@@ -52,8 +52,14 @@ void m_change::process(bot *p, Json::Value J)
 }
 bool m_change::check(bot *p, Json::Value J)
 {
-    if (J["post_type"] != "notice")
+    (void)p;
+    if (!J.isMember("post_type") || !J.isMember("notice_type") ||
+        !J.isMember("group_id") || !J.isMember("user_id")) {
         return false;
+    }
+    if (J["post_type"].asString() != "notice") {
+        return false;
+    }
     return J["notice_type"].asString() == "group_decrease" ||
            J["notice_type"].asString() == "group_increase";
 }

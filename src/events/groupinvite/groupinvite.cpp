@@ -20,6 +20,7 @@ bool groupinvite::check(bot *p, Json::Value J)
     (void)p;
     return J.isMember("post_type") && J.isMember("request_type") &&
            J.isMember("sub_type") && J.isMember("flag") &&
+           J.isMember("group_id") && J.isMember("user_id") &&
            J["post_type"].asString() == "request" &&
            J["request_type"].asString() == "group" &&
            J["sub_type"].asString() == "invite";
