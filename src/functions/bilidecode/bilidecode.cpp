@@ -49,6 +49,10 @@ void bili_decode::process_string(std::string s, const msg_meta &conf)
         bv_result res = get_bv(s);
         if (res.first.empty())
             break;
+        if (conf.group_id && group_last_decode[conf.group_id] == res.first) {
+            break;
+        }
+        group_last_decode[conf.group_id] = res.first;
         Json::Value raw_info = get_raw_info(res.first);
         if (raw_info["code"].asInt64() == 0) {
             send_dec_info(raw_info, conf);
@@ -59,6 +63,10 @@ void bili_decode::process_string(std::string s, const msg_meta &conf)
         av_result res = get_av(s);
         if (res.first == 0)
             break;
+        if (conf.group_id && group_last_decode[conf.group_id] == std::to_string(res.first)) {
+            break;
+        }
+        group_last_decode[conf.group_id] = std::to_string(res.first);
         Json::Value raw_info = get_raw_info(res.first);
         if (raw_info["code"].asInt64() == 0) {
             send_dec_info(raw_info, conf);
@@ -119,18 +127,21 @@ std::string bili_decode::get_decode_info(const Json::Value &raw_info)
     if (desc.length() >= 100) {
         desc = desc.substr(0, 100) + L"...";
     }
-    oss << "简介：" << wstring_to_string(desc) << std::endl;
+    std::string desc_str = wstring_to_string(desc);
+    // add 2 space after '\n'
+    size_t pos = 0;
+    while ((pos = desc_str.find('\n', pos)) != std::string::npos) {
+        desc_str.insert(pos + 1, "    ");
+        pos += 3;
+    }
+    oss << "简介：" << desc_str << std::endl;
 
     oss << "UP: " << raw_info["data"]["owner"]["name"].asString() << std::endl;
-    oss << "播放 "
-        << to_human_string(raw_info["data"]["stat"]["view"].asInt64())
-        << " 点赞 "
-        << to_human_string(raw_info["data"]["stat"]["like"].asInt64())
-        << " 回复 "
-        << to_human_string(raw_info["data"]["stat"]["reply"].asInt64())
-        << " 弹幕 "
-        << to_human_string(raw_info["data"]["stat"]["danmaku"].asInt64())
-        << std::endl;
+    oss << fmt::format("播放 {:<8} 点赞 {:<8}\n回复 {:<8} 弹幕 {:<8}\n",
+                       to_human_string(raw_info["data"]["stat"]["view"].asInt64()),
+                       to_human_string(raw_info["data"]["stat"]["like"].asInt64()),
+                       to_human_string(raw_info["data"]["stat"]["reply"].asInt64()),
+                       to_human_string(raw_info["data"]["stat"]["danmaku"].asInt64()));
     oss << "Link: https://www.bilibili.com/video/" +
                raw_info["data"]["bvid"].asString() + "/"
         << std::endl;
