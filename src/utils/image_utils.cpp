@@ -425,8 +425,8 @@ void buildRandomCanvas(const std::vector<Magick::Image> &input,
         canvas.alpha(true);
         for (int x = 0; x < canvasW; x += baseW) {
             for (int y = 0; y < canvasH; y += baseH) {
-                canvas.composite(src, x, y,
-                                 MagickCore::CompositeOperator::OverCompositeOp);
+                canvas.composite(
+                    src, x, y, MagickCore::CompositeOperator::OverCompositeOp);
             }
         }
 
@@ -487,7 +487,7 @@ Magick::Image buildRandomCanvas(const Image &input,
     for (int x = 0; x < canvasW; x += w) {
         for (int y = 0; y < canvasH; y += h) {
             canvas.composite(input, x, y,
-                                MagickCore::CompositeOperator::OverCompositeOp);
+                             MagickCore::CompositeOperator::OverCompositeOp);
         }
     }
 

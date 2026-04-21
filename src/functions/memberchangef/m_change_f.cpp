@@ -65,19 +65,20 @@ std::wstring m_change_f::format_message(const std::wstring &message,
 void m_change_f::process(std::string message, const msg_meta &conf)
 {
     if (message == "welcome.help") {
-        const bool can_manage = conf.p->is_op(conf.user_id) ||
-                                is_group_op(conf.p, conf.group_id,
-                                            conf.user_id);
+        const bool can_manage =
+            conf.p->is_op(conf.user_id) ||
+            is_group_op(conf.p, conf.group_id, conf.user_id);
         if (!can_manage) {
             conf.p->cq_send("入群欢迎词为管理员功能", conf);
             return;
         }
 
-        conf.p->cq_send("入群欢迎词帮助\n"
-                        "welcome.help\n"
-                        "设置入群消息 [后接入群提示消息，{{username}}代表用户名]\n"
-                        "删除入群消息",
-                        conf);
+        conf.p->cq_send(
+            "入群欢迎词帮助\n"
+            "welcome.help\n"
+            "设置入群消息 [后接入群提示消息，{{username}}代表用户名]\n"
+            "删除入群消息",
+            conf);
         return;
     }
 
@@ -178,7 +179,7 @@ void m_change_f::flush_welcome_queue(bot *p)
 
     for (const auto &item : pending) {
         msg_meta conf{"group", item.user_id, item.group_id, item.message_id,
-                    item.p != nullptr ? item.p : p};
+                      item.p != nullptr ? item.p : p};
 
         if (conf.p == nullptr) {
             continue;

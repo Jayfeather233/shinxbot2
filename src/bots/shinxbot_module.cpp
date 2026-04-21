@@ -78,17 +78,17 @@ void shinxbot::load_module_filter_config()
     }
     else {
         auto ev_names = list_available_module_names(true);
-        enabled_events = std::set<std::string>(ev_names.begin(), ev_names.end());
+        enabled_events =
+            std::set<std::string>(ev_names.begin(), ev_names.end());
         changed = true;
     }
 
     if (!cfg_exists || changed) {
         save_module_filter_config();
-        set_global_log(
-            LOG::INFO,
-            "Initialized/updated module_load.json: functions=" +
-                std::to_string(enabled_functions.size()) +
-                ", events=" + std::to_string(enabled_events.size()));
+        set_global_log(LOG::INFO,
+                       "Initialized/updated module_load.json: functions=" +
+                           std::to_string(enabled_functions.size()) +
+                           ", events=" + std::to_string(enabled_events.size()));
     }
 }
 

@@ -63,7 +63,8 @@ void bili_decode::process_string(std::string s, const msg_meta &conf)
         av_result res = get_av(s);
         if (res.first == 0)
             break;
-        if (conf.group_id && group_last_decode[conf.group_id] == std::to_string(res.first)) {
+        if (conf.group_id &&
+            group_last_decode[conf.group_id] == std::to_string(res.first)) {
             break;
         }
         group_last_decode[conf.group_id] = std::to_string(res.first);
@@ -137,11 +138,12 @@ std::string bili_decode::get_decode_info(const Json::Value &raw_info)
     oss << "简介：" << desc_str << std::endl;
 
     oss << "UP: " << raw_info["data"]["owner"]["name"].asString() << std::endl;
-    oss << fmt::format("播放 {:<8} 点赞 {:<8}\n回复 {:<8} 弹幕 {:<8}\n",
-                       to_human_string(raw_info["data"]["stat"]["view"].asInt64()),
-                       to_human_string(raw_info["data"]["stat"]["like"].asInt64()),
-                       to_human_string(raw_info["data"]["stat"]["reply"].asInt64()),
-                       to_human_string(raw_info["data"]["stat"]["danmaku"].asInt64()));
+    oss << fmt::format(
+        "播放 {:<8} 点赞 {:<8}\n回复 {:<8} 弹幕 {:<8}\n",
+        to_human_string(raw_info["data"]["stat"]["view"].asInt64()),
+        to_human_string(raw_info["data"]["stat"]["like"].asInt64()),
+        to_human_string(raw_info["data"]["stat"]["reply"].asInt64()),
+        to_human_string(raw_info["data"]["stat"]["danmaku"].asInt64()));
     oss << "Link: https://www.bilibili.com/video/" +
                raw_info["data"]["bvid"].asString() + "/"
         << std::endl;

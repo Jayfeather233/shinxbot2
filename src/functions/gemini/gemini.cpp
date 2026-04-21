@@ -183,11 +183,13 @@ void gemini::shrink_prompt_size(uint64_t u, bool is_vision)
     }
 }
 
-std::string gemini::generate_text(std::string message, uint64_t id, uint64_t user_id)
+std::string gemini::generate_text(std::string message, uint64_t id,
+                                  uint64_t user_id)
 {
     Json::Value J;
     J["role"] = "user";
-    J["parts"][0]["text"] = "[User: " + std::to_string(user_id) + "] " + message;
+    J["parts"][0]["text"] =
+        "[User: " + std::to_string(user_id) + "] " + message;
     history[0][id].append(J);
     J.clear();
     J["contents"] = history[0][id];
@@ -211,7 +213,8 @@ std::string gemini::generate_text(std::string message, uint64_t id, uint64_t use
     }
     return str_ans;
 }
-std::string gemini::generate_image(std::string message, uint64_t id, uint64_t user_id)
+std::string gemini::generate_image(std::string message, uint64_t id,
+                                   uint64_t user_id)
 {
     int cnt = 0;
     size_t index = -1, index2 = -1;
@@ -242,8 +245,9 @@ std::string gemini::generate_image(std::string message, uint64_t id, uint64_t us
         std::pair<std::string, std::string> img =
             image2base64(bot_resource_path(nullptr, "download/" + fn));
         J["role"] = "user";
-        J["parts"][0]["text"] =
-            "[User: " + std::to_string(user_id) + "] " + message.substr(0, index) + message.substr(index2 + 1);
+        J["parts"][0]["text"] = "[User: " + std::to_string(user_id) + "] " +
+                                message.substr(0, index) +
+                                message.substr(index2 + 1);
         J["parts"][1]["inline_data"]["mime_type"] = img.first;
         J["parts"][1]["inline_data"]["data"] = img.second;
         // history[1][id].append(J);

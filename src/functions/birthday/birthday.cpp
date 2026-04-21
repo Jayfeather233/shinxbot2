@@ -13,12 +13,11 @@ static std::string birthday_public_detail_help()
 
 static std::string birthday_admin_detail_help()
 {
-    return birthday_public_detail_help() +
-           "\n"
-           "date.del event\n"
-           "date.inf.add days\n"
-           "date.inf.del days\n"
-           "date.inf.list";
+    return birthday_public_detail_help() + "\n"
+                                           "date.del event\n"
+                                           "date.inf.add days\n"
+                                           "date.inf.del days\n"
+                                           "date.inf.list";
 }
 
 birthday::birthday() { load_config(); }
@@ -238,8 +237,7 @@ std::string birthday::help()
 
 std::string birthday::help(const msg_meta &conf, help_level_t level)
 {
-    if (conf.message_type == "group" &&
-        level == help_level_t::group_admin &&
+    if (conf.message_type == "group" && level == help_level_t::group_admin &&
         is_group_op(conf.p, conf.group_id, conf.user_id)) {
         return "日期提醒（管理员可配置删除与提醒周期）。帮助：date.help";
     }

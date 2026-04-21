@@ -10,7 +10,9 @@ void original::process(std::string message, const msg_meta &conf)
 {
     const std::string normalized = trim(message);
     if (normalized == ".original.help") {
-        conf.p->cq_send("消息解析帮助\n.original后发送要解析的消息，或用.original回复需要解析的消息", conf);
+        conf.p->cq_send("消息解析帮助\n.original后发送要解析的消息，或用."
+                        "original回复需要解析的消息",
+                        conf);
         return;
     }
 
