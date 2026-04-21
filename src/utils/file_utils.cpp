@@ -6,8 +6,7 @@
 #include <jsoncpp/json/json.h>
 
 std::fstream openfile(const fs::path file_path,
-                      const std::ios_base::openmode mode)
-{
+                      const std::ios_base::openmode mode) {
     if (!fs::exists(file_path)) {
         fs::path path(file_path);
         fs::create_directories(path.parent_path());
@@ -15,16 +14,14 @@ std::fstream openfile(const fs::path file_path,
     std::fstream file(file_path, mode);
     if (file.is_open()) {
         return file;
-    }
-    else {
+    } else {
         set_global_log(LOG::ERROR, "Cannot open file: " + file_path.string());
         throw(file_path.string() + ": open file failed").c_str();
     }
 }
 
 std::string readfile(const fs::path &file_path,
-                     const std::string &default_content)
-{
+                     const std::string &default_content) {
     std::ifstream afile;
     afile.open(file_path, std::ios::in);
 
@@ -36,30 +33,28 @@ std::string readfile(const fs::path &file_path,
         }
         afile.close();
         return ans;
-    }
-    else {
-        set_global_log(LOG::WARNING, "Reading file: " + file_path.string() + " not exist, using default content...");
+    } else {
+        set_global_log(LOG::WARNING,
+                       "Reading file: " + file_path.string() +
+                           " not exist, using default content...");
         try {
             std::fstream ofile = openfile(file_path, std::ios::out);
             ofile << default_content;
             ofile.flush();
             ofile.close();
             return default_content;
-        }
-        catch (...) {
+        } catch (...) {
             return "";
         }
     }
 }
 
 void writefile(const fs::path file_path, const std::string &content,
-               bool is_append)
-{
+               bool is_append) {
     std::fstream ofile;
     try {
         ofile = openfile(file_path, is_append ? std::ios::app : std::ios::out);
-    }
-    catch (...) {
+    } catch (...) {
     }
     ofile << content;
     ofile.flush();
@@ -68,8 +63,7 @@ void writefile(const fs::path file_path, const std::string &content,
 
 void command_download(const std::string &httpAddress,
                       const std::string &filePath, const std::string &fileName,
-                      const bool proxy)
-{
+                      const bool proxy) {
     fs::path p(filePath);
     if (!fs::exists(p)) {
         fs::create_directories(p);
@@ -90,8 +84,7 @@ void command_download(const std::string &httpAddress,
 }
 
 void download(const std::string &httpAddress, const fs::path &filePath,
-              const std::string &fileName, const bool proxy)
-{
+              const std::string &fileName, const bool proxy) {
     try {
         auto ret = split_http_addr(httpAddress);
         std::string data = do_get(ret.first, ret.second, false, {}, proxy);
@@ -99,8 +92,7 @@ void download(const std::string &httpAddress, const fs::path &filePath,
         try {
             ofile =
                 openfile(filePath / fileName, std::ios::out | std::ios::binary);
-        }
-        catch (...) {
+        } catch (...) {
             set_global_log(LOG::ERROR, "Cannot open file " +
                                            (filePath / fileName).string() +
                                            " for download.");
@@ -109,14 +101,12 @@ void download(const std::string &httpAddress, const fs::path &filePath,
         ofile << data;
         ofile.flush();
         ofile.close();
-    }
-    catch (const std::exception &e) {
+    } catch (const std::exception &e) {
         set_global_log(LOG::ERROR, "At download from" + httpAddress + " to " +
                                        (filePath / fileName).string() +
                                        ", Exception occurred: " + e.what());
         throw;
-    }
-    catch (const std::string &e) {
+    } catch (const std::string &e) {
         set_global_log(LOG::ERROR, "At download from" + httpAddress + " to " +
                                        (filePath / fileName).string() +
                                        ", Exception occurred: " + e);

@@ -11,25 +11,21 @@
 int send_port, receive_port;
 bot *bots;
 
-void bot_run(bot *u)
-{
+void bot_run(bot *u) {
     while (1) {
         int k = fork();
         if (k == -1) {
             std::cerr << "Process Error!" << std::endl;
-        }
-        else if (k == 0) {
+        } else if (k == 0) {
             u->run();
             exit(0);
-        }
-        else {
+        } else {
             waitpid(k, NULL, 0);
         }
     }
 }
 
-int main()
-{
+int main() {
     Magick::InitializeMagick("shinxBot");
     signal(SIGPIPE, SIG_IGN);
     signal(SIGALRM, SIG_IGN);
@@ -41,8 +37,7 @@ int main()
             iport >> x >> y >> token;
         }
         iport.close();
-    }
-    else {
+    } else {
         std::cout << "Please input the send_port: (receive port in Onebot11):";
         std::cin >> x;
         std::cout << "Please input the receive_port: (send port in Onebot11):";

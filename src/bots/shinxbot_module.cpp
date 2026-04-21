@@ -7,8 +7,7 @@
 
 namespace fs = fs;
 
-template <typename T> void close_dl(void *handle, T *p)
-{
+template <typename T> void close_dl(void *handle, T *p) {
     typedef void (*close_t)(T *);
     close_t closex = reinterpret_cast<close_t>(dlsym(handle, "destroy_t"));
     const char *dlsym_error = dlerror();
@@ -17,31 +16,27 @@ template <typename T> void close_dl(void *handle, T *p)
                        std::string("Cannot load symbol 'destroy_t': ") +
                            dlsym_error);
         // delete p; // This is not always safe
-    }
-    else {
+    } else {
         closex(p);
     }
     dlclose(handle);
 }
 
-void shinxbot::unload_func(std::tuple<processable *, void *, std::string> &f)
-{
+void shinxbot::unload_func(std::tuple<processable *, void *, std::string> &f) {
     this->mytimer->remove_callback(std::get<2>(f));
     this->archive->remove_path(std::get<2>(f));
 
     close_dl(std::get<1>(f), std::get<0>(f));
 }
 
-void shinxbot::unload_func(std::tuple<eventprocess *, void *, std::string> &f)
-{
+void shinxbot::unload_func(std::tuple<eventprocess *, void *, std::string> &f) {
     this->mytimer->remove_callback(std::get<2>(f));
     this->archive->remove_path(std::get<2>(f));
     close_dl(std::get<1>(f), std::get<0>(f));
 }
 
-void shinxbot::init_func(const std::string &name, processable *p)
-{
-    p->set_callback([&](std::function<void(bot * p)> func) {
+void shinxbot::init_func(const std::string &name, processable *p) {
+    p->set_callback([this, name](std::function<void(bot * p)> func) {
         this->mytimer->add_callback(name, func);
     });
     p->set_backup_files(this->archive, name);
@@ -49,8 +44,7 @@ void shinxbot::init_func(const std::string &name, processable *p)
 
 void shinxbot::init_func(const std::string &name, eventprocess *p) {}
 
-void shinxbot::load_module_filter_config()
-{
+void shinxbot::load_module_filter_config() {
     const std::string cfg_path = bot_config_path(this, "core/module_load.json");
     const bool cfg_exists = fs::exists(cfg_path);
     Json::Value J = string_to_json(readfile(cfg_path, "{}"));
@@ -65,8 +59,7 @@ void shinxbot::load_module_filter_config()
 
     if (has_functions) {
         parse_json_to_set(J["functions"], enabled_functions);
-    }
-    else {
+    } else {
         auto fn_names = list_available_module_names(false);
         enabled_functions =
             std::set<std::string>(fn_names.begin(), fn_names.end());
@@ -75,25 +68,23 @@ void shinxbot::load_module_filter_config()
 
     if (has_events) {
         parse_json_to_set(J["events"], enabled_events);
-    }
-    else {
+    } else {
         auto ev_names = list_available_module_names(true);
-        enabled_events = std::set<std::string>(ev_names.begin(), ev_names.end());
+        enabled_events =
+            std::set<std::string>(ev_names.begin(), ev_names.end());
         changed = true;
     }
 
     if (!cfg_exists || changed) {
         save_module_filter_config();
-        set_global_log(
-            LOG::INFO,
-            "Initialized/updated module_load.json: functions=" +
-                std::to_string(enabled_functions.size()) +
-                ", events=" + std::to_string(enabled_events.size()));
+        set_global_log(LOG::INFO,
+                       "Initialized/updated module_load.json: functions=" +
+                           std::to_string(enabled_functions.size()) +
+                           ", events=" + std::to_string(enabled_events.size()));
     }
 }
 
-void shinxbot::save_module_filter_config() const
-{
+void shinxbot::save_module_filter_config() const {
     Json::Value J(Json::objectValue);
     J["functions"] = parse_set_to_json(enabled_functions);
     J["events"] = parse_set_to_json(enabled_events);
@@ -101,31 +92,27 @@ void shinxbot::save_module_filter_config() const
               J.toStyledString());
 }
 
-void shinxbot::add_module_to_filter(const std::string &name, bool is_event)
-{
+void shinxbot::add_module_to_filter(const std::string &name, bool is_event) {
     if (is_event) {
         enabled_events.insert(name);
-    }
-    else {
+    } else {
         enabled_functions.insert(name);
     }
     save_module_filter_config();
 }
 
-void shinxbot::remove_module_from_filter(const std::string &name, bool is_event)
-{
+void shinxbot::remove_module_from_filter(const std::string &name,
+                                         bool is_event) {
     if (is_event) {
         enabled_events.erase(name);
-    }
-    else {
+    } else {
         enabled_functions.erase(name);
     }
     save_module_filter_config();
 }
 
 std::vector<std::string>
-shinxbot::list_available_module_names(bool is_event) const
-{
+shinxbot::list_available_module_names(bool is_event) const {
     std::vector<std::string> names;
     const fs::path dir =
         is_event ? fs::path("./lib/events/") : fs::path("./lib/functions/");
@@ -157,8 +144,8 @@ shinxbot::list_available_module_names(bool is_event) const
     return names;
 }
 
-bool shinxbot::handle_bot_load(const std::string &message, const msg_meta &conf)
-{
+bool shinxbot::handle_bot_load(const std::string &message,
+                               const msg_meta &conf) {
     std::istringstream iss(message.substr(8));
     std::ostringstream oss;
     std::string type, name;
@@ -192,6 +179,11 @@ bool shinxbot::handle_bot_load(const std::string &message, const msg_meta &conf)
             bool found_loaded = false;
             for (size_t i = 0; i < functions.size(); ++i) {
                 if (std::get<2>(functions[i]) == n) {
+                    const bool restart_timer = (this->mytimer != nullptr &&
+                                                this->mytimer->is_running());
+                    if (restart_timer) {
+                        this->mytimer->timer_stop();
+                    }
                     unload_func(functions[i]);
 
                     auto u = load_function<processable>("./lib/functions/lib" +
@@ -202,10 +194,12 @@ bool shinxbot::handle_bot_load(const std::string &message, const msg_meta &conf)
                         init_func(n, u.first);
                         add_module_to_filter(n, false);
                         oss << "reload " << n << std::endl;
-                    }
-                    else {
+                    } else {
                         functions.erase(functions.begin() + i);
                         oss << "load " << n << " failed" << std::endl;
+                    }
+                    if (restart_timer) {
+                        this->mytimer->timer_start();
                     }
                     found_loaded = true;
                     break;
@@ -220,8 +214,7 @@ bool shinxbot::handle_bot_load(const std::string &message, const msg_meta &conf)
                     init_func(n, u.first);
                     add_module_to_filter(n, false);
                     oss << "load " << n << std::endl;
-                }
-                else {
+                } else {
                     oss << "load " << n << " failed" << std::endl;
                 }
             }
@@ -243,6 +236,11 @@ bool shinxbot::handle_bot_load(const std::string &message, const msg_meta &conf)
             bool found_loaded = false;
             for (size_t i = 0; i < events.size(); ++i) {
                 if (std::get<2>(events[i]) == n) {
+                    const bool restart_timer = (this->mytimer != nullptr &&
+                                                this->mytimer->is_running());
+                    if (restart_timer) {
+                        this->mytimer->timer_stop();
+                    }
                     unload_func(events[i]);
 
                     auto u = load_function<eventprocess>("./lib/events/lib" +
@@ -253,10 +251,12 @@ bool shinxbot::handle_bot_load(const std::string &message, const msg_meta &conf)
                         init_func(n, u.first);
                         add_module_to_filter(n, true);
                         oss << "reload " << n << std::endl;
-                    }
-                    else {
+                    } else {
                         events.erase(events.begin() + i);
                         oss << "load " << n << " failed" << std::endl;
+                    }
+                    if (restart_timer) {
+                        this->mytimer->timer_start();
                     }
                     found_loaded = true;
                     break;
@@ -271,8 +271,7 @@ bool shinxbot::handle_bot_load(const std::string &message, const msg_meta &conf)
                     init_func(n, u.first);
                     add_module_to_filter(n, true);
                     oss << "load " << n << std::endl;
-                }
-                else {
+                } else {
                     oss << "load " << n << " failed" << std::endl;
                 }
             }
@@ -286,8 +285,7 @@ bool shinxbot::handle_bot_load(const std::string &message, const msg_meta &conf)
 }
 
 bool shinxbot::handle_bot_unload(const std::string &message,
-                                 const msg_meta &conf)
-{
+                                 const msg_meta &conf) {
     std::istringstream iss(message.substr(10));
     std::ostringstream oss;
     std::string type, name;
@@ -308,8 +306,16 @@ bool shinxbot::handle_bot_unload(const std::string &message,
             bool flg = true;
             for (size_t i = 0; i < functions.size(); ++i) {
                 if (std::get<2>(functions[i]) == n) {
+                    const bool restart_timer = (this->mytimer != nullptr &&
+                                                this->mytimer->is_running());
+                    if (restart_timer) {
+                        this->mytimer->timer_stop();
+                    }
                     unload_func(functions[i]);
                     functions.erase(functions.begin() + i);
+                    if (restart_timer) {
+                        this->mytimer->timer_start();
+                    }
                     oss << "unload " << n << std::endl;
                     flg = false;
                     break;
@@ -330,8 +336,16 @@ bool shinxbot::handle_bot_unload(const std::string &message,
             bool flg = true;
             for (size_t i = 0; i < events.size(); ++i) {
                 if (std::get<2>(events[i]) == n) {
+                    const bool restart_timer = (this->mytimer != nullptr &&
+                                                this->mytimer->is_running());
+                    if (restart_timer) {
+                        this->mytimer->timer_stop();
+                    }
                     unload_func(events[i]);
                     events.erase(events.begin() + i);
+                    if (restart_timer) {
+                        this->mytimer->timer_start();
+                    }
                     oss << "unload " << n << std::endl;
                     flg = false;
                     break;
@@ -352,8 +366,7 @@ bool shinxbot::handle_bot_unload(const std::string &message,
 }
 
 bool shinxbot::handle_bot_reload(const std::string &message,
-                                 const msg_meta &conf)
-{
+                                 const msg_meta &conf) {
     std::istringstream iss(message.substr(10));
     std::ostringstream oss;
     std::string type;
@@ -379,15 +392,13 @@ bool shinxbot::handle_bot_reload(const std::string &message,
         bool ok = false;
         try {
             ok = func->reload(conf);
-        }
-        catch (...) {
+        } catch (...) {
             ok = false;
         }
 
         if (ok) {
             oss << "reload " << alias << " ok" << std::endl;
-        }
-        else {
+        } else {
             oss << "reload " << alias << " skipped (stateless or unsupported)"
                 << std::endl;
         }

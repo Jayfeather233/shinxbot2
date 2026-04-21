@@ -1,8 +1,7 @@
 #include "image_utils.h"
 #include "utils.h"
 
-void addRandomNoiseSingle(Magick::Image &img, int strength = 4)
-{
+void addRandomNoiseSingle(Magick::Image &img, int strength = 4) {
     size_t width = img.columns();
     size_t height = img.rows();
     if (width * height > 4000000) {
@@ -34,8 +33,7 @@ void addRandomNoiseSingle(Magick::Image &img, int strength = 4)
     }
 }
 
-void addRandomNoise(const std::string &filePath)
-{
+void addRandomNoise(const std::string &filePath) {
     try {
         if (filePath.find(".gif") != filePath.npos) {
             std::vector<Magick::Image> img;
@@ -51,20 +49,17 @@ void addRandomNoise(const std::string &filePath)
                 result.push_back(frame);
             }
             Magick::writeImages(result.begin(), result.end(), filePath);
-        }
-        else {
+        } else {
             Magick::Image img(filePath);
             addRandomNoiseSingle(img);
             img.write(filePath);
         }
-    }
-    catch (std::exception &e) {
+    } catch (std::exception &e) {
         set_global_log(LOG::ERROR, e.what());
     }
 }
 
-std::pair<std::string, std::string> image2base64(std::string filepath)
-{
+std::pair<std::string, std::string> image2base64(std::string filepath) {
     Magick::Image img(filepath);
     img.thumbnail(Magick::Geometry(2048, 2048));
 
@@ -73,20 +68,15 @@ std::pair<std::string, std::string> image2base64(std::string filepath)
     std::string type = img.magick();
     if (type == "PNG") {
         type = "image/png";
-    }
-    else if (type == "JPEG") {
+    } else if (type == "JPEG") {
         type = "image/jpeg";
-    }
-    else if (type == "WEBP") {
+    } else if (type == "WEBP") {
         type = "image/webp";
-    }
-    else if (type == "HEIC") {
+    } else if (type == "HEIC") {
         type = "image/heic";
-    }
-    else if (type == "HEIF") {
+    } else if (type == "HEIF") {
         type = "image/heif";
-    }
-    else {
+    } else {
         type = "image/error";
     }
     return std::make_pair(type, blob.base64());
@@ -94,8 +84,7 @@ std::pair<std::string, std::string> image2base64(std::string filepath)
 
 void copyImageTo(Magick::Image &dst, const Magick::Image src,
                  size_t src_row_start, size_t src_row_end, size_t src_col_start,
-                 size_t src_col_end, size_t dst_row, size_t dst_col)
-{
+                 size_t src_col_end, size_t dst_row, size_t dst_col) {
     size_t crop_width = src_col_end - src_col_start;
     size_t crop_height = src_row_end - src_row_start;
     Magick::Geometry crop_region(crop_width, crop_height, src_col_start,
@@ -107,8 +96,7 @@ void copyImageTo(Magick::Image &dst, const Magick::Image src,
 }
 
 void mirrorImage(Magick::Image &img, char axis, bool direction,
-                 const Magick::Image las)
-{
+                 const Magick::Image las) {
     Magick::Image new_img = img;
 
     // Mirror operation
@@ -124,16 +112,13 @@ void mirrorImage(Magick::Image &img, char axis, bool direction,
         if (direction == 0) {
             copyImageTo(img, new_img, new_img.rows() >> 1, new_img.rows(), 0,
                         new_img.columns(), img.rows() >> 1, 0);
-        }
-        else if (direction == 1) {
+        } else if (direction == 1) {
             copyImageTo(img, new_img, 0, new_img.rows() >> 1, 0,
                         new_img.columns(), 0, 0);
-        }
-        else {
+        } else {
             goto mirrorImageError;
         }
-    }
-    else if (axis == 1) { // Horizontal axis (flop)
+    } else if (axis == 1) { // Horizontal axis (flop)
         // Delete original half side first
         for (size_t y = 0; y < img.rows(); ++y) {
             for (size_t x = (direction == 0 ? img.columns() >> 1 : 0);
@@ -146,16 +131,13 @@ void mirrorImage(Magick::Image &img, char axis, bool direction,
         if (direction == 0) {
             copyImageTo(img, new_img, 0, new_img.rows(), new_img.columns() >> 1,
                         new_img.columns(), 0, img.columns() >> 1);
-        }
-        else if (direction == 1) {
+        } else if (direction == 1) {
             copyImageTo(img, new_img, 0, new_img.rows(), 0,
                         new_img.columns() >> 1, 0, 0);
-        }
-        else {
+        } else {
             goto mirrorImageError;
         }
-    }
-    else {
+    } else {
         goto mirrorImageError;
     }
     if (las.columns() > 1) {
@@ -174,8 +156,7 @@ mirrorImageError:
 }
 
 void mirrorImage(std::vector<Magick::Image> &img, char axis, bool direction,
-                 std::function<void(float)> callback)
-{
+                 std::function<void(float)> callback) {
     std::vector<Magick::Image> coalesced;
     Magick::coalesceImages(&coalesced, img.begin(), img.end());
 
@@ -192,8 +173,7 @@ void mirrorImage(std::vector<Magick::Image> &img, char axis, bool direction,
 
 using namespace Magick;
 
-void crop_to_square(Magick::Image &img)
-{
+void crop_to_square(Magick::Image &img) {
     Magick::Geometry geo = Magick::Geometry(img.columns(), img.rows());
     size_t len = std::min(geo.width(), geo.height());
     geo.xOff((geo.width() - len) >> 1);
@@ -204,8 +184,7 @@ void crop_to_square(Magick::Image &img)
     img.page(Magick::Geometry(0, 0, 0, 0));
 }
 
-void crop_to_circle(Magick::Image &img)
-{
+void crop_to_circle(Magick::Image &img) {
     crop_to_square(img);
     size_t len = img.columns();
     double radius = len / 2.0;
@@ -223,8 +202,7 @@ void crop_to_circle(Magick::Image &img)
     }
 }
 
-void constsize_rotate(Magick::Image &img, double deg)
-{
+void constsize_rotate(Magick::Image &img, double deg) {
     size_t oriWidth = img.columns(), oriHeight = img.rows();
     // img.backgroundColor(Magick::Color(5, 0, 0, 0));
     img.rotate(deg);
@@ -242,8 +220,7 @@ void constsize_rotate(Magick::Image &img, double deg)
 
 std::vector<Magick::Image> rotateImage(const Magick::Image img, int fps,
                                        bool clockwise,
-                                       std::function<void(float)> callback)
-{
+                                       std::function<void(float)> callback) {
     Magick::Image dimg = img;
     dimg.alphaChannel(MagickCore::AlphaChannelOption::SetAlphaChannel);
 
@@ -276,8 +253,7 @@ std::vector<Magick::Image> rotateImage(const Magick::Image img, int fps,
 }
 
 void rotateImage(std::vector<Magick::Image> &img, int fps, bool clockwise,
-                 std::function<void(float)> callback)
-{
+                 std::function<void(float)> callback) {
     std::vector<Magick::Image> coalesced;
     Magick::coalesceImages(&coalesced, img.begin(), img.end());
     int total_delay = 0;
@@ -296,20 +272,17 @@ void rotateImage(std::vector<Magick::Image> &img, int fps, bool clockwise,
     double delay = 100.0 / fps;
     if (total_delay > 80 && total_delay < 130) {
         delay = total_delay * 1.0 / fps;
-    }
-    else if (total_delay >= 130) {
+    } else if (total_delay >= 130) {
         if (total_delay % 100 > 80 || total_delay % 100 < 30) {
             fps *= (total_delay + 50) / 100;
             delay = total_delay * 1.0 / fps;
-        }
-        else {
+        } else {
             total_delay <<= 1;
             fps *= (total_delay + 50) / 100;
             delay = total_delay * 1.0 / fps;
             total_delay >>= 1;
         }
-    }
-    else if (total_delay >= 20) {
+    } else if (total_delay >= 20) {
         double ratio = total_delay / 100.0;
         double availables[] = {2, 3, 4, 5};
         // find the nearest available ratio
@@ -324,9 +297,10 @@ void rotateImage(std::vector<Magick::Image> &img, int fps, bool clockwise,
             im.animationDelay(im.animationDelay() * ra);
         }
     }
-    set_global_log(LOG::INFO, "rotateImage: total_delay=" + std::to_string(total_delay) +
-                                 ", fps=" + std::to_string(fps) +
-                                 ", delay=" + std::to_string(delay));
+    set_global_log(LOG::INFO,
+                   "rotateImage: total_delay=" + std::to_string(total_delay) +
+                       ", fps=" + std::to_string(fps) +
+                       ", delay=" + std::to_string(delay));
 
     int index = 0;
     double frac = 0.001;
@@ -367,8 +341,7 @@ struct TileTransform {
 void buildRandomCanvas(const std::vector<Magick::Image> &input,
                        std::vector<Magick::Image> &output,
                        std::function<void(float)> callback = nullptr,
-                       double cover_rate = 0.98, double scaleFactor = 4.0)
-{
+                       double cover_rate = 0.98, double scaleFactor = 4.0) {
     if (input.empty())
         return;
 
@@ -424,8 +397,8 @@ void buildRandomCanvas(const std::vector<Magick::Image> &input,
         canvas.alpha(true);
         for (int x = 0; x < canvasW; x += baseW) {
             for (int y = 0; y < canvasH; y += baseH) {
-                canvas.composite(src, x, y,
-                                 MagickCore::CompositeOperator::OverCompositeOp);
+                canvas.composite(
+                    src, x, y, MagickCore::CompositeOperator::OverCompositeOp);
             }
         }
 
@@ -464,8 +437,7 @@ void buildRandomCanvas(const std::vector<Magick::Image> &input,
 Magick::Image buildRandomCanvas(const Image &input,
                                 std::function<void(float)> callback = nullptr,
                                 double cover_rate = 0.98,
-                                double scaleFactor = 4.0)
-{
+                                double scaleFactor = 4.0) {
     int w = input.columns();
     int h = input.rows();
     double scale = std::min(500.0 / w, 500.0 / h);
@@ -486,7 +458,7 @@ Magick::Image buildRandomCanvas(const Image &input,
     for (int x = 0; x < canvasW; x += w) {
         for (int y = 0; y < canvasH; y += h) {
             canvas.composite(input, x, y,
-                                MagickCore::CompositeOperator::OverCompositeOp);
+                             MagickCore::CompositeOperator::OverCompositeOp);
         }
     }
 
@@ -531,8 +503,7 @@ Magick::Image buildRandomCanvas(const Image &input,
 }
 
 Magick::Image kaleidoscopeSectorSymmetry(const Magick::Image &canvas,
-                                         int sectors = 12)
-{
+                                         int sectors = 12) {
     int w = canvas.columns();
     int h = canvas.rows();
 
@@ -584,8 +555,7 @@ Magick::Image kaleidoscopeSectorSymmetry(const Magick::Image &canvas,
             piece.flip();
             piece.page(Magick::Geometry(0, 0, 0, 0));
             piece.rotate((i + 1) * sectorAngle);
-        }
-        else {
+        } else {
             piece.page(Magick::Geometry(0, 0, 0, 0));
             piece.rotate(i * sectorAngle);
         }
@@ -605,15 +575,13 @@ Magick::Image kaleidoscopeSectorSymmetry(const Magick::Image &canvas,
 }
 
 void kaleido(Magick::Image &img, int layers, int nums_per_layer,
-             std::function<void(float)> callback)
-{
+             std::function<void(float)> callback) {
     img = kaleidoscopeSectorSymmetry(buildRandomCanvas(img, callback),
                                      nums_per_layer);
 }
 
 void kaleido(std::vector<Magick::Image> &img, int layers, int nums_per_layer,
-             std::function<void(float)> callback)
-{
+             std::function<void(float)> callback) {
     std::vector<Magick::Image> coalesced;
     Magick::coalesceImages(&coalesced, img.begin(), img.end());
 

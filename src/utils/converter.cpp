@@ -3,19 +3,16 @@
 bool is_op(const bot *p, const userid_t a) { return p->is_op(a); }
 
 std::string cq_send(const bot *p, const std::string &message,
-                    const msg_meta &conf)
-{
+                    const msg_meta &conf) {
     return p->cq_send(message, conf);
 }
 
 std::string cq_send(const bot *p, const std::string &end_point,
-                    const Json::Value &J)
-{
+                    const Json::Value &J) {
     return p->cq_send(end_point, J);
 }
 
-std::string cq_get(const bot *p, const std::string &end_point)
-{
+std::string cq_get(const bot *p, const std::string &end_point) {
     return p->cq_get(end_point);
 }
 
@@ -25,50 +22,42 @@ userid_t get_botqq(const bot *p) { return p->get_botqq(); }
 
 std::string get_local_path() { return fs::current_path(); }
 
-void input_process(bot *p, const std::string &input)
-{
+void input_process(bot *p, const std::string &input) {
     p->input_process(input);
 }
 
-std::string bot_config_path(const bot *p, const fs::path &relative)
-{
+std::string bot_config_path(const bot *p, const fs::path &relative) {
     const fs::path base =
         p ? fs::path(p->getConfigDir()) : fs::path("./config");
     return (base / relative).string();
 }
 
-std::string bot_resource_path(const bot *p, const fs::path &relative)
-{
+std::string bot_resource_path(const bot *p, const fs::path &relative) {
     const fs::path base =
         p ? fs::path(p->getResourceDir()) : fs::path("./resource");
     return (base / relative).string();
 }
 
-std::string bot_config_path(const fs::path &relative)
-{
+std::string bot_config_path(const fs::path &relative) {
     return bot_config_path(nullptr, relative);
 }
 
-std::string bot_resource_path(const fs::path &relative)
-{
+std::string bot_resource_path(const fs::path &relative) {
     return bot_resource_path(nullptr, relative);
 }
 
-std::string message_to_string(const Json::Value &J)
-{
+std::string message_to_string(const Json::Value &J) {
     if (J.isString()) {
         return J.asString();
     }
     if (J["type"].asString() == "text") {
         return cq_encode(J["data"]["text"].asString());
-    }
-    else {
+    } else {
         std::string ret = "[CQ:" + J["type"].asString();
         for (auto u : J["data"].getMemberNames()) {
             if (J["data"][u].isString()) {
                 ret += "," + u + "=" + cq_encode(J["data"][u].asString());
-            }
-            else {
+            } else {
                 ret += "," + u + "=" + cq_encode(J["data"][u].toStyledString());
             }
         }
@@ -77,26 +66,22 @@ std::string message_to_string(const Json::Value &J)
     }
 }
 
-std::string messageArr_to_string(const Json::Value &J)
-{
+std::string messageArr_to_string(const Json::Value &J) {
     if (J.isString()) {
         return J.asString();
-    }
-    else if (J.isArray()) {
+    } else if (J.isArray()) {
         std::string ret;
         Json::ArrayIndex sz = J.size();
         for (Json::ArrayIndex i = 0; i < sz; i++) {
             ret += message_to_string(J[i]);
         }
         return ret;
-    }
-    else {
+    } else {
         return message_to_string(J);
     }
 }
 
-Json::Value string_to_message(const std::string &s)
-{
+Json::Value string_to_message(const std::string &s) {
     Json::Value J;
     if (s[0] == '[') {
         size_t pos = s.find(','), laspos;
@@ -116,16 +101,14 @@ Json::Value string_to_message(const std::string &s)
                 cq_decode(s.substr(mid + 1, pos - mid - 1));
             laspos = pos;
         }
-    }
-    else {
+    } else {
         J["type"] = "text";
         J["data"]["text"] = cq_decode(s);
     }
     return J;
 }
 
-Json::Value string_to_messageArr(const std::string &s)
-{
+Json::Value string_to_messageArr(const std::string &s) {
     size_t pos = 0, laspos = 0;
     Json::Value J;
     while ((pos = s.find('[', pos)) != s.npos) {
