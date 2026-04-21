@@ -29,3 +29,41 @@ This document summarizes ownership boundaries inside `src/`.
 ## Notes on Moving Files
 
 Current CMake setup uses `aux_source_directory` on top-level directories (non-recursive), so deep folder moves inside these directories should be accompanied by CMake updates.
+
+## Alignment Review (2026-04)
+
+This repository is now close to the common plugin-host pattern used by medium-sized bot frameworks:
+
+- host runtime (`bots`) + stable plugin ABI (`interfaces`) + stateless helpers (`utils`)
+- dynamic module loading with explicit create/destroy symbols
+- command dispatch helpers shared across modules
+
+Remaining improvement points and current status:
+
+### Plugin Contract Discoverability
+
+Status: improved.
+
+Added `docs/plugin-development-spec.md` and `templates/*` for copy-first development.
+
+### Command-route Consistency (`check` vs `process`)
+
+Status: partially improved.
+
+Recent hot modules were aligned to avoid unreachable commands and broad prefix over-match.
+
+Future recommendation: add lightweight tests that assert command reachability.
+
+### Event Schema Strictness
+
+Status: improved for recently touched events.
+
+`check()` now validates required OneBot fields more strictly for selected events.
+
+### Source Layout Normalization
+
+Status: pending incremental work.
+
+Some runtime/local build outputs are still mixed under source trees in a few modules.
+
+Recommendation: standardize temporary/generated paths under dedicated cache/build directories and avoid writing beside source where possible.

@@ -121,6 +121,8 @@ git clone --recursive git@github.com:Jayfeather233/shinxbot2.git
 
 或者在本仓库基础上开发：
 
+建议先阅读 `docs/plugin-development-spec.md`（插件契约/检查清单），并从 `./templates/` 下模板开始开发。
+
 请确保已经通过执行 `./build.sh` 生成了最新的 `libutils.so`。
 
 以 `class shinxbot` 为例，函数参数仅与消息相关，事件则接受 JSON 数据。当接收到聊天消息时应调用函数中的方法，处理其他提示消息时使用事件中的方法。
@@ -137,9 +139,11 @@ git clone --recursive git@github.com:Jayfeather233/shinxbot2.git
 
 在运行机器人前，请确保你编写的功能动态库已放置在 `./lib/functions` 或 `./lib/events` 中，或使用 `generate_cmake.py` 和 `make_all.sh` 自动生成。
 
-当机器人加载一个库时，会调用 `extern "C" processable *create()` 来获取函数指针。通常只需返回 `new YourFunc()` 即可。
+当机器人加载一个库时，会调用 `extern "C" processable *create_t()`（事件库对应 `eventprocess *create_t()`）来获取插件指针。
 
-当机器人卸载一个库时，会调用 `extern "C" processable *close(processable* p)` 来表明该库需要被卸载。请正确释放所有通过 `new` 获得的全局指针，包括参数 `p`。
+当机器人卸载一个库时，会调用 `extern "C" void destroy_t(processable* p)`（事件库对应 `void destroy_t(eventprocess* p)`）来释放插件对象。
+
+推荐直接使用 `processable.h` / `eventprocess.h` 中的 `DECLARE_FACTORY_FUNCTIONS(YourClass)` 宏来导出工厂函数。
 
 
 ### 开发提示

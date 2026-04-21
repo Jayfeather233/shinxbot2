@@ -81,6 +81,8 @@ You can refer to a minimal development module: [shinxbot2_dev_module](https://gi
 
 Or continue develop on this responsitory:
 
+For a current plugin contract and review checklist, see `docs/plugin-development-spec.md` and templates under `./templates/`.
+
 If developing on the code from this repository, ensure you have generated `libutils.so` with `./build.sh`.
 
 Using `class shinxbot` as an example, function parameters are only related to messages, and events accept JSON data. Call methods from functions when receiving chat messages and use methods from events for other prompt messages.
@@ -92,9 +94,11 @@ Using `class shinxbot` as an example, function parameters are only related to me
 
 Before running the bot, ensure that the dynamic libraries for functions are placed in `./lib/functions | ./lib/events`, or generate them using `generate_cmake.py & make_all.sh`.
 
-When the bot loads a library, it will call `extern "C" processable *create()` to obtain the function pointer. Generally, just returning `new YourFunc()` is sufficient.
+When the bot loads a library, it calls `extern "C" processable *create_t()` (or `eventprocess *create_t()` for events) to obtain the plugin pointer.
 
-When the bot unloads a library, it will call `extern "C" processable *close(processable* p)` to indicate that the library needs to be unloaded. Please properly release all globally `new` obtained pointers, including the parameter `p`.
+When the bot unloads a library, it calls `extern "C" void destroy_t(processable* p)` (or `void destroy_t(eventprocess* p)` for events) to release it.
+
+The recommended way is to use the macro `DECLARE_FACTORY_FUNCTIONS(YourClass)` from `processable.h` / `eventprocess.h`.
 
 ### Features Supported
 
