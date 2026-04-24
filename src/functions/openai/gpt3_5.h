@@ -24,8 +24,11 @@ private:
     size_t key_cycle;
     std::string base_url;
     std::string model_name;
+    static constexpr int COMPRESS_RECENT_MESSAGES = 20;
     std::string get_quoted_content(const bot *p, int64_t reply_id, int depth = 0);
     std::string expand_forward_content(const bot *p, const std::string &forward_id, int depth);
+    bool compress_history(int64_t id, size_t keyid, std::string *error_message = nullptr);
+    void fallback_trim_history(int64_t id, int rounds = 1);
 
     // Archive and Restore features
     void perform_archive(int64_t id, const msg_meta &conf, bool is_auto = false);
