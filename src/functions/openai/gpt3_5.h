@@ -13,6 +13,7 @@ private:
     bool is_open, is_debug;
     std::string close_message; // The reason for is_open=false
     std::string default_prompt;
+    std::string compress_summary_prompt;
     std::map<int64_t, std::string> pre_default;
     std::map<int64_t, Json::Value> pre_prompt;
     std::map<int64_t, Json::Value> history;
@@ -27,6 +28,9 @@ private:
     static constexpr int COMPRESS_RECENT_MESSAGES = 20;
     std::string get_quoted_content(const bot *p, int64_t reply_id, int depth = 0);
     std::string expand_forward_content(const bot *p, const std::string &forward_id, int depth);
+    bool try_acquire_session(int64_t id, size_t keyid, const msg_meta &conf,
+                             bool ensure_default_prompt = true);
+    void release_session(int64_t id, size_t keyid);
     bool compress_history(int64_t id, size_t keyid, const msg_meta &conf,
                           std::string *error_message = nullptr);
     void fallback_trim_history(int64_t id, int rounds = 1);

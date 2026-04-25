@@ -54,6 +54,7 @@ gpt3_5::gpt3_5()
               "\"default\": [{\"role\": \"system\", \"content\": \"You are a "
               "helpful assistant.\"}],"
               "\"black_list\": [\"股票\"],"
+              "\"compress_summary_prompt\": \"\","
               "\"MAX_TOKEN\": 4000,"
               "\"MAX_REPLY\": 700,"
               "\"RED_LINE\": 1000"
@@ -89,6 +90,7 @@ gpt3_5::gpt3_5()
     RED_LINE = res["RED_LINE"].asInt();
     base_url = res.get("base_url", "https://api.openai.com").asString();
     model_name = res.get("model", "gpt-3.5-turbo").asString();
+    compress_summary_prompt = res["compress_summary_prompt"].asString();
 
     is_open = true;
     is_debug = false;
@@ -119,11 +121,14 @@ void gpt3_5::save_file()
 {
     std::lock_guard<std::recursive_mutex> lock(data_lock);
     Json::Value J;
+    J["base_url"] = base_url;
+    J["model"] = model_name;
     for (const std::string &u : key)
         J["keys"].append(u);
     for (const std::string &u : modes)
         J["mode"].append(u);
     J["black_list"] = parse_set_to_json(black_list);
+    J["compress_summary_prompt"] = compress_summary_prompt;
     J["MAX_TOKEN"] = MAX_TOKEN;
     J["MAX_REPLY"] = MAX_REPLY;
     J["RED_LINE"] = RED_LINE;
@@ -200,6 +205,37 @@ size_t gpt3_5::get_avaliable_key()
         }
     }
     return key_cycle;
+}
+
+bool gpt3_5::try_acquire_session(int64_t id, size_t keyid, const msg_meta &conf,
+                                 bool ensure_default_prompt)
+{
+    std::lock_guard<std::recursive_mutex> lock(data_lock);
+    if (is_lock[keyid]) {
+        conf.p->cq_send("请等待其他对话中输入的回复。", conf);
+        return false;
+    }
+    if (active_ids.count(id)) {
+        conf.p->cq_send("请等待该对话中上一个输入的回复。", conf);
+        return false;
+    }
+    if (!is_open) {
+        conf.p->cq_send("已关闭。" + close_message, conf);
+        return false;
+    }
+    if (ensure_default_prompt && history.find(id) == history.end()) {
+        pre_default[id] = default_prompt;
+    }
+    is_lock[keyid] = true;
+    active_ids.insert(id);
+    return true;
+}
+
+void gpt3_5::release_session(int64_t id, size_t keyid)
+{
+    std::lock_guard<std::recursive_mutex> lock(data_lock);
+    is_lock[keyid] = false;
+    active_ids.erase(id);
 }
 
 void gpt3_5::save_history(int64_t id)
@@ -279,24 +315,7 @@ bool gpt3_5::compress_history(int64_t id, size_t keyid, const msg_meta &conf,
 
     Json::Value user_msg;
     user_msg["role"] = "user";
-    user_msg["content"] =
-        "Provide a detailed summary of the previous conversation for continuing in a new session.\n\n"
-        "The new session will not have access to the original conversation history, so preserve all context needed to continue seamlessly.\n\n"
-        "Focus on:\n"
-        "- Key topics discussed and why they matter\n"
-        "- Important decisions made and their reasoning\n"
-        "- Current work in progress and its state\n"
-        "- Next steps or open questions to address\n"
-        "- The participants in the conversation, especially recurring group members, and their speaking style, personality, preferences, habits, and relationship dynamics\n"
-        "- Stable details that help imitate the established tone when continuing to talk with those same people later\n"
-        "- Any relevant technical details, code snippets, or configurations mentioned\n\n"
-        "Requirements:\n"
-        "1. Write in aforementioned language, matching the original conversation language\n"
-        "2. Be concise but complete — do not omit important context\n"
-        "3. Output the summary directly without prefaces or meta-commentary\n"
-        "4. Start with a clear indicator (e.g., \"[Summary of previous conversation]\" or equivalent)\n"
-        "5. Preserve user-by-user memory when possible: if different people have distinct tones or repeated viewpoints, describe them separately so the assistant can continue interacting naturally after compression\n\n"
-        "Summarize the conversation above directly.";
+    user_msg["content"] = compress_summary_prompt;
     messages.append(user_msg);
     req["messages"] = messages;
 
@@ -621,47 +640,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
              }
              return true;
          }},
-        {"arc",
-         [&]() {
-             if (!is_allowed_arc(id, conf)) {
-                 conf.p->cq_send("Not on op list.", conf);
-                 return true;
-             }
-             std::istringstream arc_iss(args);
-             std::string sub_cmd;
-             arc_iss >> sub_cmd;
-             if (sub_cmd == "list") {
-                 int page = 1;
-                 arc_iss >> page;
-                 list_archives(id, conf, page);
-             }
-             else if (sub_cmd == "restore") {
-                 std::string target;
-                 arc_iss >> target;
-                 if (target.empty()) {
-                     conf.p->cq_send("用法: .ai arc restore [编号/文件名]",
-                                     conf);
-                 }
-                 else {
-                     restore_archive(id, conf, target);
-                 }
-             }
-             else {
-                 perform_archive(id, conf, false);
-             }
-             return true;
-         }},
         {".reset",
-        [&]() {
-            {
-                std::lock_guard<std::recursive_mutex> lock(data_lock);
-                history[id].clear();
-            }
-            save_history(id);
-            conf.p->cq_send("reset done.", conf);
-            return true;
-        }},
-        {"reset",
         [&]() {
             {
                 std::lock_guard<std::recursive_mutex> lock(data_lock);
@@ -678,81 +657,12 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
                  return true;
              }
              size_t compress_keyid = get_avaliable_key();
-             {
-                 std::lock_guard<std::recursive_mutex> lock(data_lock);
-                 if (is_lock[compress_keyid]) {
-                     conf.p->cq_send("请等待其他对话中输入的回复。", conf);
-                     return true;
-                 }
-                 if (active_ids.count(id)) {
-                     conf.p->cq_send("请等待该对话中上一个输入的回复。", conf);
-                     return true;
-                 }
-                 if (!is_open) {
-                     conf.p->cq_send("已关闭。" + close_message, conf);
-                     return true;
-                 }
-                 if (history.find(id) == history.end()) {
-                     pre_default[id] = default_prompt;
-                 }
-                 is_lock[compress_keyid] = true;
-                 active_ids.insert(id);
-             }
+             if (!try_acquire_session(id, compress_keyid, conf)) return true;
 
              std::lock_guard<std::mutex> compress_lock(gptlock[compress_keyid]);
              std::string compress_error;
              bool compressed = compress_history(id, compress_keyid, conf, &compress_error);
-             {
-                 std::lock_guard<std::recursive_mutex> lock(data_lock);
-                 is_lock[compress_keyid] = false;
-                 active_ids.erase(id);
-             }
-             if (compressed) {
-                 save_history(id);
-                 conf.p->cq_send("compress done.", conf);
-             }
-             else {
-                 conf.p->cq_send(compress_error.empty() ? "compress failed." : compress_error,
-                                 conf);
-             }
-             return true;
-         }},
-        {"compress",
-         [&]() {
-             if (key.size() == 0) {
-                 conf.p->cq_send("No avaliable key!", conf);
-                 return true;
-             }
-             size_t compress_keyid = get_avaliable_key();
-             {
-                 std::lock_guard<std::recursive_mutex> lock(data_lock);
-                 if (is_lock[compress_keyid]) {
-                     conf.p->cq_send("请等待其他对话中输入的回复。", conf);
-                     return true;
-                 }
-                 if (active_ids.count(id)) {
-                     conf.p->cq_send("请等待该对话中上一个输入的回复。", conf);
-                     return true;
-                 }
-                 if (!is_open) {
-                     conf.p->cq_send("已关闭。" + close_message, conf);
-                     return true;
-                 }
-                 if (history.find(id) == history.end()) {
-                     pre_default[id] = default_prompt;
-                 }
-                 is_lock[compress_keyid] = true;
-                 active_ids.insert(id);
-             }
-
-             std::lock_guard<std::mutex> compress_lock(gptlock[compress_keyid]);
-             std::string compress_error;
-             bool compressed = compress_history(id, compress_keyid, conf, &compress_error);
-             {
-                 std::lock_guard<std::recursive_mutex> lock(data_lock);
-                 is_lock[compress_keyid] = false;
-                 active_ids.erase(id);
-             }
+             release_session(id, compress_keyid);
              if (compressed) {
                  save_history(id);
                  conf.p->cq_send("compress done.", conf);
@@ -875,23 +785,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     }
 
     size_t keyid = get_avaliable_key();
-    {
-        std::lock_guard<std::recursive_mutex> lock(data_lock);
-        if (is_lock[keyid]) {
-            conf.p->cq_send("请等待其他对话中输入的回复。", conf);
-            return;
-        }
-        if (active_ids.count(id)) {
-            conf.p->cq_send("请等待该对话中上一个输入的回复。", conf);
-            return;
-        }
-        if (!is_open) {
-            conf.p->cq_send("已关闭。" + close_message, conf);
-            return;
-        }
-        is_lock[keyid] = true;
-        active_ids.insert(id);
-    }
+    if (!try_acquire_session(id, keyid, conf, false)) return;
 
     std::lock_guard<std::mutex> lock(gptlock[keyid]);
     Json::Value J, user_input_J, ign;
@@ -962,9 +856,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     conf.p->setlog(LOG::INFO, "openai: user " + std::to_string(conf.user_id));
     
     {
-        std::lock_guard<std::recursive_mutex> lock_data(data_lock);
-        is_lock[keyid] = false;
-        active_ids.erase(id);
+        release_session(id, keyid);
     }
 
     if (J.isMember("error")) {
@@ -1089,7 +981,9 @@ std::string gpt3_5::help()
            ".ai arc - 手动归档当前上下文\n"
            ".ai arc list [页码] - 查看归档列表（每页5条）\n"
            ".ai arc restore [编号/文件名] - 从归档中恢复上下文\n"
-           "权限说明：归档与恢复功能在群聊中需管理员（OP）权限，私聊可直接使用。";
+           ".ai sw - 仅 OP 可用, 关闭模型作维护用\n"
+           ".ai set reply/token/red [数值] - 修改 MAX_REPLY/MAX_TOKEN/RED_LINE\n"
+           "权限说明：归档与恢复功能在群聊中需 OP权限，私聊可直接使用。";
 }
 
 uintmax_t gpt3_5::get_archives_total_size()

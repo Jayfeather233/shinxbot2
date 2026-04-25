@@ -8,6 +8,7 @@
         "a2",
         "a3"
     ],
+    "compress_summary_prompt": "Provide a detailed summary of the previous conversation for continuing in a new session.\n\nThe new session will not have access to the original conversation history, so preserve all context needed to continue seamlessly.\n\nFocus on:\n- Key topics discussed and why they matter\n- Important decisions made and their reasoning\n- Current work in progress and its state\n- Next steps or open questions to address\n- The participants in the conversation, especially recurring group members, and their speaking style, personality, preferences, habits, and relationship dynamics\n- Stable details that help imitate the established tone when continuing to talk with those same people later\n- Any relevant technical details, code snippets, or configurations mentioned\n\nRequirements:\n1. Write in the original conversation language\n2. Be concise but complete — do not omit important context\n3. Output the summary directly without prefaces or meta-commentary\n4. Start with a clear indicator (e.g., \"[Summary of previous conversation]\" or equivalent)\n5. Preserve user-by-user memory when possible: if different people have distinct tones or repeated viewpoints, describe them separately so the assistant can continue interacting naturally after compression\n\nSummarize the conversation above directly.",
     "MAX_TOKEN": 4000,
     "MAX_REPLY": 700,
     "RED_LINE": 1000,
