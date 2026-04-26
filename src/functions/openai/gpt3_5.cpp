@@ -54,42 +54,44 @@ gpt3_5::gpt3_5()
               "\"default\": [{\"role\": \"system\", \"content\": \"You are a "
               "helpful assistant.\"}],"
               "\"black_list\": [\"股票\"],"
+              "\"compress_summary_prompt\": \"\","
               "\"MAX_TOKEN\": 4000,"
               "\"MAX_REPLY\": 700,"
               "\"RED_LINE\": 1000"
               "}";
         of.close();
     }
-    else {
-        std::string ans = readfile(openai_conf_path);
 
-        Json::Value res = string_to_json(ans);
+    std::string ans = readfile(openai_conf_path);
 
-        Json::ArrayIndex sz = res["keys"].size();
-        if (sz > MAX_KEYS) sz = MAX_KEYS;
-        for (Json::ArrayIndex i = 0; i < sz; ++i) {
-            key.push_back(res["keys"][i].asString());
-            is_lock.push_back(false);
-        }
+    Json::Value res = string_to_json(ans);
 
-        sz = res["mode"].size();
-        for (Json::ArrayIndex i = 0; i < sz; i++) {
-            std::string tmp = res["mode"][i].asString();
-            modes.push_back(tmp);
-            mode_prompt[tmp] = res[tmp];
-            if (i == 0) {
-                default_prompt = tmp;
-            }
-        }
-
-        parse_json_to_set(res["black_list"], black_list);
-
-        MAX_TOKEN = res["MAX_TOKEN"].asInt();
-        MAX_REPLY = res["MAX_REPLY"].asInt();
-        RED_LINE = res["RED_LINE"].asInt();
-        base_url = res.get("base_url", "https://api.openai.com").asString();
-        model_name = res.get("model", "gpt-3.5-turbo").asString();
+    Json::ArrayIndex sz = res["keys"].size();
+    if (sz > MAX_KEYS) sz = MAX_KEYS;
+    for (Json::ArrayIndex i = 0; i < sz; ++i) {
+        key.push_back(res["keys"][i].asString());
+        is_lock.push_back(false);
     }
+
+    sz = res["mode"].size();
+    for (Json::ArrayIndex i = 0; i < sz; i++) {
+        std::string tmp = res["mode"][i].asString();
+        modes.push_back(tmp);
+        mode_prompt[tmp] = res[tmp];
+        if (i == 0) {
+            default_prompt = tmp;
+        }
+    }
+
+    parse_json_to_set(res["black_list"], black_list);
+
+    MAX_TOKEN = res["MAX_TOKEN"].asInt();
+    MAX_REPLY = res["MAX_REPLY"].asInt();
+    RED_LINE = res["RED_LINE"].asInt();
+    base_url = res.get("base_url", "https://api.openai.com").asString();
+    model_name = res.get("model", "gpt-3.5-turbo").asString();
+    compress_summary_prompt = res["compress_summary_prompt"].asString();
+
     is_open = true;
     is_debug = false;
     key_cycle = 0;
@@ -119,11 +121,14 @@ void gpt3_5::save_file()
 {
     std::lock_guard<std::recursive_mutex> lock(data_lock);
     Json::Value J;
+    J["base_url"] = base_url;
+    J["model"] = model_name;
     for (const std::string &u : key)
         J["keys"].append(u);
     for (const std::string &u : modes)
         J["mode"].append(u);
     J["black_list"] = parse_set_to_json(black_list);
+    J["compress_summary_prompt"] = compress_summary_prompt;
     J["MAX_TOKEN"] = MAX_TOKEN;
     J["MAX_REPLY"] = MAX_REPLY;
     J["RED_LINE"] = RED_LINE;
@@ -202,6 +207,37 @@ size_t gpt3_5::get_avaliable_key()
     return key_cycle;
 }
 
+bool gpt3_5::try_acquire_session(int64_t id, size_t keyid, const msg_meta &conf,
+                                 bool ensure_default_prompt)
+{
+    std::lock_guard<std::recursive_mutex> lock(data_lock);
+    if (is_lock[keyid]) {
+        conf.p->cq_send("请等待其他对话中输入的回复。", conf);
+        return false;
+    }
+    if (active_ids.count(id)) {
+        conf.p->cq_send("请等待该对话中上一个输入的回复。", conf);
+        return false;
+    }
+    if (!is_open) {
+        conf.p->cq_send("已关闭。" + close_message, conf);
+        return false;
+    }
+    if (ensure_default_prompt && history.find(id) == history.end()) {
+        pre_default[id] = default_prompt;
+    }
+    is_lock[keyid] = true;
+    active_ids.insert(id);
+    return true;
+}
+
+void gpt3_5::release_session(int64_t id, size_t keyid)
+{
+    std::lock_guard<std::recursive_mutex> lock(data_lock);
+    is_lock[keyid] = false;
+    active_ids.erase(id);
+}
+
 void gpt3_5::save_history(int64_t id)
 {
     std::lock_guard<std::recursive_mutex> lock(data_lock);
@@ -211,6 +247,128 @@ void gpt3_5::save_history(int64_t id)
     writefile(
         bot_config_path(nullptr, "gpt3_5/" + std::to_string(id) + ".json"),
         J.toStyledString());
+}
+
+void gpt3_5::fallback_trim_history(int64_t id, int rounds)
+{
+    std::lock_guard<std::recursive_mutex> lock(data_lock);
+    Json::Value ign;
+    for (int j = 0; j < rounds; ++j) {
+        if (history[id].size() > 0) history[id].removeIndex(0, &ign);
+        if (history[id].size() > 0) history[id].removeIndex(0, &ign);
+        if (history[id].size() == 0) break;
+    }
+}
+
+bool gpt3_5::compress_history(int64_t id, size_t keyid, const msg_meta &conf,
+                              std::string *error_message)
+{
+    Json::Value old_history;
+    std::string current_mode;
+    {
+        std::lock_guard<std::recursive_mutex> lock(data_lock);
+        if (history.find(id) == history.end() || history[id].size() <= 2) {
+            if (error_message) *error_message = "history too short to compress.";
+            return false;
+        }
+        old_history = history[id];
+        current_mode = pre_default[id];
+    }
+
+    Json::ArrayIndex total_sz = old_history.size();
+    Json::ArrayIndex recent_keep = static_cast<Json::ArrayIndex>(COMPRESS_RECENT_MESSAGES);
+    if (total_sz <= recent_keep) {
+        if (error_message) *error_message = "history too short to compress.";
+        return false;
+    }
+
+    Json::ArrayIndex split_idx = total_sz - recent_keep;
+    Json::Value older_history(Json::arrayValue);
+    Json::Value recent_history(Json::arrayValue);
+    for (Json::ArrayIndex i = 0; i < split_idx; ++i) {
+        older_history.append(old_history[i]);
+    }
+    for (Json::ArrayIndex i = split_idx; i < total_sz; ++i) {
+        recent_history.append(old_history[i]);
+    }
+
+    if (older_history.empty()) {
+        if (error_message) *error_message = "history too short to compress.";
+        return false;
+    }
+
+    perform_archive(id, conf, true, true);
+
+    Json::Value req;
+    req["model"] = model_name;
+    req["temperature"] = 0.3;
+    req["max_tokens"] = MAX_REPLY;
+
+    Json::Value messages(Json::arrayValue);
+    Json::Value prompt_messages = mode_prompt[current_mode.empty() ? default_prompt : current_mode];
+    for (Json::ArrayIndex i = 0; i < prompt_messages.size(); ++i) {
+        messages.append(prompt_messages[i]);
+    }
+    for (Json::ArrayIndex i = 0; i < older_history.size(); ++i) {
+        messages.append(older_history[i]);
+    }
+
+    Json::Value user_msg;
+    user_msg["role"] = "user";
+    user_msg["content"] = compress_summary_prompt;
+    messages.append(user_msg);
+    req["messages"] = messages;
+
+    Json::Value resp;
+    try {
+        resp = string_to_json(do_post(base_url, "/v1/chat/completions", false,
+                                      req,
+                                      {{"Content-Type", "application/json"},
+                                       {"Authorization", "Bearer " + key[keyid]}},
+                                      true));
+    }
+    catch (std::string e) {
+        if (error_message) *error_message = e;
+        return false;
+    }
+    catch (...) {
+        if (error_message) *error_message = "http connection failed.";
+        return false;
+    }
+
+    if (resp.isMember("error")) {
+        if (error_message) *error_message = resp["error"]["message"].asString();
+        return false;
+    }
+    if (!resp.isMember("choices") || !resp["choices"].isArray() ||
+        resp["choices"].empty()) {
+        if (error_message) *error_message = "summary response format invalid";
+        return false;
+    }
+
+    std::string summary = trim(resp["choices"][0]["message"]["content"].asString());
+    if (summary.empty()) {
+        if (error_message) *error_message = "summary is empty";
+        return false;
+    }
+
+    Json::Value new_history(Json::arrayValue);
+    Json::Value summary_msg;
+    summary_msg["role"] = "system";
+    summary_msg["content"] = summary;
+    new_history.append(summary_msg);
+    for (Json::ArrayIndex i = 0; i < recent_history.size(); ++i) {
+        new_history.append(recent_history[i]);
+    }
+
+    {
+        std::lock_guard<std::recursive_mutex> lock(data_lock);
+        history[id] = new_history;
+        if (pre_default.find(id) == pre_default.end()) {
+            pre_default[id] = current_mode.empty() ? default_prompt : current_mode;
+        }
+    }
+    return true;
 }
 
 
@@ -435,8 +593,16 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     int64_t id = conf.message_type == "group" ? (conf.group_id << 1)
                                               : ((conf.user_id << 1) | 1);
 
+    {
+        std::lock_guard<std::recursive_mutex> lock(data_lock);
+        if (history.find(id) == history.end()) {
+            pre_default[id] = default_prompt;
+        }
+    }
+
     // Auto-archive check
     perform_archive(id, conf, true);
+
 
     const std::vector<cmd_exact_rule> exact_rules = {
         {".test",
@@ -445,36 +611,6 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
              return true;
          }},
         {".arc",
-         [&]() {
-             if (!is_allowed_arc(id, conf)) {
-                 conf.p->cq_send("Not on op list.", conf);
-                 return true;
-             }
-             std::istringstream arc_iss(args);
-             std::string sub_cmd;
-             arc_iss >> sub_cmd;
-             if (sub_cmd == "list") {
-                 int page = 1;
-                 arc_iss >> page;
-                 list_archives(id, conf, page);
-             }
-             else if (sub_cmd == "restore") {
-                 std::string target;
-                 arc_iss >> target;
-                 if (target.empty()) {
-                     conf.p->cq_send("用法: .ai arc restore [编号/文件名]",
-                                     conf);
-                 }
-                 else {
-                     restore_archive(id, conf, target);
-                 }
-             }
-             else {
-                 perform_archive(id, conf, false);
-             }
-             return true;
-         }},
-        {"arc",
          [&]() {
              if (!is_allowed_arc(id, conf)) {
                  conf.p->cq_send("Not on op list.", conf);
@@ -514,16 +650,29 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
             conf.p->cq_send("reset done.", conf);
             return true;
         }},
-        {"reset",
-        [&]() {
-            {
-                std::lock_guard<std::recursive_mutex> lock(data_lock);
-                history[id].clear();
-            }
-            save_history(id);
-            conf.p->cq_send("reset done.", conf);
-            return true;
-        }},
+        {".compress",
+         [&]() {
+             if (key.size() == 0) {
+                 conf.p->cq_send("No avaliable key!", conf);
+                 return true;
+             }
+             size_t compress_keyid = get_avaliable_key();
+             if (!try_acquire_session(id, compress_keyid, conf)) return true;
+
+             std::lock_guard<std::mutex> compress_lock(gptlock[compress_keyid]);
+             std::string compress_error;
+             bool compressed = compress_history(id, compress_keyid, conf, &compress_error);
+             release_session(id, compress_keyid);
+             if (compressed) {
+                 save_history(id);
+                 conf.p->cq_send("compress done.", conf);
+             }
+             else {
+                 conf.p->cq_send(compress_error.empty() ? "compress failed." : compress_error,
+                                 conf);
+             }
+             return true;
+         }},
         {".change",
         [&]() {
             std::string reply;
@@ -622,6 +771,38 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
             if (do_save) save_file();
             return true;
         }},
+        {".status",
+        [&]() {
+            std::string reply;
+            {
+                std::lock_guard<std::recursive_mutex> lock(data_lock);
+                int64_t compress_threshold = static_cast<int64_t>(MAX_TOKEN) -
+                                            static_cast<int64_t>(RED_LINE);
+                int64_t trim_threshold = static_cast<int64_t>(MAX_TOKEN) -
+                                        static_cast<int64_t>(MAX_REPLY);
+                reply = "current ai status:\n";
+                reply += "model: " + model_name + "\n";
+                reply += "mode: " + pre_default[id] + "\n";
+                reply += "MAX_TOKEN: " + std::to_string(MAX_TOKEN) + "\n";
+                reply += "MAX_REPLY: " + std::to_string(MAX_REPLY) + "\n";
+                reply += "RED_LINE: " + std::to_string(RED_LINE) + "\n";
+                reply += "compress threshold (MAX_TOKEN-RED_LINE): " +
+                         std::to_string(compress_threshold) + "\n";
+                reply += "trim threshold (MAX_TOKEN-MAX_REPLY): " +
+                         std::to_string(trim_threshold) + "\n";
+                reply += "last api prompt_tokens: " +
+                         std::to_string(last_prompt_tokens[id]) + "\n";
+                reply += "last api completion_tokens: " +
+                         std::to_string(last_completion_tokens[id]) + "\n";
+                reply += "last api total_tokens: " +
+                         std::to_string(last_total_tokens[id]) + "\n";
+                reply += "history message count: " +
+                         std::to_string(history[id].size()) + "\n";
+                reply += "note: context will be conpressed when prompt_tokens > compress threshold, context will be conpressed when prompt_tokens > trim threshold";
+            }
+            conf.p->cq_send(reply, conf);
+            return true;
+        }},
     };
 
     bool handled = false;
@@ -636,26 +817,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     }
 
     size_t keyid = get_avaliable_key();
-    {
-        std::lock_guard<std::recursive_mutex> lock(data_lock);
-        if (is_lock[keyid]) {
-            conf.p->cq_send("请等待其他对话中输入的回复。", conf);
-            return;
-        }
-        if (active_ids.count(id)) {
-            conf.p->cq_send("请等待该对话中上一个输入的回复。", conf);
-            return;
-        }
-        if (!is_open) {
-            conf.p->cq_send("已关闭。" + close_message, conf);
-            return;
-        }
-        if (history.find(id) == history.end()) {
-            pre_default[id] = default_prompt;
-        }
-        is_lock[keyid] = true;
-        active_ids.insert(id);
-    }
+    if (!try_acquire_session(id, keyid, conf, false)) return;
 
     std::lock_guard<std::mutex> lock(gptlock[keyid]);
     Json::Value J, user_input_J, ign;
@@ -679,14 +841,36 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     J["model"] = model_name;
     
     {
-        std::lock_guard<std::recursive_mutex> lock_data(data_lock);
-        
-        // Pre-pruning history to avoid context-length-limit errors
+        std::unique_lock<std::recursive_mutex> lock_data(data_lock);
+
+        // Prefer compression before fallback trimming.
         Json::Value &h = history[id];
-        while(getlength(h) > (int64_t)(MAX_TOKEN - MAX_REPLY)) {
+        while (((last_prompt_tokens[id] > 0 &&
+                 last_prompt_tokens[id] > (int64_t)(MAX_TOKEN - RED_LINE)) ||
+                (last_prompt_tokens[id] <= 0 &&
+                 getlength(h) > (int64_t)(MAX_TOKEN - RED_LINE))) &&
+               h.size() > 2) {
+            lock_data.unlock();
+            std::string compress_error;
+            bool compressed = compress_history(id, keyid, conf, &compress_error);
+            lock_data.lock();
+            if (!compressed) {
+                break;
+            }
+            if (last_prompt_tokens[id] > 0) {
+                break;
+            }
+        }
+        while (((last_prompt_tokens[id] > 0 &&
+                 last_prompt_tokens[id] > (int64_t)(MAX_TOKEN - MAX_REPLY)) ||
+                (last_prompt_tokens[id] <= 0 &&
+                 getlength(h) > (int64_t)(MAX_TOKEN - MAX_REPLY)))) {
+            if (h.size() <= 2) break;
             if (h.size() > 0) h.removeIndex(0, &ign);
             if (h.size() > 0) h.removeIndex(0, &ign);
-            if (h.size() == 0) break;
+            if (last_prompt_tokens[id] > 0) {
+                break;
+            }
         }
 
         Json::Value K = mode_prompt[pre_default[id]];
@@ -717,9 +901,7 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
     conf.p->setlog(LOG::INFO, "openai: user " + std::to_string(conf.user_id));
     
     {
-        std::lock_guard<std::recursive_mutex> lock_data(data_lock);
-        is_lock[keyid] = false;
-        active_ids.erase(id);
+        release_session(id, keyid);
     }
 
     if (J.isMember("error")) {
@@ -778,26 +960,47 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
             aimsg += "\n(QAQ 响应被 OpenAI 安全策略部分过滤)";
         }
 
-        int tokens = 0;
-        if (J.isMember("usage") && J["usage"].isMember("total_tokens")) {
-            tokens = static_cast<int>(J["usage"]["total_tokens"].asInt64());
+        int64_t prompt_tokens = 0;
+        int64_t completion_tokens = 0;
+        int64_t total_tokens = 0;
+        if (J.isMember("usage")) {
+            if (J["usage"].isMember("prompt_tokens")) {
+                prompt_tokens = J["usage"]["prompt_tokens"].asInt64();
+            }
+            if (J["usage"].isMember("completion_tokens")) {
+                completion_tokens = J["usage"]["completion_tokens"].asInt64();
+            }
+            if (J["usage"].isMember("total_tokens")) {
+                total_tokens = J["usage"]["total_tokens"].asInt64();
+            }
         }
 
         std::string reply_msg = "[CQ:reply,id=" + std::to_string(conf.message_id) +
                                 "] " + aimsg;
-        {
-            std::lock_guard<std::recursive_mutex> lock_data(data_lock);
-            if (MAX_TOKEN < tokens) {
+    {
+        std::unique_lock<std::recursive_mutex> lock_data(data_lock);
+            last_prompt_tokens[id] = prompt_tokens;
+            last_completion_tokens[id] = completion_tokens;
+            last_total_tokens[id] = total_tokens;
+
+            if (MAX_TOKEN < prompt_tokens) {
                 history[id].clear();
             }
             else {
-                for (int i = 5; i >= 1; i--) {
-                    if (MAX_TOKEN - RED_LINE / i < tokens) {
-                        for (int j = 0; j < i; j++) {
-                            if (history[id].size() > 0) history[id].removeIndex(0, &ign);
-                            if (history[id].size() > 0) history[id].removeIndex(0, &ign);
+                if (prompt_tokens > MAX_TOKEN - RED_LINE) {
+                    lock_data.unlock();
+                    std::string compress_error;
+                    bool compressed = compress_history(id, keyid, conf, &compress_error);
+                    lock_data.lock();
+                    if (!compressed) {
+                        for (int i = 5; i >= 1; i--) {
+                            if (MAX_TOKEN - RED_LINE / i < prompt_tokens) {
+                                lock_data.unlock();
+                                fallback_trim_history(id, i);
+                                lock_data.lock();
+                                break;
+                            }
                         }
-                        break;
                     }
                 }
             }
@@ -831,12 +1034,16 @@ std::string gpt3_5::help()
 {
     return "OpenAI GPT-3.5：使用 .ai [内容] 开始对话\n"
            "指令列表：\n"
-           ".ai reset - 重置当前对话上下文\n"
-           ".ai change [模式] - 切换提示词模式\n"
-           ".ai arc - 手动归档当前上下文\n"
-           ".ai arc list [页码] - 查看归档列表（每页5条）\n"
-           ".ai arc restore [编号/文件名] - 从归档中恢复上下文\n"
-           "权限说明：归档与恢复功能在群聊中需管理员（OP）权限，私聊可直接使用。";
+           ".ai.reset - 重置当前对话上下文\n"
+           ".ai.status - 查看当前实际生效的模型/阈值/历史长度估算\n"
+           ".ai.compress - 压缩旧上下文并保留最近对话\n"
+           ".ai.change [模式] - 切换提示词模式\n"
+           ".ai.arc - 手动归档当前上下文\n"
+           ".ai.arc list [页码] - 查看归档列表（每页5条）\n"
+           ".ai.arc restore [编号/文件名] - 从归档中恢复上下文\n"
+           ".ai.sw - 仅 OP 可用, 关闭模型作维护用\n"
+           ".ai.set reply/token/red [数值] - 修改 MAX_REPLY/MAX_TOKEN/RED_LINE\n"
+           "权限说明：归档与恢复功能在群聊中需 OP权限，私聊可直接使用。";
 }
 
 uintmax_t gpt3_5::get_archives_total_size()
@@ -852,7 +1059,8 @@ uintmax_t gpt3_5::get_archives_total_size()
     return total_size;
 }
 
-void gpt3_5::perform_archive(int64_t id, const msg_meta &conf, bool is_auto)
+void gpt3_5::perform_archive(int64_t id, const msg_meta &conf, bool is_auto,
+                             bool silent)
 {
     {
         std::lock_guard<std::recursive_mutex> lock(data_lock);
@@ -907,7 +1115,7 @@ void gpt3_5::perform_archive(int64_t id, const msg_meta &conf, bool is_auto)
         arc_is_full = full;
     }
 
-    if (!is_auto) {
+    if (!is_auto && !silent) {
         conf.p->cq_send("归档已生成: " + filename, conf);
     }
 }
