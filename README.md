@@ -2,6 +2,8 @@
 
 A bot framework based on [Lagrange.Onebot](https://github.com/LagrangeDev/Lagrange.Core), restructured from [shinxBot](https://github.com/Jayfeather233/shinxBot).
 
+This respositry only contains framework. For functions(plugins), please see [shinxbot2-plugins](https://github.com/Jayfeather233/shinxbot2-plugins)
+
 [Documents](./README.md)/[文档](./README_ZH.md)
 
 ### File Structure

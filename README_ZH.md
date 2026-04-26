@@ -2,6 +2,8 @@
 
 一个基于[Lagrange.Onebot](https://github.com/LagrangeDev/Lagrange.Core)的(多)机器人管理框架，重构自[shinxBot](https://github.com/Jayfeather233/shinxBot)。
 
+本仓仅包含框架. 功能（插件）在 [shinxbot2-plugins](https://github.com/Jayfeather233/shinxbot2-plugins)
+
 [文档](./README_ZH.md)/[Documents](./README.md)
 
 ### 功能支持

@@ -12,3 +12,8 @@
 	path = lib/uuid_v4
 	url = https://github.com/crashoz/uuid_v4
 	branch = master
+
+[submodule "lib/shinxbot2-api"]
+	path = lib/shinxbot2-api
+	url = https://github.com/Jayfeather233/shinxbot2-api
+	branch = main
