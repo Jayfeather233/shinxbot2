@@ -264,17 +264,32 @@ namespace dice_tokenizer {
                 int num = left->calcVal < 0 ? left->calcVal - 0.4999 : left->calcVal + 0.4999;
                 int sides = right->calcVal < 0 ? right->calcVal - 0.4999 : right->calcVal + 0.4999;
 
-                int rval = 0;
-                for (int i = 0; i < num; ++i) {
-                    int rrval = dice_random(sides);
-                    rval += rrval;
-                    renderedStr += myToString(rrval);
-                    if (i < num - 1) renderedStr += "+";
-                }
-                if (num <= 1) {
+                double rval = 0;
+                if (num >= 100) {
+                    double mean = num * (sides + 1.0) / 2.0;
+                    double stddev = sqrt(num * (1ll * sides * sides - 1) / 12.0);
+                    std::normal_distribution<double> dist(mean, stddev);
+                    rval = std::round(dist(drng()));
+                    if (rval < num) rval = num;
+                    if (rval > 1ll * num * sides) rval = 1ll * num * sides;
+                    renderedStr = fmt::format("({}d{}={})", num, sides, rval);
+                } else if (num >= 20) {
+                    for (int i = 0; i < num; ++i) {
+                        rval += dice_random(sides);
+                    }
                     renderedStr = fmt::format("({}d{}={})", num, sides, rval);
                 } else {
-                    renderedStr = fmt::format("({}d{}={}=({}))", num, sides, rval, renderedStr);
+                    for (int i = 0; i < num; ++i) {
+                        int rrval = dice_random(sides);
+                        rval += rrval;
+                        renderedStr += myToString(rrval);
+                        if (i < num - 1) renderedStr += "+";
+                    }
+                    if (num <= 1) {
+                        renderedStr = fmt::format("({}d{}={})", num, sides, rval);
+                    } else {
+                        renderedStr = fmt::format("({}d{}={}=({}))", num, sides, rval, renderedStr);
+                    }
                 }
                 calcVal = rval;
 
