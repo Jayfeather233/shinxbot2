@@ -771,6 +771,38 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
             if (do_save) save_file();
             return true;
         }},
+        {".status",
+        [&]() {
+            std::string reply;
+            {
+                std::lock_guard<std::recursive_mutex> lock(data_lock);
+                int64_t compress_threshold = static_cast<int64_t>(MAX_TOKEN) -
+                                            static_cast<int64_t>(RED_LINE);
+                int64_t trim_threshold = static_cast<int64_t>(MAX_TOKEN) -
+                                        static_cast<int64_t>(MAX_REPLY);
+                reply = "current ai status:\n";
+                reply += "model: " + model_name + "\n";
+                reply += "mode: " + pre_default[id] + "\n";
+                reply += "MAX_TOKEN: " + std::to_string(MAX_TOKEN) + "\n";
+                reply += "MAX_REPLY: " + std::to_string(MAX_REPLY) + "\n";
+                reply += "RED_LINE: " + std::to_string(RED_LINE) + "\n";
+                reply += "compress threshold (MAX_TOKEN-RED_LINE): " +
+                         std::to_string(compress_threshold) + "\n";
+                reply += "trim threshold (MAX_TOKEN-MAX_REPLY): " +
+                         std::to_string(trim_threshold) + "\n";
+                reply += "last api prompt_tokens: " +
+                         std::to_string(last_prompt_tokens[id]) + "\n";
+                reply += "last api completion_tokens: " +
+                         std::to_string(last_completion_tokens[id]) + "\n";
+                reply += "last api total_tokens: " +
+                         std::to_string(last_total_tokens[id]) + "\n";
+                reply += "history message count: " +
+                         std::to_string(history[id].size()) + "\n";
+                reply += "note: context will be conpressed when prompt_tokens > compress threshold, context will be conpressed when prompt_tokens > trim threshold";
+            }
+            conf.p->cq_send(reply, conf);
+            return true;
+        }},
     };
 
     bool handled = false;
@@ -813,7 +845,11 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
 
         // Prefer compression before fallback trimming.
         Json::Value &h = history[id];
-        while (getlength(h) > (int64_t)(MAX_TOKEN - RED_LINE) && h.size() > 2) {
+        while (((last_prompt_tokens[id] > 0 &&
+                 last_prompt_tokens[id] > (int64_t)(MAX_TOKEN - RED_LINE)) ||
+                (last_prompt_tokens[id] <= 0 &&
+                 getlength(h) > (int64_t)(MAX_TOKEN - RED_LINE))) &&
+               h.size() > 2) {
             lock_data.unlock();
             std::string compress_error;
             bool compressed = compress_history(id, keyid, conf, &compress_error);
@@ -821,11 +857,20 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
             if (!compressed) {
                 break;
             }
+            if (last_prompt_tokens[id] > 0) {
+                break;
+            }
         }
-        while (getlength(h) > (int64_t)(MAX_TOKEN - MAX_REPLY)) {
+        while (((last_prompt_tokens[id] > 0 &&
+                 last_prompt_tokens[id] > (int64_t)(MAX_TOKEN - MAX_REPLY)) ||
+                (last_prompt_tokens[id] <= 0 &&
+                 getlength(h) > (int64_t)(MAX_TOKEN - MAX_REPLY)))) {
             if (h.size() <= 2) break;
             if (h.size() > 0) h.removeIndex(0, &ign);
             if (h.size() > 0) h.removeIndex(0, &ign);
+            if (last_prompt_tokens[id] > 0) {
+                break;
+            }
         }
 
         Json::Value K = mode_prompt[pre_default[id]];
@@ -915,27 +960,41 @@ void gpt3_5::process(std::string message, const msg_meta &conf)
             aimsg += "\n(QAQ 响应被 OpenAI 安全策略部分过滤)";
         }
 
-        int tokens = 0;
-        if (J.isMember("usage") && J["usage"].isMember("total_tokens")) {
-            tokens = static_cast<int>(J["usage"]["total_tokens"].asInt64());
+        int64_t prompt_tokens = 0;
+        int64_t completion_tokens = 0;
+        int64_t total_tokens = 0;
+        if (J.isMember("usage")) {
+            if (J["usage"].isMember("prompt_tokens")) {
+                prompt_tokens = J["usage"]["prompt_tokens"].asInt64();
+            }
+            if (J["usage"].isMember("completion_tokens")) {
+                completion_tokens = J["usage"]["completion_tokens"].asInt64();
+            }
+            if (J["usage"].isMember("total_tokens")) {
+                total_tokens = J["usage"]["total_tokens"].asInt64();
+            }
         }
 
         std::string reply_msg = "[CQ:reply,id=" + std::to_string(conf.message_id) +
                                 "] " + aimsg;
     {
         std::unique_lock<std::recursive_mutex> lock_data(data_lock);
-            if (MAX_TOKEN < tokens) {
+            last_prompt_tokens[id] = prompt_tokens;
+            last_completion_tokens[id] = completion_tokens;
+            last_total_tokens[id] = total_tokens;
+
+            if (MAX_TOKEN < prompt_tokens) {
                 history[id].clear();
             }
             else {
-                if (tokens > MAX_TOKEN - RED_LINE) {
+                if (prompt_tokens > MAX_TOKEN - RED_LINE) {
                     lock_data.unlock();
                     std::string compress_error;
                     bool compressed = compress_history(id, keyid, conf, &compress_error);
                     lock_data.lock();
                     if (!compressed) {
                         for (int i = 5; i >= 1; i--) {
-                            if (MAX_TOKEN - RED_LINE / i < tokens) {
+                            if (MAX_TOKEN - RED_LINE / i < prompt_tokens) {
                                 lock_data.unlock();
                                 fallback_trim_history(id, i);
                                 lock_data.lock();
@@ -975,14 +1034,15 @@ std::string gpt3_5::help()
 {
     return "OpenAI GPT-3.5：使用 .ai [内容] 开始对话\n"
            "指令列表：\n"
-           ".ai reset - 重置当前对话上下文\n"
-           ".ai compress / .ai.compress - 压缩旧上下文并保留最近对话\n"
-           ".ai change [模式] - 切换提示词模式\n"
-           ".ai arc - 手动归档当前上下文\n"
-           ".ai arc list [页码] - 查看归档列表（每页5条）\n"
-           ".ai arc restore [编号/文件名] - 从归档中恢复上下文\n"
-           ".ai sw - 仅 OP 可用, 关闭模型作维护用\n"
-           ".ai set reply/token/red [数值] - 修改 MAX_REPLY/MAX_TOKEN/RED_LINE\n"
+           ".ai.reset - 重置当前对话上下文\n"
+           ".ai.status - 查看当前实际生效的模型/阈值/历史长度估算\n"
+           ".ai.compress - 压缩旧上下文并保留最近对话\n"
+           ".ai.change [模式] - 切换提示词模式\n"
+           ".ai.arc - 手动归档当前上下文\n"
+           ".ai.arc list [页码] - 查看归档列表（每页5条）\n"
+           ".ai.arc restore [编号/文件名] - 从归档中恢复上下文\n"
+           ".ai.sw - 仅 OP 可用, 关闭模型作维护用\n"
+           ".ai.set reply/token/red [数值] - 修改 MAX_REPLY/MAX_TOKEN/RED_LINE\n"
            "权限说明：归档与恢复功能在群聊中需 OP权限，私聊可直接使用。";
 }
 

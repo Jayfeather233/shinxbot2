@@ -17,6 +17,9 @@ private:
     std::map<int64_t, std::string> pre_default;
     std::map<int64_t, Json::Value> pre_prompt;
     std::map<int64_t, Json::Value> history;
+    std::map<int64_t, int64_t> last_prompt_tokens;
+    std::map<int64_t, int64_t> last_completion_tokens;
+    std::map<int64_t, int64_t> last_total_tokens;
     std::vector<std::string> modes;
     std::set<std::string> black_list;
     std::set<int64_t> active_ids;
