@@ -75,21 +75,8 @@ void shinxbot::input_process(const std::string &input)
     }
     else if (post_type == "message") {
         if (J.isMember("message_type") && J.isMember("message")) {
-            Json::Value messageArr;
-            if (J["message"].isArray()) {
-                messageArr = J["message"];
-            }
-            else if (J["message"].isString()) {
-                Json::Value jj;
-                jj["type"] = "text";
-                jj["data"]["text"] = J["message"];
-                messageArr.append(jj);
-            }
-            else {
-                messageArr.append(J["message"]);
-            }
             std::string messageStr = messageArr_to_string(J["message"]);
-            messageArr = expand_string_to_messageArr(messageStr);
+            Json::Value messageArr = expand_string_to_messageArr(messageStr);
             int64_t message_id = J["message_id"].asInt64();
             std::string message_type = J["message_type"].asString();
             if (message_type == "group" || message_type == "private" ||
