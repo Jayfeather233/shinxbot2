@@ -7,15 +7,13 @@
 
 namespace fs = fs;
 
-void shinxbot::init()
-{
+void shinxbot::init() {
     for (;;) {
         try {
             Json::Value J = string_to_json(cq_get("get_login_info"));
             botqq = J["data"]["user_id"].asUInt64();
             break;
-        }
-        catch (...) {
+        } catch (...) {
         }
         sleep(10); // 10 sec
     }
@@ -54,8 +52,7 @@ void shinxbot::init()
     this->archive->set_default_pwd(std::to_string(this->botqq));
 }
 
-void shinxbot::input_process(const std::string &input)
-{
+void shinxbot::input_process(const std::string &input) {
     if (input.empty()) {
         return;
     }
@@ -72,8 +69,7 @@ void shinxbot::input_process(const std::string &input)
                 even->process(this, J);
             }
         }
-    }
-    else if (post_type == "message") {
+    } else if (post_type == "message") {
         if (J.isMember("message_type") && J.isMember("message")) {
             std::string messageStr = messageArr_to_string(J["message"]);
             Json::Value messageArr = expand_string_to_messageArr(messageStr);
@@ -104,40 +100,34 @@ void shinxbot::input_process(const std::string &input)
                                 if (func->check(messageArr, conf)) {
                                     func->process(messageArr, conf);
                                 }
-                            }
-                            else {
+                            } else {
                                 if (func->check(messageStr, conf)) {
                                     func->process(messageStr, conf);
                                 }
                             }
-                        }
-                        catch (const char *e) {
+                        } catch (const char *e) {
                             cq_send((std::string) "Throw an char*: " + e, conf);
-                            setlog(LOG::ERROR,
-                                   name + ": Throw an char*: " + e);
-                        }
-                        catch (const std::string &e) {
+                            setlog(LOG::ERROR, name + ": Throw an char*: " + e);
+                        } catch (const std::string &e) {
                             cq_send("Throw an string: " + e, conf);
-                            setlog(LOG::ERROR, name + ": Throw an string: " + e);
-                        }
-                        catch (std::exception &e) {
+                            setlog(LOG::ERROR,
+                                   name + ": Throw an string: " + e);
+                        } catch (std::exception &e) {
                             cq_send((std::string) "Throw an exception: " +
                                         e.what(),
                                     conf);
                             setlog(LOG::ERROR,
-                                   name + ": Throw an exception: " +
-                                       e.what());
-                        }
-                        catch (...) {
+                                   name + ": Throw an exception: " + e.what());
+                        } catch (...) {
                             cq_send("Throw an unknown error", conf);
-                            setlog(LOG::ERROR, name + ": Throw an unknown error");
+                            setlog(LOG::ERROR,
+                                   name + ": Throw an unknown error");
                         }
                     }
                 }
             }
         }
-    }
-    else if (post_type == "meta_event") {
+    } else if (post_type == "meta_event") {
         if (J.isMember("meta_event_type") &&
             J["meta_event_type"].asString() == "heartbeat") {
             recorder->inform();
@@ -145,8 +135,7 @@ void shinxbot::input_process(const std::string &input)
     }
 }
 
-void shinxbot::run()
-{
+void shinxbot::run() {
     this->mytimer =
         new Timer(std::chrono::milliseconds(500), this); // smallest time: 1s
     this->archive = new archivist();
@@ -192,8 +181,7 @@ void shinxbot::run()
                                                    ":" + filename);
                 }
             }
-        }
-        catch (const fs::filesystem_error &ex) {
+        } catch (const fs::filesystem_error &ex) {
             set_global_log(LOG::ERROR,
                            std::string("Error accessing directory: ") +
                                ex.what());

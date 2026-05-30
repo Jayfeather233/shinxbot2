@@ -1,5 +1,5 @@
-#include "shinxbot.hpp"
 #include "dynamic_lib.hpp"
+#include "shinxbot.hpp"
 
 #include <filesystem>
 #include <functional>
@@ -9,8 +9,7 @@
 
 namespace fs = fs;
 
-bool shinxbot::meta_func(std::string message, const msg_meta &conf)
-{
+bool shinxbot::meta_func(std::string message, const msg_meta &conf) {
     std::string normalized = trim(message);
     const std::string at_me = "[CQ:at,qq=" + std::to_string(get_botqq()) + "]";
 
@@ -28,9 +27,8 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
         help_level_t help_level = help_level_t::public_only;
         if (conf.message_type == "private" && is_op(conf.user_id)) {
             help_level = help_level_t::bot_admin;
-        }
-        else if (conf.message_type == "group" &&
-                 is_group_op(conf.p, conf.group_id, conf.user_id)) {
+        } else if (conf.message_type == "group" &&
+                   is_group_op(conf.p, conf.group_id, conf.user_id)) {
             help_level = help_level_t::group_admin;
         }
         std::string help_message;
@@ -127,8 +125,7 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
         std::string filepa = fs::absolute(oss.str()).string();
         if (conf.message_type == "private") {
             send_file_private(conf.p, conf.user_id, filepa);
-        }
-        else {
+        } else {
             upload_file(conf.p, filepa, conf.group_id, "backup");
         }
         return false;
@@ -166,8 +163,7 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
         for (const auto &n : fn_names) {
             if (loaded_fn.find(n) != loaded_fn.end()) {
                 loaded_fn_names.push_back(n);
-            }
-            else {
+            } else {
                 unloaded_fn_names.push_back(n);
             }
         }
@@ -177,8 +173,7 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
         for (const auto &n : ev_names) {
             if (loaded_ev.find(n) != loaded_ev.end()) {
                 loaded_ev_names.push_back(n);
-            }
-            else {
+            } else {
                 unloaded_ev_names.push_back(n);
             }
         }
@@ -219,8 +214,7 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
             cq_send("已清除屏蔽功能", conf);
             save_blocklist();
             return false;
-        }
-        else {
+        } else {
             return true;
         }
     };
@@ -235,8 +229,7 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
             cq_send("已添加屏蔽功能", conf);
             save_blocklist();
             return false;
-        }
-        else {
+        } else {
             return true;
         }
     };
@@ -251,8 +244,7 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
             cq_send("已移除屏蔽功能", conf);
             save_blocklist();
             return false;
-        }
-        else {
+        } else {
             return true;
         }
     };
@@ -267,8 +259,7 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
             cq_send("已添加白名单功能", conf);
             save_blocklist();
             return false;
-        }
-        else {
+        } else {
             return true;
         }
     };
@@ -283,8 +274,7 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
             cq_send("已移除白名单功能", conf);
             save_blocklist();
             return false;
-        }
-        else {
+        } else {
             return true;
         }
     };
@@ -296,13 +286,17 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
         normalized = normalized.substr(17);
         size_t pos = normalized.find(' ');
         if (pos == std::string::npos) {
-            cq_send("命令格式错误，正确格式：bot.module.clone [alias] [git address]", conf);
+            cq_send("命令格式错误，正确格式：bot.module.clone [alias] [git "
+                    "address]",
+                    conf);
             return true;
         }
         std::string alias = trim(normalized.substr(0, pos));
         std::string git_addr = trim(normalized.substr(pos + 1));
         if (alias.empty() || git_addr.empty()) {
-            cq_send("命令格式错误，正确格式：bot.module.clone [alias] [git address]", conf);
+            cq_send("命令格式错误，正确格式：bot.module.clone [alias] [git "
+                    "address]",
+                    conf);
             return true;
         }
         std::string plugin_path = "./plugins/" + alias;
@@ -315,7 +309,8 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
             if (result != 0) {
                 cq_send("更新失败，请检查网络连接和仓库状态", conf);
             }
-            cmd = "git -C " + plugin_path + " submodule update --init --recursive";
+            cmd = "git -C " + plugin_path +
+                  " submodule update --init --recursive";
             setlog(LOG::INFO, "执行命令：" + cmd);
             result = system(cmd.c_str());
             if (result != 0) {
@@ -327,7 +322,8 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
         } else {
             fs::create_directories(plugin_path);
             // clone with submodules
-            std::string cmd = "git clone --recurse-submodules " + git_addr + " " + plugin_path;
+            std::string cmd = "git clone --recurse-submodules " + git_addr +
+                              " " + plugin_path;
             setlog(LOG::INFO, "执行命令：" + cmd);
             int result = system(cmd.c_str());
             if (result != 0) {
@@ -345,14 +341,18 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
         std::istringstream iss(normalized);
         std::string alias, type, name;
         if (!(iss >> alias >> type >> name)) {
-            cq_send("命令格式错误，正确格式：bot.module.compile_and_load [alias] [functions/events/all] [name]", conf);
+            cq_send("命令格式错误，正确格式：bot.module.compile_and_load "
+                    "[alias] [functions/events/all] [name]",
+                    conf);
             return true;
         }
         alias = trim(alias);
         type = trim(type);
         name = trim(name);
         if (alias.empty() || type.empty() || (name.empty() && type != "all")) {
-            cq_send("命令格式错误，正确格式：bot.module.compile_and_load [alias] [functions/events/all] [name]", conf);
+            cq_send("命令格式错误，正确格式：bot.module.compile_and_load "
+                    "[alias] [functions/events/all] [name]",
+                    conf);
             return true;
         }
         std::string plugin_path = "./plugins/" + alias;
@@ -360,24 +360,33 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
             cq_send("别名不存在", conf);
             return true;
         }
-        auto compile_and_load = [&](const std::string &type, const std::string &name) {
+        auto compile_and_load = [&](const std::string &type,
+                                    const std::string &name) {
             // use cmake to compile
             // function path: ./plugins/[alias]/[type]/[name]/
             // output path: ./plugins/[alias]/lib/[type]/[name].so
             std::string source_path = plugin_path + "/" + type + "/" + name;
-            std::string output_path = plugin_path + "/lib/" + type + "/lib" + name + ".so";
+            std::string output_path =
+                plugin_path + "/lib/" + type + "/lib" + name + ".so";
             if (!fs::exists(source_path)) {
-                cq_send(fmt::format("{}/{}/{}: 源文件不存在", plugin_path, type, name), conf);
+                cq_send(fmt::format("{}/{}/{}: 源文件不存在", plugin_path, type,
+                                    name),
+                        conf);
                 return false;
             }
             std::string cmake_path = source_path + "/CMakeLists.txt";
             if (!fs::exists(cmake_path)) {
                 // 执行 cd source_path/.. && python3 generate_cmake.py
-                std::string cmd = "cd " + source_path + "/.. && python3 generate_cmake.py";
+                std::string cmd =
+                    "cd " + source_path + "/.. && python3 generate_cmake.py";
                 setlog(LOG::INFO, "执行命令：" + cmd);
                 int result = system(cmd.c_str());
                 if (result != 0) {
-                    cq_send(fmt::format("{}/{}/{}: 生成CMakeLists.txt失败，请检查源文件", plugin_path, type, name), conf);
+                    cq_send(
+                        fmt::format(
+                            "{}/{}/{}: 生成CMakeLists.txt失败，请检查源文件",
+                            plugin_path, type, name),
+                        conf);
                     return true;
                 }
             }
@@ -387,18 +396,24 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
             setlog(LOG::INFO, "执行命令：" + cmd);
             int result = system(cmd.c_str());
             if (result != 0) {
-                cq_send(fmt::format("{}/{}/{}: cmake配置失败，请检查源文件", plugin_path, type, name), conf);
+                cq_send(fmt::format("{}/{}/{}: cmake配置失败，请检查源文件",
+                                    plugin_path, type, name),
+                        conf);
                 return false;
             }
             cmd = "cmake --build " + build_path + " --config Release";
             setlog(LOG::INFO, "执行命令：" + cmd);
             result = system(cmd.c_str());
             if (result != 0) {
-                cq_send(fmt::format("{}/{}/{}: 编译失败，请检查源文件", plugin_path, type, name), conf);
+                cq_send(fmt::format("{}/{}/{}: 编译失败，请检查源文件",
+                                    plugin_path, type, name),
+                        conf);
                 return false;
             }
             if (!fs::exists(output_path)) {
-                cq_send(fmt::format("{}/{}/{}: 编译成功，但未找到输出文件", plugin_path, type, name), conf);
+                cq_send(fmt::format("{}/{}/{}: 编译成功，但未找到输出文件",
+                                    plugin_path, type, name),
+                        conf);
                 return false;
             }
             // load module
@@ -420,21 +435,25 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
                 fs::copy_file(output_path, dest_path);
                 auto u = load_function<processable>(dest_path);
                 if (u.first != nullptr) {
-                    functions.push_back(std::make_tuple(u.first, u.second, name));
+                    functions.push_back(
+                        std::make_tuple(u.first, u.second, name));
                     init_func(name, u.first);
                     if (already_loaded) {
-                        cq_send(fmt::format("{}/{}/{}: 编译并重新加载成功", plugin_path, type, name), conf);
+                        cq_send(fmt::format("{}/{}/{}: 编译并重新加载成功",
+                                            plugin_path, type, name),
+                                conf);
+                    } else {
+                        cq_send(fmt::format("{}/{}/{}: 编译并加载成功",
+                                            plugin_path, type, name),
+                                conf);
                     }
-                    else {
-                        cq_send(fmt::format("{}/{}/{}: 编译并加载成功", plugin_path, type, name), conf);
-                    }
-                }
-                else {
-                    cq_send(fmt::format("{}/{}/{}: 编译成功，但加载失败", plugin_path, type, name), conf);
+                } else {
+                    cq_send(fmt::format("{}/{}/{}: 编译成功，但加载失败",
+                                        plugin_path, type, name),
+                            conf);
                     return false;
                 }
-            }
-            else if (type == "events") {
+            } else if (type == "events") {
                 add_module_to_filter(name, true);
                 std::string dest_path = "./lib/events/lib" + name + ".so";
                 bool already_loaded = false;
@@ -455,18 +474,24 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
                     events.push_back(std::make_tuple(u.first, u.second, name));
                     init_func(name, u.first);
                     if (already_loaded) {
-                        cq_send(fmt::format("{}/{}/{}: 编译并重新加载成功", plugin_path, type, name), conf);
+                        cq_send(fmt::format("{}/{}/{}: 编译并重新加载成功",
+                                            plugin_path, type, name),
+                                conf);
+                    } else {
+                        cq_send(fmt::format("{}/{}/{}: 编译并加载成功",
+                                            plugin_path, type, name),
+                                conf);
                     }
-                    else {
-                        cq_send(fmt::format("{}/{}/{}: 编译并加载成功", plugin_path, type, name), conf);
-                    }
-                }
-                else {
-                    cq_send(fmt::format("{}/{}/{}: 编译成功，但加载失败", plugin_path, type, name), conf);
+                } else {
+                    cq_send(fmt::format("{}/{}/{}: 编译成功，但加载失败",
+                                        plugin_path, type, name),
+                            conf);
                     return false;
                 }
             } else {
-                cq_send("命令格式错误，正确格式：bot.module.compile_and_load [alias] [functions/events/all] [name]", conf);
+                cq_send("命令格式错误，正确格式：bot.module.compile_and_load "
+                        "[alias] [functions/events/all] [name]",
+                        conf);
                 return false;
             }
             return true;
@@ -474,20 +499,21 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
 
         if (type == "functions") {
             compile_and_load("functions", name);
-        }
-        else if (type == "events") {
+        } else if (type == "events") {
             compile_and_load("events", name);
-        }
-        else if (type == "all") {
+        } else if (type == "all") {
             // all plugin in functions/events path
             std::string function_path = plugin_path + "/functions/";
             std::string event_path = plugin_path + "/events/";
             if (fs::exists(function_path)) {
-                for (const auto &entry : fs::directory_iterator(function_path)) {
+                for (const auto &entry :
+                     fs::directory_iterator(function_path)) {
                     if (entry.is_directory()) {
                         std::string name = entry.path().filename().string();
                         if (!compile_and_load("functions", name)) {
-                            cq_send(fmt::format("function {} 编译加载失败", name), conf);
+                            cq_send(
+                                fmt::format("function {} 编译加载失败", name),
+                                conf);
                         }
                     }
                 }
@@ -497,14 +523,16 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
                     if (entry.is_directory()) {
                         std::string name = entry.path().filename().string();
                         if (!compile_and_load("events", name)) {
-                            cq_send(fmt::format("event {} 编译加载失败", name), conf);
+                            cq_send(fmt::format("event {} 编译加载失败", name),
+                                    conf);
                         }
                     }
                 }
             }
-        }
-        else {
-            cq_send("命令格式错误，正确格式：bot.module.compile_and_load [alias] [functions/events/all] [name]", conf);
+        } else {
+            cq_send("命令格式错误，正确格式：bot.module.compile_and_load "
+                    "[alias] [functions/events/all] [name]",
+                    conf);
         }
         return true;
     };
@@ -546,8 +574,9 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
         {"bot.list_alias", handle_bot_list_alias, {require_op}},
         {"bot.progress", handle_bot_progress, {}},
         {"bot.blockclear", handle_group_blockclear, {require_group_at_bot}},
-        {"bot.module.list", handle_module_list, {require_group_at_bot_or_private, require_op}}
-    };
+        {"bot.module.list",
+         handle_module_list,
+         {require_group_at_bot_or_private, require_op}}};
 
     const std::vector<cmd_prefix_rule> prefix_rules = {
         {"bot.load",
@@ -563,9 +592,12 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
         {"bot.unblock ", handle_group_unblock, {require_group_at_bot}},
         {"bot.white ", handle_group_white, {require_group_at_bot}},
         {"bot.unwhite ", handle_group_unwhite, {require_group_at_bot}},
-        {"bot.module.clone ", handle_module_clone, {require_group_at_bot_or_private, require_op}},
-        {"bot.module.compile_and_load ", handle_module_compile_and_load, {require_group_at_bot_or_private, require_op}}
-    };
+        {"bot.module.clone ",
+         handle_module_clone,
+         {require_group_at_bot_or_private, require_op}},
+        {"bot.module.compile_and_load ",
+         handle_module_compile_and_load,
+         {require_group_at_bot_or_private, require_op}}};
 
     bool handled = false;
     const bool route_result =
@@ -577,8 +609,7 @@ bool shinxbot::meta_func(std::string message, const msg_meta &conf)
     return true;
 }
 
-void shinxbot::save_blocklist()
-{
+void shinxbot::save_blocklist() {
     Json::Value J_block;
     for (const auto &pair : group_blocklist) {
         groupid_t gid = pair.first;

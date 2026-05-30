@@ -7,29 +7,21 @@
 // }
 msg_meta::msg_meta(const msg_meta &u)
     : message_type(u.message_type), user_id(u.user_id), group_id(u.group_id),
-      message_id(u.message_id), p(u.p)
-{
-}
+      message_id(u.message_id), p(u.p) {}
 msg_meta::msg_meta(const msg_meta &&u)
     : message_type(u.message_type), user_id(u.user_id), group_id(u.group_id),
-      message_id(u.message_id), p(u.p)
-{
-}
+      message_id(u.message_id), p(u.p) {}
 msg_meta::msg_meta(std::string mt, userid_t uid, groupid_t gid, int64_t mid,
                    bot *pp)
-    : message_type(mt), user_id(uid), group_id(gid), message_id(mid), p(pp)
-{
-}
+    : message_type(mt), user_id(uid), group_id(gid), message_id(mid), p(pp) {}
 
 bot::bot(int recv_port, int send_port, const std::string &tk)
-    : receive_port(recv_port), send_port(send_port), token(tk), botqq(0)
-{
-}
+    : receive_port(recv_port), send_port(send_port), token(tk), botqq(0) {}
 
 bool bot::is_op(const userid_t a) const { return false; }
 
-std::string bot::cq_send(const std::string &message, const msg_meta &conf) const
-{
+std::string bot::cq_send(const std::string &message,
+                         const msg_meta &conf) const {
     if (trim(message).empty()) {
         return std::string("{\"data\": {\"message_id\": 0}}");
     }
@@ -42,15 +34,13 @@ std::string bot::cq_send(const std::string &message, const msg_meta &conf) const
 }
 
 std::string bot::cq_send(const std::string &end_point,
-                         const Json::Value &J) const
-{
+                         const Json::Value &J) const {
     return do_post((std::string) "127.0.0.1", send_port,
                    (std::string) "/" + end_point, false, J,
                    {{"Authorization", "Bearer " + token}});
 }
 
-std::string bot::cq_get(const std::string &end_point) const
-{
+std::string bot::cq_get(const std::string &end_point) const {
     return do_get((std::string) "127.0.0.1", send_port,
                   (std::string) "/" + end_point, false,
                   {{"Authorization", "Bearer " + token}});

@@ -19,57 +19,45 @@ public:
     blockItem() : mode(true) {}
     blockItem(const std::set<std::string> &blocklist,
               const std::set<std::string> &whitelist, bool mode)
-        : blocklist(blocklist), whitelist(whitelist), mode(mode)
-    {
-    }
-    blockItem(const Json::Value &J)
-    {
+        : blocklist(blocklist), whitelist(whitelist), mode(mode) {}
+    blockItem(const Json::Value &J) {
         if (J.isMember("block") && J.isMember("white") && J.isMember("mode")) {
             parse_json_to_set(J["block"], blocklist);
             parse_json_to_set(J["white"], whitelist);
             mode = J["mode"].asBool();
-        }
-        else {
+        } else {
             mode = true;
         }
     }
-    bool is_blocked(const std::string &message)
-    {
+    bool is_blocked(const std::string &message) {
         if (mode) {
             return blocklist.find(message) != blocklist.end();
-        }
-        else {
+        } else {
             return whitelist.find(message) == whitelist.end();
         }
     }
-    void add_block(const std::string &message)
-    {
+    void add_block(const std::string &message) {
         blocklist.insert(message);
         mode = true;
     }
-    void remove_block(const std::string &message)
-    {
+    void remove_block(const std::string &message) {
         blocklist.erase(message);
         mode = true;
     }
-    void add_white(const std::string &message)
-    {
+    void add_white(const std::string &message) {
         whitelist.insert(message);
         mode = false;
     }
-    void remove_white(const std::string &message)
-    {
+    void remove_white(const std::string &message) {
         whitelist.erase(message);
         mode = false;
     }
-    void clear()
-    {
+    void clear() {
         blocklist.clear();
         whitelist.clear();
         mode = true;
     }
-    Json::Value to_json() const
-    {
+    Json::Value to_json() const {
         Json::Value J;
         J["block"] = parse_set_to_json(blocklist);
         J["white"] = parse_set_to_json(whitelist);

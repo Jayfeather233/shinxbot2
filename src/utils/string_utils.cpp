@@ -6,20 +6,17 @@
 
 static std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
 
-std::wstring string_to_wstring(const std::string &u)
-{
+std::wstring string_to_wstring(const std::string &u) {
     return converter.from_bytes(u);
 }
-std::string wstring_to_string(const std::wstring &u)
-{
+std::string wstring_to_string(const std::wstring &u) {
     return converter.to_bytes(u);
 }
 
 static std::string whitespaces = "\t\r\n ";
 static std::wstring w_whitespaces = L"\t\r\n ";
 
-std::string trim(const std::string &u)
-{
+std::string trim(const std::string &u) {
     size_t fir = u.find_first_not_of(whitespaces);
     if (fir == std::string::npos) {
         return "";
@@ -28,20 +25,17 @@ std::string trim(const std::string &u)
     return u.substr(fir, las - fir + 1);
 }
 
-bool starts_with(const std::string &s, const std::string &prefix)
-{
+bool starts_with(const std::string &s, const std::string &prefix) {
     return s.size() >= prefix.size() &&
            s.compare(0, prefix.size(), prefix) == 0;
 }
 
-bool starts_with(const std::wstring &s, const std::wstring &prefix)
-{
+bool starts_with(const std::wstring &s, const std::wstring &prefix) {
     return s.size() >= prefix.size() &&
            s.compare(0, prefix.size(), prefix) == 0;
 }
 
-std::wstring trim(const std::wstring &u)
-{
+std::wstring trim(const std::wstring &u) {
     size_t fir = u.find_first_not_of(w_whitespaces);
     if (fir == std::wstring::npos) {
         return L"";
@@ -50,8 +44,7 @@ std::wstring trim(const std::wstring &u)
     return u.substr(fir, las - fir + 1);
 }
 
-std::string my_replace(const std::string &s, const char old, const char ne)
-{
+std::string my_replace(const std::string &s, const char old, const char ne) {
     // std::string ans;
     // for (size_t i = 0; i < s.length(); i++) {
     //     if (s[i] == old) {
@@ -67,8 +60,7 @@ std::string my_replace(const std::string &s, const char old, const char ne)
     return u;
 }
 
-std::string cq_encode(const std::string &input)
-{
+std::string cq_encode(const std::string &input) {
     std::regex amp("&");
     std::regex lBracket("\\[");
     std::regex rBracket("\\]");
@@ -82,8 +74,7 @@ std::string cq_encode(const std::string &input)
     return result;
 }
 
-std::string cq_decode(const std::string &input)
-{
+std::string cq_decode(const std::string &input) {
     std::regex amp("&amp;");
     std::regex lBracket("&#91;");
     std::regex rBracket("&#93;");
@@ -97,8 +88,7 @@ std::string cq_decode(const std::string &input)
     return result;
 }
 
-std::wstring cq_encode(const std::wstring &input)
-{
+std::wstring cq_encode(const std::wstring &input) {
     std::wregex amp(L"&");
     std::wregex lBracket(L"\\[");
     std::wregex rBracket(L"\\]");
@@ -112,8 +102,7 @@ std::wstring cq_encode(const std::wstring &input)
     return result;
 }
 
-std::wstring cq_decode(const std::wstring &input)
-{
+std::wstring cq_decode(const std::wstring &input) {
     std::wregex amp(L"&amp;");
     std::wregex lBracket(L"&#91;");
     std::wregex rBracket(L"&#93;");
@@ -127,8 +116,7 @@ std::wstring cq_decode(const std::wstring &input)
     return result;
 }
 
-std::pair<std::string, std::string> split_http_addr(const std::string &addr)
-{
+std::pair<std::string, std::string> split_http_addr(const std::string &addr) {
     size_t p = addr.find("/");
     while (p != addr.npos && ((p > 0 && addr[p - 1] == '/') ||
                               (p < addr.length() && addr[p + 1] == '/'))) {
@@ -136,14 +124,12 @@ std::pair<std::string, std::string> split_http_addr(const std::string &addr)
     }
     if (p == addr.npos) {
         return std::make_pair(addr, "");
-    }
-    else {
+    } else {
         return std::make_pair(addr.substr(0, p), addr.substr(p));
     }
 }
 
-float similarity(const std::string &s1, const std::string &s2)
-{
+float similarity(const std::string &s1, const std::string &s2) {
     size_t m = s1.length();
     size_t n = s2.length();
     std::vector<std::vector<size_t>> dp(m + 1, std::vector<size_t>(n + 1));
@@ -151,11 +137,9 @@ float similarity(const std::string &s1, const std::string &s2)
         for (size_t j = 0; j <= n; j++) {
             if (i == 0 || j == 0) {
                 dp[i][j] = 0;
-            }
-            else if (s1[i - 1] == s2[j - 1]) {
+            } else if (s1[i - 1] == s2[j - 1]) {
                 dp[i][j] = dp[i - 1][j - 1] + 1;
-            }
-            else {
+            } else {
                 dp[i][j] = std::max(dp[i - 1][j], dp[i][j - 1]);
             }
         }
@@ -163,8 +147,7 @@ float similarity(const std::string &s1, const std::string &s2)
     return (float)dp[m][n] / n;
 }
 
-float similarity(const std::wstring &s1, const std::wstring &s2)
-{
+float similarity(const std::wstring &s1, const std::wstring &s2) {
     size_t m = s1.length();
     size_t n = s2.length();
     std::vector<std::vector<size_t>> dp(m + 1, std::vector<size_t>(n + 1));
@@ -172,11 +155,9 @@ float similarity(const std::wstring &s1, const std::wstring &s2)
         for (size_t j = 0; j <= n; j++) {
             if (i == 0 || j == 0) {
                 dp[i][j] = 0;
-            }
-            else if (s1[i - 1] == s2[j - 1]) {
+            } else if (s1[i - 1] == s2[j - 1]) {
                 dp[i][j] = dp[i - 1][j - 1] + 1;
-            }
-            else {
+            } else {
                 dp[i][j] = std::max(dp[i - 1][j], dp[i][j - 1]);
             }
         }

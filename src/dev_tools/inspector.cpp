@@ -14,8 +14,7 @@ int receive_port_bot;
 
 // https://stackoverflow.com/a/26221725/17792535
 template <typename... Args>
-std::string string_format(const std::string &format, Args... args)
-{
+std::string string_format(const std::string &format, Args... args) {
     int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) +
                  1; // Extra space for '\0'
     if (size_s <= 0) {
@@ -28,31 +27,27 @@ std::string string_format(const std::string &format, Args... args)
                        buf.get() + size - 1); // We don't want the '\0' inside
 }
 
-void get_config()
-{
+void get_config() {
     std::ifstream iport("../../config/port.txt");
     if (iport.is_open()) {
         iport >> send_port_bot >> receive_port_bot;
         std::cout << send_port_bot << " " << receive_port_bot << std::endl;
         iport.close();
-    }
-    else {
+    } else {
         std::cerr << "Please first generate port.txt by running `cq_bot`"
                   << std::endl;
         std::exit(1);
     }
 }
 
-std::string process(const std::string request)
-{
+std::string process(const std::string request) {
     std::string response = "{}";
     std::istringstream iss{request};
     std::string newline;
     std::getline(iss, newline);
     if (newline.find("/get_login_info") != std::string::npos) {
         response = "{\"user_id\": 23333, \"nickname\":\"Test\"}";
-    }
-    else if (newline.find("/get_friend_list") != std::string::npos) {
+    } else if (newline.find("/get_friend_list") != std::string::npos) {
         response = "["
                    "{\"user_id\": 9982,\"nickname\": \"hi\"},"
                    "{\"user_id\": 9983,\"nickname\": \"hi\"},"
@@ -72,8 +67,7 @@ std::string process(const std::string request)
     return cq_body;
 }
 
-void read_server_message(int new_socket)
-{
+void read_server_message(int new_socket) {
     char buffer[4096];
     try {
         std::string s_buffer;
@@ -101,15 +95,13 @@ void read_server_message(int new_socket)
         std::string response = head + body;
 
         send(new_socket, response.c_str(), response.length(), 0);
-    }
-    catch (const std::exception &exc) {
+    } catch (const std::exception &exc) {
         std::cerr << exc.what();
     }
     close(new_socket);
 }
 
-int start_server()
-{
+int start_server() {
     get_config();
     int server_fd, new_socket;
     struct sockaddr_in address;
@@ -158,8 +150,7 @@ int start_server()
     return 0;
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     start_server();
     return 0;
 }

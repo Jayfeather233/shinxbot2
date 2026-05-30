@@ -10,18 +10,14 @@
 static std::mutex m;
 
 BarInfo::BarInfo(float pg, const std::string &dc)
-    : progress(pg), desc(dc), f(nullptr), b(nullptr)
-{
-}
+    : progress(pg), desc(dc), f(nullptr), b(nullptr) {}
 void BarInfo::setProgress(float pg) { progress = pg; }
 void BarInfo::setDesc(const std::string &d) { this->desc = d; }
-void BarInfo::setBar(float pg, const std::string &d)
-{
+void BarInfo::setBar(float pg, const std::string &d) {
     progress = pg;
     this->desc = d;
 }
-BarInfo::~BarInfo()
-{
+BarInfo::~BarInfo() {
     std::lock_guard<std::mutex> lock(m);
     if (b != nullptr)
         b->f = f;
@@ -29,15 +25,13 @@ BarInfo::~BarInfo()
         f->b = b;
 }
 
-progressBar::progressBar()
-{
+progressBar::progressBar() {
     root.b = &tail;
     tail.f = &root;
     root.f = tail.b = nullptr;
 }
 
-void progressBar::addBar(BarInfo *u)
-{
+void progressBar::addBar(BarInfo *u) {
     std::lock_guard<std::mutex> lock(m);
     if (u->f != nullptr) {
         set_global_log(
@@ -51,8 +45,7 @@ void progressBar::addBar(BarInfo *u)
     tail.f = u;
 }
 
-std::string progressBar::desc() const
-{
+std::string progressBar::desc() const {
     std::lock_guard<std::mutex> lock(m);
     std::ostringstream oss;
     BarInfo *p = root.b;
@@ -80,8 +73,7 @@ std::string progressBar::desc() const
     return fmt::format("Total {} Tasks running.\n{}", cnt, oss.str());
 }
 
-progressBar::~progressBar()
-{
+progressBar::~progressBar() {
     if (root.b != &tail || tail.f != &root) {
         set_global_log(LOG::ERROR, "progressBar list not properly released. "
                                    "May result in Segmentation fault.");

@@ -8,8 +8,7 @@
 namespace fs = fs;
 
 // ===== Logging =====
-void shinxbot::refresh_log_stream()
-{
+void shinxbot::refresh_log_stream() {
     std::time_t nt =
         std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     tm tt = *std::localtime(&nt);
@@ -35,22 +34,17 @@ void shinxbot::refresh_log_stream()
 }
 
 shinxbot::shinxbot(int recv_port, int send_port, const std::string &tk)
-    : bot(recv_port, send_port, tk)
-{
-}
+    : bot(recv_port, send_port, tk) {}
 shinxbot::shinxbot(const Json::Value &J)
-    : bot(J["recv_port"].asInt(), J["send_port"].asInt(), J["token"].asString())
-{
-}
+    : bot(J["recv_port"].asInt(), J["send_port"].asInt(),
+          J["token"].asString()) {}
 
-bool shinxbot::is_op(const userid_t a) const
-{
+bool shinxbot::is_op(const userid_t a) const {
     return op_list.find(a) != op_list.end();
 }
 
 // ===== Runtime logging and teardown =====
-void shinxbot::setlog(LOG type, std::string message)
-{
+void shinxbot::setlog(LOG type, std::string message) {
     std::lock_guard<std::mutex> lock(log_lock);
 
     std::time_t nt =
@@ -69,15 +63,14 @@ void shinxbot::setlog(LOG type, std::string message)
                     tt.tm_sec, LOG_name[type], message);
 
     if (type == LOG::ERROR)
-        fmt::print(stderr, formatted_message);
+        fmt::print(stderr, "{}", formatted_message);
     else
-        fmt::print(formatted_message);
+        fmt::print("{}", formatted_message);
     LOG_output[type] << formatted_message;
     LOG_output[type].flush();
 }
 
-void shinxbot::cq_send_all_op(const std::string &message)
-{
+void shinxbot::cq_send_all_op(const std::string &message) {
     msg_meta conf = (msg_meta){"private", 0, 0, 0, this};
     for (userid_t uid : op_list) {
         conf.user_id = uid;
@@ -85,8 +78,7 @@ void shinxbot::cq_send_all_op(const std::string &message)
     }
 }
 
-shinxbot::~shinxbot()
-{
+shinxbot::~shinxbot() {
     if (this->mytimer != nullptr) {
         this->mytimer->timer_stop();
         delete this->mytimer;
