@@ -4,7 +4,7 @@ a.out
 build/
 test/
 config/port.txt
-resource/
+resource/**
 log/
 test*
 compile_commands.json
@@ -15,3 +15,5 @@ tests/function_bench/generated/
 tests/function_bench/*_check_bench.cpp
 tests/function_bench/*.bench.out
 plugins/
+!resource/cat/**
+!resource/auto114/**
