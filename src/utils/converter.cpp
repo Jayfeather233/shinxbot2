@@ -58,7 +58,9 @@ std::string message_to_string(const Json::Value &J) {
             if (J["data"][u].isString()) {
                 ret += "," + u + "=" + cq_encode(J["data"][u].asString());
             } else {
-                ret += "," + u + "=" + cq_encode(Json::FastWriter().write(J["data"][u]));
+                Json::FastWriter writer;
+                writer.omitEndingLineFeed();
+                ret += "," + u + "=" + cq_encode(writer.write(J["data"][u]));
             }
         }
         ret += "]";
