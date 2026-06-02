@@ -616,5 +616,5 @@ void shinxbot::save_blocklist() {
         J_block[std::to_string(gid)] = pair.second.to_json();
     }
     writefile(bot_config_path(this, "core/blocklist.json"),
-              J_block.toStyledString());
+              Json::FastWriter().write(J_block));
 }

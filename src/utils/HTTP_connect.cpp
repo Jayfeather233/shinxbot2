@@ -141,7 +141,7 @@ std::string do_http_request(httplib::Client &client,
     httplib::Result res =
         hrm == http_req_method::POST
             ? client.Post(httppath, httplib_headers,
-                          json_message.toStyledString(), "application/json")
+                          Json::FastWriter().write(json_message), "application/json")
             : client.Get(httppath, httplib_headers);
 
     if (!res || res->status / 100 != 2) {

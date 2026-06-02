@@ -89,7 +89,7 @@ void shinxbot::save_module_filter_config() const {
     J["functions"] = parse_set_to_json(enabled_functions);
     J["events"] = parse_set_to_json(enabled_events);
     writefile(bot_config_path(this, "core/module_load.json"),
-              J.toStyledString());
+              Json::FastWriter().write(J));
 }
 
 void shinxbot::add_module_to_filter(const std::string &name, bool is_event) {

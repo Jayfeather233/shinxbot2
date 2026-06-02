@@ -114,10 +114,9 @@ void upload_file(bot *p, const fs::path &file, const groupid_t &group_id,
         J["file"] = (fs::current_path() / file).lexically_normal().string();
         J["name"] = file.filename().string();
         J["folder"] = id;
-        // cq_send(J.toStyledString(), "group", 0, group_id);
         J = string_to_json(p->cq_send("upload_group_file", J));
         if (J.isMember("msg")) {
-            p->cq_send(J.toStyledString(), msg_meta("group", 0, group_id, 0));
+            p->cq_send(Json::FastWriter().write(J), msg_meta("group", 0, group_id, 0));
         }
     } catch (...) {
         p->setlog(LOG::WARNING, "File upload failed.");
