@@ -175,7 +175,7 @@ void send_file_private(const bot *p, const userid_t user_id,
  * This function substitutes the CQ:image segment with a local file path, which can be used for uploading files.
  * CQ format: [CQ:image,file=123.jpg,file_size=114514,sub_type=0,summary=,url=https://example.com/image.jpg]
  */
-std::string substitute_image_segment(bot *p, std::string segment, const fs::path &save_dir) {
+std::string substitute_image_segment(bot *p, std::string segment, const fs::path &save_dir, const std::string &cq_image_segment_template) {
     size_t cq_pos = segment.find("[CQ:image");
     while (cq_pos != std::string::npos) {
         size_t end_pos = segment.find("]", cq_pos);
@@ -183,6 +183,7 @@ std::string substitute_image_segment(bot *p, std::string segment, const fs::path
             break; // Invalid segment, no closing bracket
         }
         std::string img_segment = segment.substr(cq_pos + 10, end_pos - cq_pos - 10); // Extract the content inside [CQ:image...]
+        img_segment = cq_decode(img_segment);
         std::istringstream ss(img_segment);
         std::string token;
         std::map<std::string, std::string> params;
@@ -199,8 +200,9 @@ std::string substitute_image_segment(bot *p, std::string segment, const fs::path
             std::string url = params["url"];
             try {
                 download(url, save_dir, file_name);
-                std::string local_path = (save_dir / file_name).string();
-                segment.replace(cq_pos, end_pos - cq_pos + 1, local_path);
+                fs::path local_path = fs::absolute(save_dir / file_name);
+                std::string cq_image_segment = fmt::format(cq_image_segment_template, cq_encode(local_path.string()));
+                segment.replace(cq_pos, end_pos - cq_pos + 1, cq_image_segment);
             } catch (const std::exception &e) {
                 p->setlog(LOG::ERROR, "Failed to download image: " + std::string(e.what()));
             }
