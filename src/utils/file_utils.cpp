@@ -86,6 +86,7 @@ void command_download(const std::string &httpAddress,
 void download(const std::string &httpAddress, const fs::path &filePath,
               const std::string &fileName, const bool proxy) {
     try {
+        fs::create_directories(filePath);
         auto ret = split_http_addr(httpAddress);
         std::string data = do_get(ret.first, ret.second, false, {}, proxy);
         std::fstream ofile;

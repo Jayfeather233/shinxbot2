@@ -170,3 +170,44 @@ void send_file_private(const bot *p, const userid_t user_id,
     J["name"] = path.has_filename() ? path.filename().string() : "unnamed";
     p->cq_send("upload_private_file", J);
 }
+
+/**
+ * This function substitutes the CQ:image segment with a local file path, which can be used for uploading files.
+ * CQ format: [CQ:image,file=123.jpg,file_size=114514,sub_type=0,summary=,url=https://example.com/image.jpg]
+ */
+std::string substitute_image_segment(bot *p, std::string segment, const fs::path &save_dir) {
+    size_t cq_pos = segment.find("[CQ:image");
+    while (cq_pos != std::string::npos) {
+        size_t end_pos = segment.find("]", cq_pos);
+        if (end_pos == std::string::npos) {
+            break; // Invalid segment, no closing bracket
+        }
+        std::string img_segment = segment.substr(cq_pos + 10, end_pos - cq_pos - 10); // Extract the content inside [CQ:image...]
+        std::istringstream ss(img_segment);
+        std::string token;
+        std::map<std::string, std::string> params;
+        while (std::getline(ss, token, ',')) {
+            size_t eq_pos = token.find('=');
+            if (eq_pos != std::string::npos) {
+                std::string key = token.substr(0, eq_pos);
+                std::string value = token.substr(eq_pos + 1);
+                params[key] = value;
+            }
+        }
+        if (params.count("file") > 0 && params.count("url") > 0) {
+            std::string file_name = params["file"];
+            std::string url = params["url"];
+            try {
+                download(url, save_dir, file_name);
+                std::string local_path = (save_dir / file_name).string();
+                segment.replace(cq_pos, end_pos - cq_pos + 1, local_path);
+            } catch (const std::exception &e) {
+                p->setlog(LOG::ERROR, "Failed to download image: " + std::string(e.what()));
+            }
+        } else {
+            p->setlog(LOG::WARNING, "Invalid CQ:image segment, missing file or url parameter.");
+        }
+        cq_pos = segment.find("[CQ:image", cq_pos + 1);
+    }
+    return segment;
+}
