@@ -57,7 +57,7 @@ Json::Value expand_string_to_messageArr(std::string s) {
     if ((pos = s.find("[CQ:")) == std::string::npos) {
         Json::Value jj;
         jj["type"] = "text";
-        jj["data"]["text"] = s;
+        jj["data"]["text"] = cq_decode(s);
         messageArr.append(jj);
         return messageArr;
     } else {
@@ -66,7 +66,7 @@ Json::Value expand_string_to_messageArr(std::string s) {
             if (pos > last_pos) {
                 Json::Value jj;
                 jj["type"] = "text";
-                jj["data"]["text"] = s.substr(last_pos, pos - last_pos);
+                jj["data"]["text"] = cq_decode(s.substr(last_pos, pos - last_pos));
                 messageArr.append(jj);
             }
             size_t end_pos = s.find("]", pos);
@@ -90,7 +90,7 @@ Json::Value expand_string_to_messageArr(std::string s) {
                     std::string value = item.substr(equal_pos + 1);
                     jj["data"][key] = cq_decode(value);
                 } else {
-                    jj["data"]["0"] = item;
+                    jj["data"]["0"] = cq_decode(item);
                 }
                 comma_pos = next_comma;
             }
@@ -101,7 +101,7 @@ Json::Value expand_string_to_messageArr(std::string s) {
         if (last_pos < s.size()) {
             Json::Value jj;
             jj["type"] = "text";
-            jj["data"]["text"] = s.substr(last_pos);
+            jj["data"]["text"] = cq_decode(s.substr(last_pos));
             messageArr.append(jj);
         }
         return messageArr;

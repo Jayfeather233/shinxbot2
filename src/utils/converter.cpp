@@ -46,12 +46,12 @@ std::string bot_resource_path(const fs::path &relative) {
     return bot_resource_path(nullptr, relative);
 }
 
-std::string message_to_string(const Json::Value &J) {
+std::string message_to_string(const Json::Value &J, bool need_decode) {
     if (J.isString()) {
         return J.asString();
     }
     if (J["type"].asString() == "text") {
-        return J["data"]["text"].asString();
+        return need_decode ? cq_decode(J["data"]["text"].asString()) : J["data"]["text"].asString();
     } else {
         std::string ret = "[CQ:" + J["type"].asString();
         for (auto u : J["data"].getMemberNames()) {
@@ -75,11 +75,11 @@ std::string messageArr_to_string(const Json::Value &J) {
         std::string ret;
         Json::ArrayIndex sz = J.size();
         for (Json::ArrayIndex i = 0; i < sz; i++) {
-            ret += message_to_string(J[i]);
+            ret += message_to_string(J[i], true);
         }
         return ret;
     } else {
-        return message_to_string(J);
+        return message_to_string(J, false);
     }
 }
 
